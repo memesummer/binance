@@ -403,7 +403,7 @@ def get_aggTrades_future(symbol, target=100000):
         return []
 
 
-def scan_big_order_spot(symbol, endpoint='api/v3/aggTrades', target=50000):
+def scan_big_order_spot(symbol, endpoint='api/v3/aggTrades', target=100000):
     buy = []
     sell = []
 
@@ -425,7 +425,7 @@ def scan_big_order_spot(symbol, endpoint='api/v3/aggTrades', target=50000):
     return buy, sell
 
 
-def scan_big_order_future(symbol, target=50000):
+def scan_big_order_future(symbol, target=100000):
     try:
         buy = []
         sell = []
