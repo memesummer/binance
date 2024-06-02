@@ -44,7 +44,7 @@ while True:
                 continue
             price = vl[0]
             message += f"""
-*🚧 symbol：*`{k}`🚧 
+*🚧symbol：*`{k}` 🚧 
 *💰价格：*`{price}`
 {st}
 {"-" * 32}
