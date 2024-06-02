@@ -60,3 +60,5 @@ def save_circulating_supply(api_key="dcb49ec3-0e14-4e3f-824c-3fb3ec40a46e"):
 
     return None
 
+
+save_circulating_supply()
