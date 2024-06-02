@@ -1,0 +1,65 @@
+import telebot
+import atexit
+from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
+    get_order_table_sell, get_future_price
+from main import get_latest_price
+
+bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
+
+
+@bot.message_handler(commands=['o'])
+def get_order(message):
+    try:
+        # 将参数分割成两部分
+        param1, param2 = message.text.split()[1:]
+
+        sym = param1.upper() + 'USDT'
+        order_value = int(param2) * 10000
+
+        spot_buy, spot_sell = get_spot_pending_order_rank(sym, order_value)
+        if spot_buy is None:
+            bot.reply_to(message, "请检查输入的symbol和限额是否正确")
+        else:
+            future_buy, future_sell = get_future_pending_order_rank(sym, order_value)
+
+            price = get_latest_price(sym)
+
+            if future_buy is None and future_sell is None:
+                # 只有现货没有期货
+                future_buy = []
+                future_sell = []
+                future_price = "无期货"
+            else:
+                future_price = get_future_price(sym)
+
+            res = f"""
+💸现货价：{price}  |  💸期货价：{future_price}
+"""
+            if len(spot_buy) == 0 and len(future_buy) == 0:
+                res += """
+目前没有高于您给的限额的大买单\n
+"""
+            else:
+                table_buy = get_order_table_buy(spot_buy, future_buy)
+                res += table_buy
+                res += "\n"
+            if len(spot_sell) == 0 and len(future_sell) == 0:
+                res += """
+目前没有高于您给的限额的大卖单\n
+"""
+            else:
+                table_sell = get_order_table_sell(spot_sell, future_sell)
+                res += table_sell
+            bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        bot.reply_to(message, "请输入正确的参数格式。示例：/o 参数1 参数2")
+
+
+@atexit.register
+def exit_handler():
+    # 这个函数将在程序退出时自动执行
+    print("Exiting program...")
+    bot.stop_polling()
+
+
+bot.polling()
