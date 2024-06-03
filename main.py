@@ -129,19 +129,16 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
 
 def max_increasing_length(data):
     length = 0
-    max_length = 0
 
     for i in range(len(data) - 1, 0, -1):
-        if data[i] > data[i - 1]:  # 如果当前元素小于前一个元素，则降序序列长度 +1
+        if data[i] > data[i - 1]:  # 如果当前元素大于前一个元素，则降序序列长度 +1
             length += 1
         elif i == len(data) - 1:
             continue
         else:
             break  # 一旦不满足降序条件，退出循环
 
-        max_length = max(max_length, length)
-
-    return max_length + 1
+    return length
 
 
 def get_price_volume_increase(symbol, interval, limit, circle_supply):
