@@ -127,7 +127,7 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
         print("无数据或数据格式不正确")
 
 
-def max_increasing_length(data):
+def max_increasing_length(data, is_volume=0):
     length = 0
 
     for i in range(len(data) - 1, 0, -1):
@@ -138,7 +138,7 @@ def max_increasing_length(data):
         else:
             break  # 一旦不满足降序条件，退出循环
 
-    return length
+    return length if not is_volume else length + 1
 
 
 def get_price_volume_increase(symbol, interval, limit, circle_supply):
@@ -154,7 +154,7 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
         endprice_list.append(endprice)
         volume_list.append(vol)
     p_len = max_increasing_length(endprice_list)
-    v_len = max_increasing_length(volume_list)
+    v_len = max_increasing_length(volume_list, is_volume=1)
 
     # 再看交易量占比
     flag = -2 if volume_list[-2] > volume_list[-1] else -1
