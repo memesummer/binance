@@ -411,14 +411,13 @@ def scan_big_order_spot(symbol, endpoint='api/v3/aggTrades', target=100000):
 
     sp = get_latest_price(symbol)
     for d in data:
-        if d['m']:
-            p = float(d['p'])
-            v = p * float(d['q'])
-            if v >= target:
-                if p >= sp:
-                    buy.append(v)
-                else:
-                    sell.append(v)
+        p = float(d['p'])
+        v = p * float(d['q'])
+        if v >= target:
+            if p >= sp:
+                buy.append(v)
+            else:
+                sell.append(v)
     return buy, sell
 
 
@@ -434,14 +433,13 @@ def scan_big_order_future(symbol, target=100000):
 
         fp = um_futures_client.ticker_price(**para)
         for d in data:
-            if d['m']:
-                p = float(d['p'])
-                v = p * float(d['q'])
-                if v >= target:
-                    if p >= fp:
-                        buy.append(v)
-                    else:
-                        sell.append(v)
+            p = float(d['p'])
+            v = p * float(d['q'])
+            if v >= target:
+                if p >= fp:
+                    buy.append(v)
+                else:
+                    sell.append(v)
         return buy, sell
     except Exception as e:
         return [], []
