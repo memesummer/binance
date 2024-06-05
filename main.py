@@ -400,12 +400,13 @@ def get_aggTrades_future(symbol, target=100000):
         return []
 
 
-def scan_big_order_spot(symbol, endpoint='api/v3/aggTrades', target=100000):
+def scan_big_order_spot(symbol, limit=1000, endpoint='api/v3/aggTrades', target=100000):
     buy = []
     sell = []
 
     para = {
-        'symbol': symbol
+        'symbol': symbol,
+        'limit': limit
     }
     data = binance_api_get(endpoint, para)
 
@@ -421,13 +422,14 @@ def scan_big_order_spot(symbol, endpoint='api/v3/aggTrades', target=100000):
     return buy, sell
 
 
-def scan_big_order_future(symbol, target=100000):
+def scan_big_order_future(symbol, limit=1000, target=100000):
     try:
         buy = []
         sell = []
 
         para = {
-            'symbol': symbol
+            'symbol': symbol,
+            'limit': limit
         }
         data = um_futures_client.agg_trades(**para)
 
