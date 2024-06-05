@@ -416,9 +416,9 @@ def scan_big_order_spot(symbol, limit=1000, endpoint='api/v3/aggTrades', target=
         v = p * float(d['q'])
         if v >= target:
             if p >= sp:
-                buy.append(v)
+                buy.append([v, d['T']])
             else:
-                sell.append(v)
+                sell.append([v, d['T']])
     return buy, sell
 
 
@@ -439,15 +439,15 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
             v = p * float(d['q'])
             if v >= target:
                 if p >= fp:
-                    buy.append(v)
+                    buy.append([v, d['T']])
                 else:
-                    sell.append(v)
+                    sell.append([v, d['T']])
         return buy, sell
     except Exception as e:
         return [], []
 
 
-def scan_big_order(endpoint='api/v3/ticker/24hr', rank=15):
+def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
@@ -472,16 +472,24 @@ def scan_big_order(endpoint='api/v3/ticker/24hr', rank=15):
             future = []
             if len(buy_spot) > 0:
                 for v in buy_spot:
-                    spot.append([1, v])
+                    if v[1] not in record:
+                        spot.append([1, v[0]])
+                        record.add(v[1])
             if len(sell_spot) > 0:
                 for v in sell_spot:
-                    spot.append([0, v])
+                    if v[1] not in record:
+                        spot.append([0, v[0]])
+                        record.add(v[1])
             if len(buy_future) > 0:
                 for v in buy_future:
-                    future.append([1, v])
+                    if v[1] not in record:
+                        future.append([1, v[0]])
+                        record.add(v[1])
             if len(sell_future) > 0:
                 for v in sell_future:
-                    future.append([0, v])
+                    if v[1] not in record:
+                        future.append([0, v[0]])
+                        record.add(v[1])
             if len(spot) > 0 or len(future) > 0:
                 price = get_latest_price(symbol)
                 recommend_list.append({symbol[:-4]: [price, [spot, future]]})

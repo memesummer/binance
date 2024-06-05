@@ -11,6 +11,7 @@ import telebot
 import time
 
 binance_his = set()
+record = set()
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
 chat_id = "-1002213443358"
@@ -18,7 +19,7 @@ chat_id = "-1002213443358"
 bot.send_message(chat_id, "开始扫描新币......")
 
 while True:
-    res = scan_big_order()
+    res = scan_big_order(record)
     message = ""
     for item in res:
         frozen_dict = '；'.join(f"{key}:{','.join(map(str, values[1]))}" for key, values in item.items())
