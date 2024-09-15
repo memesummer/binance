@@ -94,19 +94,23 @@ def recommend(cir_df, rank=20, endpoint="api/v3/ticker/24hr"):
             if not circle_supply:
                 continue
             flag = []
-            p_len4, v_len4, vc_ratio, taker_ratio4 = get_price_volume_increase(symbol, '4h', 5, circle_supply)
+            p_len4, v_len4, vc_ratio, taker_ratio4, t_len4 = get_price_volume_increase(symbol, '4h', 5, circle_supply)
             if p_len4 >= 3 and v_len4 >= 2:
                 flag.append([1, p_len4, v_len4])
             if vc_ratio > 0.05:
                 flag.append([3, vc_ratio])
             if taker_ratio4 > 0.6:
                 flag.append([9, taker_ratio4])
+            if t_len4 >= 3:
+                flag.append([11, t_len4])
 
-            p_len1, v_len1, vc_ratio, taker_ratio1 = get_price_volume_increase(symbol, '1h', 7, circle_supply)
+            p_len1, v_len1, vc_ratio, taker_ratio1, t_len1 = get_price_volume_increase(symbol, '1h', 7, circle_supply)
             if p_len1 >= 5 and v_len1 >= 4:
                 flag.append([2, p_len1, v_len1])
             if taker_ratio1 > 0.6:
                 flag.append([10, taker_ratio1])
+            if t_len1 >= 3:
+                flag.append([12, t_len1])
 
             v15_list = get_volume_increase_15(symbol)
             if v15_list[0] == 1:
@@ -160,15 +164,22 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
 
     volume_list = []
     endprice_list = []
+    taker_list = []
 
     # 先看1h/4h红绿绿以及绿绿绿趋势,以及交易量趋势
     for l in data:
         endprice = float(l[4])
         vol = float(l[7])
+        taker_vol = float(l[10])
+        taker_ratio = taker_vol / vol
+
         endprice_list.append(endprice)
         volume_list.append(vol)
+        taker_list.append(taker_ratio)
+
     p_len = max_increasing_length(endprice_list)
     v_len = max_increasing_length(volume_list, is_volume=1)
+    t_len = max_increasing_length(taker_list)
 
     # 再看交易量占比
     flag = -2 if volume_list[-2] > volume_list[-1] else -1
@@ -182,7 +193,7 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
     vol0 = float(data[0][7])
     taker_ratio = round(taker_vol0 / vol0, 2)
 
-    return p_len, v_len, vc_ratio, taker_ratio
+    return p_len, v_len, vc_ratio, taker_ratio, t_len
 
 
 def get_volume_increase_15(symbol):
