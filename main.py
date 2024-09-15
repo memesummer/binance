@@ -1,6 +1,8 @@
-import requests
-import random
+import concurrent.futures
 import datetime
+import random
+
+import requests
 from binance.um_futures import UMFutures
 
 um_futures_client = UMFutures()
@@ -560,24 +562,53 @@ def get_taker_vol_delta(symbol, interval):
         return None
 
 
-def get_net_volume_rank(interval, rank=10, reverse=True):
-    data = um_futures_client.ticker_price()
-    net_list = []
-    for v in data:
-        symbol = v['symbol']
-        price = float(v['price'])
-        para = {
-            'symbol': symbol,
-            'period': interval,
-            'limit': 1
-        }
-        taker = um_futures_client.taker_long_short_ratio(**para)
-        if not taker:
-            continue
-        else:
-            taker = taker[0]
+def fetch_taker_data(symbol, interval):
+    """
+    获取每个 symbol 的净成交量数据
+    :param symbol: 交易对
+    :param interval: 时间间隔
+    :return: 返回 symbol 和净成交量（如果获取失败返回 None）
+    """
+    price = float(um_futures_client.ticker_price(symbol=symbol)['price'])
+    para = {
+        'symbol': symbol,
+        'period': interval,
+        'limit': 1
+    }
+    taker = um_futures_client.taker_long_short_ratio(**para)
+    if not taker:
+        return None
+    else:
+        taker = taker[0]
         net_volume = round((float(taker['buyVol']) - float(taker['sellVol'])) * price / 10000, 2)
-        net_list.append([symbol[:-4], net_volume])
+        return [symbol[:-4], net_volume]
+
+
+def get_net_volume_rank(interval, rank=10, reverse=True):
+    """
+    获取所有 symbol 的净成交量排名，并行请求 API
+    :param interval: 时间间隔
+    :param rank: 返回排名数量
+    :param reverse: 排序方式，默认为从高到低
+    :return: 排名前的 symbol 列表
+    """
+    data = um_futures_client.ticker_price()
+    symbols = [v['symbol'] for v in data]
+
+    net_list = []
+
+    # 使用 ThreadPoolExecutor 进行并行 API 请求
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(fetch_taker_data, symbol, interval) for symbol in symbols]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                net_list.append(result)
+
+    # 按净成交量进行排序
     sorted_list = sorted(net_list, key=lambda x: x[1], reverse=reverse)[:rank]
     return sorted_list
 
