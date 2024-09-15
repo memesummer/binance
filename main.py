@@ -94,25 +94,39 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
             if not circle_supply:
                 continue
             flag = []
-            p_len4, v_len4, vc_ratio = get_price_volume_increase(symbol, '4h', 5, circle_supply)
+            p_len4, v_len4, vc_ratio, taker_ratio4 = get_price_volume_increase(symbol, '4h', 5, circle_supply)
             if p_len4 >= 3 and v_len4 >= 2:
                 flag.append([1, p_len4, v_len4])
             if vc_ratio > 0.05:
                 flag.append([3, vc_ratio])
+            if taker_ratio4 > 0.5:
+                flag.append([9, taker_ratio4])
 
-            p_len1, v_len1, vc_ratio = get_price_volume_increase(symbol, '1h', 7, circle_supply)
+            p_len1, v_len1, vc_ratio, taker_ratio1 = get_price_volume_increase(symbol, '1h', 7, circle_supply)
             if p_len1 >= 5 and v_len1 >= 4:
                 flag.append([2, p_len1, v_len1])
+            if taker_ratio1 > 0.5:
+                flag.append([10, taker_ratio1])
 
             v15_list = get_volume_increase_15(symbol)
             if v15_list[0] == 1:
                 flag.append([4, v15_list[1]])
+
             buy_spot = search_more_big_buy_spot(symbol)
             buy_future = search_more_big_buy_future(symbol)
             for i in range(3):
                 if buy_spot[i] == 1 or buy_future == 1:
                     flag.append([5, buy_spot, buy_future])
                     break
+
+            longshortRatio_rate1 = get_future_takerlongshortRatio(symbol, '1h')
+            longshortRatio_rate4 = get_future_takerlongshortRatio(symbol, '4h')
+            if longshortRatio_rate1:
+                if longshortRatio_rate1 > 0.1:
+                    flag.append([7, longshortRatio_rate1])
+            if longshortRatio_rate4:
+                if longshortRatio_rate4 > 0.1:
+                    flag.append([8, longshortRatio_rate4])
             # agg_spot = get_aggTrades_spot(symbol)
             # agg_future = get_aggTrades_future(symbol)
             # if len(agg_spot) > 0 or len(agg_future) > 0:
@@ -163,7 +177,12 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
     cmc = circle_supply * price
     vc_ratio = round(float(volume / cmc), 2)
 
-    return p_len, v_len, vc_ratio
+    # 看主动成交额占比
+    taker_vol0 = float(data[0][10])
+    vol0 = float(data[0][7])
+    taker_ratio = round(taker_vol0 / vol0, 2)
+
+    return p_len, v_len, vc_ratio, taker_ratio
 
 
 def get_volume_increase_15(symbol):
@@ -495,6 +514,40 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15):
                 recommend_list.append({symbol[:-4]: [price, [spot, future]]})
     return recommend_list
 
-# syb = 'GTCUSDT'
-# p = scan_big_order_spot(syb, target=5000)
+
+def get_future_takerlongshortRatio(symbol, interval):
+    try:
+        para1 = {
+            'symbol': symbol,
+            'period': interval,
+            'limit': 2
+        }
+        data = um_futures_client.taker_long_short_ratio(**para1)
+
+        ratio_rate = (float(data[0]['buySellRatio']) - float(data[1]['buySellRatio'])) / float(
+            data[1]['buySellRatio'])
+
+        return ratio_rate
+    except Exception as e:
+        return None
+
+
+def get_taker_vol_delta(symbol, interval):
+    try:
+        para = {
+            'symbol': symbol,
+            'period': interval,
+            'limit': 1
+        }
+
+        data = um_futures_client.taker_long_short_ratio(**para)
+
+        taker_vol_delta = float(data[0]['buyVol']) - float(data[0]['sellVol'])
+
+        return taker_vol_delta
+    except Exception as e:
+        return None
+
+# syb = 'OSMOUSDT'
+# p = get_future_takerlongshortRatio(syb, '1h')
 # print(p)

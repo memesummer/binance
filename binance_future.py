@@ -188,6 +188,8 @@ def get_future_price(symbol):
     return price
 
 
+
+
 # para = {
 #     'symbol': 'TNSRUSDT'
 # }
@@ -198,4 +200,8 @@ def get_future_price(symbol):
 #         res += 1
 # print(res)
 
-
+# a, b, c, d = get_future_takerlongshortRatio('BTCUSDT')
+# print(a)
+# print(b)
+# print(c)
+# print(d)

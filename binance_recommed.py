@@ -64,19 +64,33 @@ while True:
                     for vo in agg_future:
                         vk = int(vo / 1000)
                         st += f"🚨近期*[期货]*有交易额为*{vk}k*的大额订单成交\n"
+                if value[0] == 7:
+                    longshortRatio_rate1 = round(value[1], 2) * 100
+                    st += f"⬆️近*1小时合约*主动买卖比显著增加🔺{longshortRatio_rate1}%\n"
+                if value[0] == 8:
+                    longshortRatio_rate4 = round(value[1], 2) * 100
+                    st += f"⬆️近*4小时合约*主动买卖比显著增加🔺{longshortRatio_rate4}%\n"
+                if value[0] == 9:
+                    taker_ratio4 = round(value[1] * 100, 0)
+                    st += f"💪近*4小时现货*主动买入量占比较高🥧：{taker_ratio4}%\n"
+                if value[0] == 10:
+                    taker_ratio1 = round(value[1] * 100, 0)
+                    st += f"💪近*1小时现货*主动买入量占比较高🥧：{taker_ratio1}%\n"
             if not st:
                 continue
             price = vl[0]
             symbol = k
-            star = (2 if len(v) == 2 else 3 if len(v) == 3 else 4 if len(v) == 4 else 5 if len(v) == 5 else 6 if len(
-                v) == 6 else 1) * "🌟"
+            star = len(v) * "🌟"
             message += f"""
 *💎symbol：*`{symbol}`｜{star}
 *💰价格：*`{price}`
 {st}
 {"-" * 32}
                                                         """
+            if len(message) >= 3000:
+                bot.send_message(chat_id, message)
+                message = ""
             binance_his.add(frozen_dict)
-    if message:
-        bot.send_message(chat_id, message)
+    bot.send_message(chat_id, message)
+
     time.sleep(60)
