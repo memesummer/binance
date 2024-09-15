@@ -71,7 +71,7 @@ def get_gain_loss(rank=30, endpoint="api/v3/ticker/24hr"):
         print("无数据或数据格式不正确")
 
 
-def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
+def recommend(cir_df, rank=20, endpoint="api/v3/ticker/24hr"):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
@@ -99,13 +99,13 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
                 flag.append([1, p_len4, v_len4])
             if vc_ratio > 0.05:
                 flag.append([3, vc_ratio])
-            if taker_ratio4 > 0.5:
+            if taker_ratio4 > 0.6:
                 flag.append([9, taker_ratio4])
 
             p_len1, v_len1, vc_ratio, taker_ratio1 = get_price_volume_increase(symbol, '1h', 7, circle_supply)
             if p_len1 >= 5 and v_len1 >= 4:
                 flag.append([2, p_len1, v_len1])
-            if taker_ratio1 > 0.5:
+            if taker_ratio1 > 0.6:
                 flag.append([10, taker_ratio1])
 
             v15_list = get_volume_increase_15(symbol)
