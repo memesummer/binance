@@ -66,7 +66,7 @@ def get_order(message):
         if param2 == 'a':
             reverse = False
         net_list = get_net_volume_rank(interval, reverse=reverse)
-        res = get_net_rank_table(net_list)
+        res = get_net_rank_table(net_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
 
     except Exception as e:
