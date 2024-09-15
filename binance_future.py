@@ -180,15 +180,24 @@ def get_order_table_sell(l1, l3, limit=10):
     return table
 
 
+def get_net_rank_table(net_list, m=14):
+    res = f"`符号        净流入量(w)`\n"
+    for i, l in enumerate(net_list):
+        line = f"`{i + 1}.{l[0]}"
+        n = len(line)
+        line += ' ' * (m - n)
+        line += str(l[1])
+        line += '`\n'
+        res += line
+    return res
+
+
 def get_future_price(symbol):
     para = {
         'symbol': symbol
     }
     price = um_futures_client.ticker_price(**para)['price']
     return price
-
-
-
 
 # para = {
 #     'symbol': 'TNSRUSDT'

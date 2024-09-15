@@ -559,6 +559,26 @@ def get_taker_vol_delta(symbol, interval):
     except Exception as e:
         return None
 
-# syb = 'OSMOUSDT'
-# p = get_future_takerlongshortRatio(syb, '1h')
-# print(p)
+
+def get_net_volume_rank(interval, rank=10, reverse=True):
+    data = um_futures_client.ticker_price()
+    net_list = []
+    for v in data:
+        symbol = v['symbol']
+        price = float(v['price'])
+        para = {
+            'symbol': symbol,
+            'period': interval,
+            'limit': 1
+        }
+        taker = um_futures_client.taker_long_short_ratio(**para)
+        if not taker:
+            continue
+        else:
+            taker = taker[0]
+        net_volume = round((float(taker['buyVol']) - float(taker['sellVol'])) * price / 10000, 2)
+        net_list.append([symbol[:-4], net_volume])
+    sorted_list = sorted(net_list, key=lambda x: x[1], reverse=reverse)[:rank]
+    return sorted_list
+
+
