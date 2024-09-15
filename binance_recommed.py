@@ -97,6 +97,7 @@ while True:
                 bot.send_message(chat_id, message)
                 message = ""
             binance_his.add(frozen_dict)
-    bot.send_message(chat_id, message)
+    if message:
+        bot.send_message(chat_id, message)
 
     time.sleep(60)
