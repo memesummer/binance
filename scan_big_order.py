@@ -50,6 +50,9 @@ while True:
 {st}
 {"-" * 32}
                                                         """
+            if len(message) >= 3000:
+                bot.send_message(chat_id, message)
+                message = ""
             binance_his.add(frozen_dict)
     if message:
         bot.send_message(chat_id, message)

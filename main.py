@@ -173,11 +173,14 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
         endprice = float(l[4])
         vol = float(l[7])
         taker_vol = float(l[10])
-        taker_ratio = taker_vol / vol
 
         endprice_list.append(endprice)
         volume_list.append(vol)
-        taker_list.append(taker_ratio)
+        if vol > 0:
+            taker_ratio = taker_vol / vol
+            taker_list.append(taker_ratio)
+        else:
+            taker_list.append(0)
 
     p_len = max_increasing_length(endprice_list)
     v_len = max_increasing_length(volume_list, is_volume=1)
@@ -611,5 +614,3 @@ def get_net_volume_rank(interval, rank=10, reverse=True):
     # 按净成交量进行排序
     sorted_list = sorted(net_list, key=lambda x: x[1], reverse=reverse)[:rank]
     return sorted_list
-
-
