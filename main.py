@@ -596,7 +596,8 @@ def get_net_volume_rank_future(interval, rank=10, reverse=True):
     """
     data = um_futures_client.ticker_24hr_price_change()
     symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
-               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol']]
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+                   'count'] != 0]
 
     net_list = []
 
@@ -689,3 +690,68 @@ def parse_interval_to_minutes(interval):
         return '5m', minutes // 5  # 计算有多少个5分钟间隔
     else:
         raise ValueError("无效的时间间隔格式！请使用 'h', 'm', 或 'd' 作为单位。")
+
+
+def fetch_openInterest(symbol, p_chg, interval):
+    para = {
+        'symbol': symbol,
+        'period': interval,
+        'limit': 2
+    }
+    openInterest = um_futures_client.open_interest_hist(**para)
+    if not openInterest:
+        return None
+    else:
+        openInterest = openInterest[0]
+        sumOpenInterestValue = float(openInterest['sumOpenInterestValue'])
+        ls_ratio = um_futures_client.top_long_short_position_ratio(**para)[0]
+        delta_openInterest = (float(ls_ratio['longAccount']) - float(ls_ratio['shortAccount'])) * sumOpenInterestValue
+        return [symbol[:-4], round(delta_openInterest / 10000, 2), p_chg]
+
+
+def get_openInterest_rank(interval, rank=10, reverse=True):
+    data = um_futures_client.ticker_24hr_price_change()
+    symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+                   'count'] != 0]
+
+    delta_list = []
+
+    # 使用 ThreadPoolExecutor 进行并行 API 请求
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(fetch_openInterest, symbol[0], symbol[1], interval) for symbol in symbols]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                delta_list.append(result)
+
+    # 按净持仓量进行排序
+    sorted_list = sorted(delta_list, key=lambda x: x[1], reverse=reverse)[:rank]
+    return sorted_list
+
+
+def get_symbol_open_interest(symbol):
+    interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
+    res = []
+    for interval in interval_list:
+        # 因为合约持仓量的interval是指近interval的时间点的持仓量，但是因为还是按照K线来划分时间点，所以需要取2个然后取第一个值
+        # 不能取最近的值，因为比如现在7点，2h和4h最近的刻度都是6点，如果limit是1的话就都取的6点那个2时刻的持仓量
+        para = {
+            'symbol': symbol,
+            'period': interval,
+            'limit': 2
+        }
+        openInterest = um_futures_client.open_interest_hist(**para)
+        if not openInterest:
+            return None
+        else:
+            openInterest = openInterest[0]
+            sumOpenInterestValue = float(openInterest['sumOpenInterestValue'])
+            ls_ratio = um_futures_client.top_long_short_position_ratio(**para)[0]
+            delta_openInterest = (float(ls_ratio['longAccount']) - float(
+                ls_ratio['shortAccount'])) * sumOpenInterestValue
+            res.append([interval, round(delta_openInterest / 10000, 2)])
+    return res

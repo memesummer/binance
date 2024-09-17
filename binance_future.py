@@ -181,7 +181,7 @@ def get_order_table_sell(l1, l3, limit=10):
 
 
 def get_net_rank_table(net_list, interval, m=15, r=30):
-    res = f"`符号        近{interval}净流入量(w)  24h价格变化`\n"
+    res = f"`符号        近{interval}净流入值(w)  24h价格变化`\n"
     for i, l in enumerate(net_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
@@ -201,6 +201,36 @@ def get_future_price(symbol):
     }
     price = um_futures_client.ticker_price(**para)['price']
     return price
+
+
+def get_delta_rank_table(delta_list, interval, m=15, r=30):
+    res = f"`符号        近{interval}净持仓值(w)  24h价格变化`\n"
+    for i, l in enumerate(delta_list):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += str(l[1])
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += f"{str(l[2])}%"
+        line += '`\n'
+        res += line
+    return res
+
+
+def get_symbol_oi_table(symbol_oi, m=10):
+    res = f"`周期     净持仓值(w)`\n"
+    for i, l in enumerate(symbol_oi):
+        line = f"`{l[0]}:"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += str(l[1])
+        # n2 = len(line)
+        # line += ' ' * (r - n2)
+        # line += f"{str(l[2])}%"
+        line += '`\n'
+        res += line
+    return res
 
 # para = {
 #     'symbol': 'TNSRUSDT'
