@@ -2,7 +2,8 @@
 
 # 使用指定的时区来执行任务
 export TZ='UTC'
-export PATH=/usr/local/bin:/usr/bin:/bin
+export PATH=/opt/anaconda3/envs/bot/bin:/usr/local/bin:/usr/bin:/bin
+
 
 source /opt/anaconda3/bin/activate bot
 
