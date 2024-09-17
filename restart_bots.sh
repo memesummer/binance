@@ -32,7 +32,7 @@ fi
 sleep 5
 
 echo "重新计算流通量..."
-/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/cmc.py >> cmc.log 2>&1 &
+python /opt/daixin/binance/cmc.py
 
 # 重新启动程序
 echo "正在重新启动程序..."
