@@ -3,6 +3,7 @@
 # 使用指定的时区来执行任务
 export TZ='UTC'
 export PATH=/opt/anaconda3/envs/bot/bin:/usr/local/bin:/usr/bin:/bin
+export PYTHONPATH=/opt/anaconda3/envs/bot/lib/python3.1/site-packages
 
 
 source /opt/anaconda3/bin/activate bot
@@ -30,10 +31,15 @@ sleep 5
 
 # 重新启动程序
 echo "正在重新启动程序..."
-/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_bot.py > bot.log 2>&1 &
-sleep 1
-/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_recommed.py > push.log 2>&1 &
-sleep 1
-/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/scan_big_order.py > scan.log 2>&1 &
+echo "Starting binance_bot.py" >> /opt/daixin/binance/restart_bots.log
+/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_bot.py >> bot.log 2>&1 &
+echo "Started binance_bot.py" >> /opt/daixin/binance/restart_bots.log
 
+echo "Starting binance_recommed.py" >> /opt/daixin/binance/restart_bots.log
+/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_recommed.py >> push.log 2>&1 &
+echo "Started binance_recommed.py" >> /opt/daixin/binance/restart_bots.log
+
+echo "Starting scan_big_order.py" >> /opt/daixin/binance/restart_bots.log
+/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/scan_big_order.py >> scan.log 2>&1 &
+echo "Started scan_big_order.py" >> /opt/daixin/binance/restart_bots.log
 echo "程序已重新启动"
