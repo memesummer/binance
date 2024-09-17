@@ -2,6 +2,7 @@
 
 # 使用指定的时区来执行任务
 export TZ='UTC'
+export PATH=/usr/local/bin:/usr/bin:/bin
 
 # 获取进程 ID 并杀掉相应的程序
 pids=$(ps aux | grep -E 'binance_bot.py|binance_recommed.py|scan_big_order.py' | grep -v grep | awk '{print $2}')
