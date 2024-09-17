@@ -7,6 +7,7 @@
 #
 # ===============================================================
 from main import recommend
+import os
 import telebot
 import time
 import pandas as pd
@@ -16,7 +17,13 @@ bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mo
 
 # chat_id = "-4020273113"
 chat_id = "-1002213443358"
-cir_df = pd.read_csv("circulating.txt", sep='\t', header=None, names=['symbol', 'circle_supply'], encoding='utf-8')
+
+# 获取当前脚本所在的目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# 构建 circulating.txt 的绝对路径
+file_path = os.path.join(current_dir, "circulating.txt")
+cir_df = pd.read_csv(file_path, sep='\t', header=None, names=['symbol', 'circle_supply'], encoding='utf-8')
 
 bot.send_message(chat_id, "开始推荐新币......")
 
