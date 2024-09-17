@@ -7,6 +7,14 @@ export PATH=/opt/anaconda3/envs/bot/bin:/usr/local/bin:/usr/bin:/bin
 
 source /opt/anaconda3/bin/activate bot
 
+echo "开始执行脚本: $(date)" >> /opt/daixin/binance/restart_bots.log
+echo "环境变量 PATH: $PATH" >> /opt/daixin/binance/restart_bots.log
+echo "环境变量 PYTHONPATH: $PYTHONPATH" >> /opt/daixin/binance/restart_bots.log
+echo "当前工作目录: $(pwd)" >> /opt/daixin/binance/restart_bots.log
+echo "当前 Python 解释器路径: $(which python)" >> /opt/daixin/binance/restart_bots.log
+echo "当前 Conda 环境: $(conda info --envs)" >> /opt/daixin/binance/restart_bots.log
+
+
 # 获取进程 ID 并杀掉相应的程序
 pids=$(ps aux | grep -E 'binance_bot.py|binance_recommed.py|scan_big_order.py' | grep -v grep | awk '{print $2}')
 
