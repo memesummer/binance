@@ -75,10 +75,10 @@ while True:
                         st += f"🚨近期*[期货]*有交易额为*{vk}k*的大额订单成交\n"
                 if value[0] == 8:
                     longshortRatio_rate4 = round(value[1] * 100, 0)
-                    st += f"⬆️近*4小时合约*主动买卖比显著增加🔺{longshortRatio_rate4}%\n"
+                    st += f"⬆️近*1h合约*主动买卖比显著增加🔺{longshortRatio_rate4}%\n"
                 if value[0] == 7:
                     longshortRatio_rate1 = round(value[1] * 100, 0)
-                    st += f"⬆️近*1小时合约*主动买卖比显著增加🔺{longshortRatio_rate1}%\n"
+                    st += f"⬆️近*30min合约*主动买卖比显著增加🔺{longshortRatio_rate1}%\n"
                 if value[0] == 9:
                     taker_ratio4 = round(value[1] * 100, 0)
                     st += f"💪近*4小时现货*主动买入量占比较高🥧：{taker_ratio4}%\n"

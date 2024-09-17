@@ -125,8 +125,8 @@ def recommend(cir_df, rank=20, endpoint="api/v3/ticker/24hr"):
                     flag.append([5, buy_spot, buy_future])
                     break
 
-            longshortRatio_rate1 = get_future_takerlongshortRatio(symbol, '1h')
-            longshortRatio_rate4 = get_future_takerlongshortRatio(symbol, '4h')
+            longshortRatio_rate1 = get_future_takerlongshortRatio(symbol, '30m')
+            longshortRatio_rate4 = get_future_takerlongshortRatio(symbol, '1h')
             if longshortRatio_rate1:
                 if longshortRatio_rate1 > 0.1:
                     flag.append([7, longshortRatio_rate1])
@@ -546,51 +546,39 @@ def get_future_takerlongshortRatio(symbol, interval):
         return None
 
 
-def get_taker_vol_delta(symbol, interval):
-    try:
-        para = {
-            'symbol': symbol,
-            'period': interval,
-            'limit': 1
-        }
-
-        data = um_futures_client.taker_long_short_ratio(**para)
-
-        taker_vol_delta = float(data[0]['buyVol']) - float(data[0]['sellVol'])
-
-        return taker_vol_delta
-    except Exception as e:
-        return None
-
-
-def fetch_taker_data_future(symbol, p_chg, interval):
+def fetch_taker_data_future(symbol, p_chg, interval, limit):
     """
     获取每个 symbol 的净成交量数据
     :param symbol: 交易对
     :param interval: 时间间隔
     :return: 返回 symbol 和净成交量（如果获取失败返回 None）
     """
-    price = float(um_futures_client.ticker_price(symbol=symbol)['price'])
     para = {
         'symbol': symbol,
-        'period': interval,
-        'limit': 1
+        'interval': interval,
+        'limit': limit
     }
-    taker = um_futures_client.taker_long_short_ratio(**para)
-    # 有可能有些币没有合约
-    if not taker:
+    k_line = um_futures_client.klines(**para)
+    # 有可能有些币没有合约~
+    if not k_line:
         return None
     else:
-        taker = taker[0]
-        net_volume = round((float(taker['buyVol']) - float(taker['sellVol'])) * price / 10000, 2)
-        return [symbol[:-4], net_volume, p_chg]
+        net = 0
+        for k in k_line:
+            price = float(k[4])
+            v = float(k[5])
+            taker = float(k[9])
+            maker = v - taker
+            net_volume = (taker - maker) * price
+            net += net_volume
+        return [symbol[:-4], round(net / 10000, 2), p_chg]
 
 
 def get_net_volume_rank_future(interval, rank=10, reverse=True):
     """
     获取所有 symbol 的净成交量排名，并行请求 API
     :param interval: 时间间隔
-    :param rank: 返回排名数量
+    :param rank: 返回排名数量    new_interval, limit = parse_interval_to_minutes(interval)
     :param reverse: 排序方式，默认为从高到低
     :return: 排名前的 symbol 列表
     """
@@ -600,11 +588,13 @@ def get_net_volume_rank_future(interval, rank=10, reverse=True):
                    'count'] != 0]
 
     net_list = []
+    new_interval, limit = parse_interval_to_minutes(interval)
 
     # 使用 ThreadPoolExecutor 进行并行 API 请求
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
-        futures = [executor.submit(fetch_taker_data_future, symbol[0], symbol[1], interval) for symbol in symbols]
+        futures = [executor.submit(fetch_taker_data_future, symbol[0], symbol[1], new_interval, limit) for symbol in
+                   symbols]
 
         # 等待所有任务完成，并收集结果
         for future in concurrent.futures.as_completed(futures):
