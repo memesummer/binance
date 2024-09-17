@@ -1,7 +1,5 @@
 #!/bin/bash
 
-chmod +x /opt/daixin/binance/restart_bots.sh >> /opt/daixin/binance/restart_bots.log 2>&1
-
 # 使用指定的时区来执行任务
 export TZ='UTC'
 export PATH=/usr/local/bin:/usr/bin:/bin
