@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 使用指定的时区来执行任务
+export TZ='Asia/Shanghai'
+
 # 获取进程 ID 并杀掉相应的程序
 pids=$(ps aux | grep -E 'binance_bot.py|binance_recommed.py|scan_big_order.py' | grep -v grep | awk '{print $2}')
 
