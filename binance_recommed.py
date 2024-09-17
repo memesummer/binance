@@ -6,11 +6,13 @@
 #    @Description   : 
 #
 # ===============================================================
-from main import recommend
 import os
-import telebot
 import time
+
 import pandas as pd
+import telebot
+
+from main import recommend
 
 binance_his = set()
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')

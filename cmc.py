@@ -1,3 +1,5 @@
+import os
+
 import requests
 
 
@@ -31,7 +33,7 @@ def get_cmc(symbol, api_key="dcb49ec3-0e14-4e3f-824c-3fb3ec40a46e"):
     return None
 
 
-def save_circulating_supply(api_key="dcb49ec3-0e14-4e3f-824c-3fb3ec40a46e"):
+def save_circulating_supply(save_file, api_key="dcb49ec3-0e14-4e3f-824c-3fb3ec40a46e"):
     base_url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest"
 
     params = {
@@ -46,7 +48,7 @@ def save_circulating_supply(api_key="dcb49ec3-0e14-4e3f-824c-3fb3ec40a46e"):
 
         if response.status_code == 200:
             # 查找符号匹配的代币
-            with open("circulating.txt", 'w', encoding='utf-8') as file:
+            with open(save_file, 'w', encoding='utf-8') as file:
                 for token_info in data['data']:
                     symbol = token_info['symbol'].lower()
                     circulating_supply = token_info['circulating_supply']
@@ -63,4 +65,9 @@ def save_circulating_supply(api_key="dcb49ec3-0e14-4e3f-824c-3fb3ec40a46e"):
     return None
 
 
-save_circulating_supply()
+# 获取当前脚本所在的目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# 构建 circulating.txt 的绝对路径
+file_path = os.path.join(current_dir, "circulating.txt")
+save_circulating_supply(file_path)
