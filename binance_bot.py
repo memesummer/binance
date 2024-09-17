@@ -1,8 +1,10 @@
-import telebot
 import atexit
+
+import telebot
+
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table
-from main import get_latest_price, get_net_volume_rank
+from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
@@ -55,8 +57,8 @@ def get_order(message):
         bot.reply_to(message, "请输入正确的参数格式。示例：/o BTC 20")
 
 
-@bot.message_handler(commands=['n'])
-def get_order(message):
+@bot.message_handler(commands=['nf'])
+def get_net_future(message):
     try:
         # 将参数分割成两部分
         param1, param2 = message.text.split()[1:]
@@ -65,12 +67,30 @@ def get_order(message):
         reverse = True
         if param2 == 'a':
             reverse = False
-        net_list = get_net_volume_rank(interval, reverse=reverse)
+        net_list = get_net_volume_rank_future(interval, reverse=reverse)
         res = get_net_rank_table(net_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
 
     except Exception as e:
-        bot.reply_to(message, "请输入正确的参数格式。示例：/n 1h d")
+        bot.reply_to(message, "请输入正确的参数格式。示例：/nf 1h d")
+
+
+@bot.message_handler(commands=['ns'])
+def get_net_spot(message):
+    try:
+        # 将参数分割成两部分
+        param1, param2 = message.text.split()[1:]
+
+        interval = param1
+        reverse = True
+        if param2 == 'a':
+            reverse = False
+        net_list = get_net_volume_rank_spot(interval, reverse=reverse)
+        res = get_net_rank_table(net_list, interval)
+        bot.reply_to(message, res, parse_mode='Markdown')
+
+    except Exception as e:
+        bot.reply_to(message, "请输入正确的参数格式。示例：/ns 1h d")
 
 
 @atexit.register

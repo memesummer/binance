@@ -50,6 +50,8 @@ def save_circulating_supply(api_key="dcb49ec3-0e14-4e3f-824c-3fb3ec40a46e"):
                 for token_info in data['data']:
                     symbol = token_info['symbol'].lower()
                     circulating_supply = token_info['circulating_supply']
+                    if symbol == 'quick' and circulating_supply < 728513:
+                        continue
                     file.write(f"{symbol}\t{circulating_supply}\n")
             print(f"流通量已成功保存到circulating.txt")
         else:

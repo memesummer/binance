@@ -180,13 +180,16 @@ def get_order_table_sell(l1, l3, limit=10):
     return table
 
 
-def get_net_rank_table(net_list, interval, m=15):
-    res = f"`符号        近{interval}净流入量(w)`\n"
+def get_net_rank_table(net_list, interval, m=15, r=30):
+    res = f"`符号        近{interval}净流入量(w)  24h价格变化`\n"
     for i, l in enumerate(net_list):
         line = f"`{i + 1}.{l[0]}"
-        n = len(line)
-        line += ' ' * (m - n)
+        n1 = len(line)
+        line += ' ' * (m - n1)
         line += str(l[1])
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += f"{str(l[2])}%"
         line += '`\n'
         res += line
     return res

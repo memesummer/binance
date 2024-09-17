@@ -410,10 +410,9 @@ def get_aggTrades_spot(symbol, endpoint='api/v3/aggTrades', target=100000):
 
     res = []
     for d in data:
-        if d['m']:
-            v = float(d['p']) * float(d['q'])
-            if v >= target:
-                res.append(v)
+        v = float(d['p']) * float(d['q'])
+        if v >= target:
+            res.append(v)
     return res
 
 
@@ -426,10 +425,9 @@ def get_aggTrades_future(symbol, target=100000):
 
         res = []
         for d in data:
-            if d['m']:
-                v = float(d['p']) * float(d['q'])
-                if v >= target:
-                    res.append(v)
+            v = float(d['p']) * float(d['q'])
+            if v >= target:
+                res.append(v)
         return res
     except Exception as e:
         return []
@@ -565,7 +563,7 @@ def get_taker_vol_delta(symbol, interval):
         return None
 
 
-def fetch_taker_data(symbol, interval):
+def fetch_taker_data_future(symbol, p_chg, interval):
     """
     获取每个 symbol 的净成交量数据
     :param symbol: 交易对
@@ -579,15 +577,16 @@ def fetch_taker_data(symbol, interval):
         'limit': 1
     }
     taker = um_futures_client.taker_long_short_ratio(**para)
+    # 有可能有些币没有合约
     if not taker:
         return None
     else:
         taker = taker[0]
         net_volume = round((float(taker['buyVol']) - float(taker['sellVol'])) * price / 10000, 2)
-        return [symbol[:-4], net_volume]
+        return [symbol[:-4], net_volume, p_chg]
 
 
-def get_net_volume_rank(interval, rank=10, reverse=True):
+def get_net_volume_rank_future(interval, rank=10, reverse=True):
     """
     获取所有 symbol 的净成交量排名，并行请求 API
     :param interval: 时间间隔
@@ -595,15 +594,16 @@ def get_net_volume_rank(interval, rank=10, reverse=True):
     :param reverse: 排序方式，默认为从高到低
     :return: 排名前的 symbol 列表
     """
-    data = um_futures_client.ticker_price()
-    symbols = [v['symbol'] for v in data]
+    data = um_futures_client.ticker_24hr_price_change()
+    symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol']]
 
     net_list = []
 
     # 使用 ThreadPoolExecutor 进行并行 API 请求
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
-        futures = [executor.submit(fetch_taker_data, symbol, interval) for symbol in symbols]
+        futures = [executor.submit(fetch_taker_data_future, symbol[0], symbol[1], interval) for symbol in symbols]
 
         # 等待所有任务完成，并收集结果
         for future in concurrent.futures.as_completed(futures):
@@ -614,3 +614,78 @@ def get_net_volume_rank(interval, rank=10, reverse=True):
     # 按净成交量进行排序
     sorted_list = sorted(net_list, key=lambda x: x[1], reverse=reverse)[:rank]
     return sorted_list
+
+
+def fetch_taker_data_spot(symbol, p_chg, interval, limit):
+    """
+    获取每个 symbol 的净成交量数据
+    :param symbol: 交易对
+    :param interval: 时间间隔
+    :return: 返回 symbol 和净成交量（如果获取失败返回 None）
+    """
+    k_line = get_k_lines(symbol, interval, limit)
+    net = 0
+    for k in k_line:
+        price = float(k[4])
+        v = float(k[5])
+        taker = float(k[9])
+        maker = v - taker
+        net_volume = (taker - maker) * price
+        net += net_volume
+    return [symbol[:-4], round(net / 10000, 2), p_chg]
+
+
+def get_net_volume_rank_spot(interval, rank=10, reverse=True):
+    """
+    获取所有 symbol 的净成交量排名，并行请求 API
+    :param interval: 时间间隔
+    :param rank: 返回排名数量
+    :param reverse: 排序方式，默认为从高到低
+    :return: 排名前的 symbol 列表
+    """
+    endpoint = "api/v3/ticker/24hr"
+    params = {}
+    data = binance_api_get(endpoint, params)
+    symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+                   'count'] != 0]
+
+    net_list = []
+
+    new_interval, limit = parse_interval_to_minutes(interval)
+
+    # 使用 ThreadPoolExecutor 进行并行 API 请求
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(fetch_taker_data_spot, symbol[0], symbol[1], new_interval, limit) for symbol in
+                   symbols]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                net_list.append(result)
+
+    # 按净成交量进行排序
+    sorted_list = sorted(net_list, key=lambda x: x[1], reverse=reverse)[:rank]
+    return sorted_list
+
+
+def parse_interval_to_minutes(interval):
+    """
+    将时间间隔解析为对应的分钟数或5分钟间隔数
+    :param interval: 输入的时间间隔（如 '4h', '1h', '15m', '1d'）
+    :return: 返回对应的分钟数，或者若是天单位，返回多少个5分钟间隔
+    """
+    if interval.endswith('h'):
+        # 如果时间间隔以 'h' 结尾，转换为小时，然后乘以 60
+        return '1m', int(interval[:-1]) * 60
+    elif interval.endswith('m'):
+        # 如果时间间隔以 'm' 结尾，直接转换为分钟
+        return '1m', int(interval[:-1])
+    elif interval.endswith('d'):
+        # 如果时间间隔以 'd' 结尾，转换为天并计算有多少个5分钟间隔
+        minutes = int(interval[:-1]) * 1440  # 1天 = 1440分钟
+        return '5m', minutes // 5  # 计算有多少个5分钟间隔
+    else:
+        raise ValueError("无效的时间间隔格式！请使用 'h', 'm', 或 'd' 作为单位。")
