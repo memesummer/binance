@@ -54,6 +54,8 @@ def save_circulating_supply(save_file, api_key="dcb49ec3-0e14-4e3f-824c-3fb3ec40
                     circulating_supply = token_info['circulating_supply']
                     if symbol == 'quick' and circulating_supply < 728513:
                         continue
+                    if symbol == 'beam':
+                        symbol = 'beamx'
                     file.write(f"{symbol}\t{circulating_supply}\n")
             print(f"流通量已成功保存到circulating.txt")
         else:

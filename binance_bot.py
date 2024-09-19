@@ -1,4 +1,5 @@
 import atexit
+import time
 
 import telebot
 
@@ -132,4 +133,15 @@ def exit_handler():
     bot.stop_polling()
 
 
-bot.polling()
+def start_bot():
+    while True:
+        try:
+            bot.polling(none_stop=True, interval=1, timeout=60)
+        except Exception as e:
+            print(f"Error occurred: {e}")
+            bot.stop_polling()
+            time.sleep(5)  # 等待5秒后重新启动
+            continue
+
+
+start_bot()
