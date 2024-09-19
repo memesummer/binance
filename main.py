@@ -88,9 +88,19 @@ def recommend(cir_df, rank=20, endpoint="api/v3/ticker/24hr"):
 
         # 过滤出包含 "USDT" 的币种
         usdt_symbols_rise = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
-                             'USDT' in token['symbol'] or token['symbol'] in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']]
+                             'USDT' in token['symbol']]
+        # 筛选出前20
+        usdt_symbols_rise = usdt_symbols_rise[:rank]
+        # 增加额外的币种
+        additional_symbols = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
+                              token['symbol'] in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']]
+        usdt_symbols_rise += additional_symbols
+        # 去重
+        unique_usdt_symbols_rise = {item[0]: item for item in usdt_symbols_rise}.values()
+        # 转换成列表
+        usdt_symbols_rise = list(unique_usdt_symbols_rise)
 
-        for symbol_list in usdt_symbols_rise[:rank]:
+        for symbol_list in usdt_symbols_rise:
             symbol = symbol_list[0]
             circle_supply = get_circulating_supply(symbol[:-4].lower(), cir_df)
             if not circle_supply:
@@ -497,9 +507,19 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15):
 
         # 过滤出包含 "USDT" 的币种
         usdt_symbols_rise = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
-                             'USDT' in token['symbol'] or token['symbol'] in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']]
+                             'USDT' in token['symbol']]
+        # 筛选出前20
+        usdt_symbols_rise = usdt_symbols_rise[:rank]
+        # 增加额外的币种
+        additional_symbols = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
+                              token['symbol'] in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']]
+        usdt_symbols_rise += additional_symbols
+        # 去重
+        unique_usdt_symbols_rise = {item[0]: item for item in usdt_symbols_rise}.values()
+        # 转换成列表
+        usdt_symbols_rise = list(unique_usdt_symbols_rise)
 
-        for symbol_list in usdt_symbols_rise[:rank]:
+        for symbol_list in usdt_symbols_rise:
             symbol = symbol_list[0]
             buy_spot, sell_spot = scan_big_order_spot(symbol)
             buy_future, sell_future = scan_big_order_future(symbol)
