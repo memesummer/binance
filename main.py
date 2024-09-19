@@ -88,7 +88,7 @@ def recommend(cir_df, rank=20, endpoint="api/v3/ticker/24hr"):
 
         # 过滤出包含 "USDT" 的币种
         usdt_symbols_rise = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
-                             'USDT' in token['symbol']]
+                             'USDT' in token['symbol'] or token['symbol'] in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']]
 
         for symbol_list in usdt_symbols_rise[:rank]:
             symbol = symbol_list[0]
@@ -446,6 +446,8 @@ def scan_big_order_spot(symbol, limit=1000, endpoint='api/v3/aggTrades', target=
     for d in data:
         p = float(d['p'])
         v = p * float(d['q'])
+        if symbol in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']:
+            target = 1000000
         if v >= target:
             if d['m']:
                 sell.append([v, d['T']])
@@ -468,6 +470,8 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         for d in data:
             p = float(d['p'])
             v = p * float(d['q'])
+            if symbol in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']:
+                target = 1000000
             if v >= target:
                 if d['m']:
                     sell.append([v, d['T']])
@@ -493,7 +497,7 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15):
 
         # 过滤出包含 "USDT" 的币种
         usdt_symbols_rise = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
-                             'USDT' in token['symbol']]
+                             'USDT' in token['symbol'] or token['symbol'] in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']]
 
         for symbol_list in usdt_symbols_rise[:rank]:
             symbol = symbol_list[0]
