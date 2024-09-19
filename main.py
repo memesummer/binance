@@ -443,15 +443,14 @@ def scan_big_order_spot(symbol, limit=1000, endpoint='api/v3/aggTrades', target=
     }
     data = binance_api_get(endpoint, para)
 
-    sp = get_latest_price(symbol)
     for d in data:
         p = float(d['p'])
         v = p * float(d['q'])
         if v >= target:
-            if p >= sp:
-                buy.append([v, d['T']])
-            else:
+            if d['m']:
                 sell.append([v, d['T']])
+            else:
+                buy.append([v, d['T']])
     return buy, sell
 
 
@@ -466,15 +465,14 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         }
         data = um_futures_client.agg_trades(**para)
 
-        fp = um_futures_client.ticker_price(**para)
         for d in data:
             p = float(d['p'])
             v = p * float(d['q'])
             if v >= target:
-                if p >= fp:
-                    buy.append([v, d['T']])
-                else:
+                if d['m']:
                     sell.append([v, d['T']])
+                else:
+                    buy.append([v, d['T']])
         return buy, sell
     except Exception as e:
         return [], []

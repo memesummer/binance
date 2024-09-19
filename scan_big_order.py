@@ -73,6 +73,8 @@ while True:
         # 定期清理历史记录，避免内存泄漏
         if len(binance_his) > 10000:
             binance_his.clear()
+        if len(record) > 10000:
+            record.clear()
         time.sleep(0.1)
     except Exception as e:
         error_message = f"Error occurred: {str(e)}"
