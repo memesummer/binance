@@ -456,8 +456,10 @@ def scan_big_order_spot(symbol, limit=1000, endpoint='api/v3/aggTrades', target=
     for d in data:
         p = float(d['p'])
         v = p * float(d['q'])
-        if symbol in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']:
+        if symbol in ['ETHUSDT', 'SOLUSDT']:
             target = 1000000
+        if symbol == 'BTCUSDT':
+            target = 2500000
         if v >= target:
             if d['m']:
                 sell.append([v, d['T']])
@@ -480,8 +482,10 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         for d in data:
             p = float(d['p'])
             v = p * float(d['q'])
-            if symbol in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']:
+            if symbol in ['ETHUSDT', 'SOLUSDT']:
                 target = 1000000
+            if symbol == 'BTCUSDT':
+                target = 2500000
             if v >= target:
                 if d['m']:
                     sell.append([v, d['T']])
