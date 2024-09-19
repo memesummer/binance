@@ -73,7 +73,7 @@ def get_gain_loss(rank=30, endpoint="api/v3/ticker/24hr"):
         print("无数据或数据格式不正确")
 
 
-def recommend(cir_df, rank=20, endpoint="api/v3/ticker/24hr"):
+def recommend(cir_df, rank=40, endpoint="api/v3/ticker/24hr"):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
