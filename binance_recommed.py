@@ -108,10 +108,10 @@ while True:
                 symbol = k
                 star = len(v) * "🌟"
                 message += f"""
-    *💎symbol：*`{symbol}`｜{star}
-    *💰价格：*`{price}`
-    {st}
-    {"-" * 32}
+*💎symbol：*`{symbol}`｜{star}
+*💰价格：*`{price}`
+{st}
+{"-" * 32}
                                                             """
                 if len(message) >= 3000:
                     safe_send_message(chat_id, message)

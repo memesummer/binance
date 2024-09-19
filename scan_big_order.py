@@ -59,10 +59,10 @@ while True:
                     continue
                 price = vl[0]
                 message += f"""
-    *🚧symbol：*`{k}` 🚧 
-    *💰价格：*`{price}`
-    {st}
-    {"-" * 32}
+*🚧symbol：*`{k}` 🚧 
+*💰价格：*`{price}`
+{st}
+{"-" * 32}
                                                             """
                 if len(message) >= 3000:
                     safe_send_message(chat_id, message)
