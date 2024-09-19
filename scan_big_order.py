@@ -12,6 +12,7 @@ import telebot
 from requests.exceptions import Timeout
 
 from main import scan_big_order
+from binance_future import format_number
 
 binance_his = set()
 record = set()
@@ -45,16 +46,18 @@ while True:
                 future = vl[1][1]
                 if len(spot) > 0:
                     for l in spot:
+                        fn = format_number(l[1])
                         if l[0] == 0:
-                            st += f"🟥现货卖出了{int(l[1] / 1000)}k，达到阈值\n"
+                            st += f"🟥现货卖出了{fn}，达到阈值\n"
                         if l[0] == 1:
-                            st += f"🟩现货买入了{int(l[1] / 1000)}k，达到阈值\n"
+                            st += f"🟩现货买入了{fn}，达到阈值\n"
                 if len(future) > 0:
                     for l in future:
+                        fn = format_number(l[1])
                         if l[0] == 0:
-                            st += f"🟥期货卖出了{int(l[1] / 1000)}k，达到阈值\n"
+                            st += f"🟥期货卖出了{fn}，达到阈值\n"
                         if l[0] == 1:
-                            st += f"🟩期货买入了{int(l[1] / 1000)}k，达到阈值\n"
+                            st += f"🟩期货买入了{fn}，达到阈值\n"
                 if not st:
                     continue
                 price = vl[0]
