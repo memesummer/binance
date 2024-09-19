@@ -180,13 +180,22 @@ def get_order_table_sell(l1, l3, limit=10):
     return table
 
 
+def format_number(num):
+    if num >= 1000000:
+        return f"{num / 1000000:.2f}M"
+    elif num >= 1000:
+        return f"{num / 1000:.2f}K"
+    else:
+        return str(num)
+
+
 def get_net_rank_table(net_list, interval, m=15, r=30):
-    res = f"`符号        近{interval}净流入值(w)  24h价格变化`\n"
+    res = f"`符号        近{interval}净流入值  24h价格变化`\n"
     for i, l in enumerate(net_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
         line += ' ' * (m - n1)
-        line += str(l[1])
+        line += format_number(float(l[1]))
         n2 = len(line)
         line += ' ' * (r - n2)
         line += f"{str(l[2])}%"
@@ -204,12 +213,12 @@ def get_future_price(symbol):
 
 
 def get_delta_rank_table(delta_list, interval, m=15, r=30):
-    res = f"`符号        近{interval}净持仓值(w)  24h价格变化`\n"
+    res = f"`符号        近{interval}净持仓值  24h价格变化`\n"
     for i, l in enumerate(delta_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
         line += ' ' * (m - n1)
-        line += str(l[1])
+        line += format_number(float(l[1]))
         n2 = len(line)
         line += ' ' * (r - n2)
         line += f"{str(l[2])}%"
@@ -219,12 +228,12 @@ def get_delta_rank_table(delta_list, interval, m=15, r=30):
 
 
 def get_symbol_oi_table(symbol_oi, m=10):
-    res = f"`周期     净持仓值(w)`\n"
+    res = f"`周期     净持仓值`\n"
     for i, l in enumerate(symbol_oi):
         line = f"`{l[0]}:"
         n1 = len(line)
         line += ' ' * (m - n1)
-        line += str(l[1])
+        line += format_number(float(l[1]))
         # n2 = len(line)
         # line += ' ' * (r - n2)
         # line += f"{str(l[2])}%"
