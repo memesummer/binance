@@ -181,9 +181,9 @@ def get_order_table_sell(l1, l3, limit=10):
 
 
 def format_number(num):
-    if num >= 1000000:
+    if abs(num) >= 1000000:
         return f"{num / 1000000:.2f}M"
-    elif num >= 1000:
+    elif abs(num) >= 1000:
         return f"{num / 1000:.2f}K"
     else:
         return str(num)
