@@ -43,8 +43,11 @@ def safe_send_message(chat_id, message):
 while True:
     try:
         res = recommend(cir_df)
+        # 按照 flag 列表长度降序排序
+        sorted_res = sorted(res, key=lambda item: len(list(item.values())[0][1]), reverse=True)
+
         message = ""
-        for item in res:
+        for item in sorted_res:
             frozen_dict = '；'.join(f"{key}:{','.join(map(str, values[1]))}" for key, values in item.items())
             if frozen_dict in binance_his:
                 continue
