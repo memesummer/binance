@@ -597,7 +597,7 @@ def fetch_taker_data_future(symbol, p_chg, interval, limit):
             maker = v - taker
             net_volume = (taker - maker) * price
             net += net_volume
-        return [symbol[:-4], round(net / 10000, 2), p_chg]
+        return [symbol[:-4], round(net, 2), p_chg]
 
 
 def get_net_volume_rank_future(interval, rank=10, reverse=True):
