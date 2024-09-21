@@ -649,7 +649,7 @@ def fetch_taker_data_spot(symbol, p_chg, interval, limit):
         maker = v - taker
         net_volume = (taker - maker) * price
         net += net_volume
-    return [symbol[:-4], round(net / 10000, 2), p_chg]
+    return [symbol[:-4], round(net, 2), p_chg]
 
 
 def get_net_volume_rank_spot(interval, rank=10, reverse=True):
@@ -722,7 +722,7 @@ def fetch_openInterest(symbol, p_chg, interval):
         sumOpenInterestValue = float(openInterest['sumOpenInterestValue'])
         ls_ratio = um_futures_client.top_long_short_position_ratio(**para)[0]
         delta_openInterest = (float(ls_ratio['longAccount']) - float(ls_ratio['shortAccount'])) * sumOpenInterestValue
-        return [symbol[:-4], round(delta_openInterest / 10000, 2), p_chg]
+        return [symbol[:-4], round(delta_openInterest, 2), p_chg]
 
 
 def get_openInterest_rank(interval, rank=10, reverse=True):
@@ -769,5 +769,5 @@ def get_symbol_open_interest(symbol):
             ls_ratio = um_futures_client.top_long_short_position_ratio(**para)[0]
             delta_openInterest = (float(ls_ratio['longAccount']) - float(
                 ls_ratio['shortAccount'])) * sumOpenInterestValue
-            res.append([interval, round(delta_openInterest / 10000, 2)])
+            res.append([interval, round(delta_openInterest, 2)])
     return res
