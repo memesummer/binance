@@ -873,3 +873,28 @@ def get_symbol_info(symbol, data):
     future2 = get_binance_spot_future("1000" + symbol.upper() + 'USDT')
     res += future1 if future1 else future2 if future2 else "🙅‍️未上币安期货\n"
     return res
+
+
+def token_spot_future_delta(endpoint="api/v3/ticker/24hr"):
+    params = {}
+    spot = binance_api_get(endpoint, params)
+    future = um_futures_client.ticker_24hr_price_change(**params)
+
+    if isinstance(spot, list) and spot and isinstance(future, list) and future:
+        # 过滤出包含 "USDT" 的币种
+        symbols_spot = set(
+            [token['symbol'][4:-4] if token['symbol'].startswith('1000') else token['symbol'][:-4] for token in spot
+             if
+             token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token['symbol'] and
+             token['count'] != 0])
+        symbols_future = set(
+            [token['symbol'][4:-4] if token['symbol'].startswith('1000') else token['symbol'][:-4] for token in future
+             if
+             token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token['symbol'] and
+             token['count'] != 0])
+        only_spot = list(symbols_spot - symbols_future)
+        only_future = list(symbols_future - symbols_spot)
+        return only_spot, only_future
+
+    else:
+        print("无数据或数据格式不正确")

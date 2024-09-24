@@ -8,7 +8,7 @@ import telebot
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
-    get_symbol_open_interest, get_symbol_info
+    get_symbol_open_interest, get_symbol_info, token_spot_future_delta
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
@@ -143,6 +143,18 @@ def get_order(message):
     except Exception as e:
         print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/t btc")
+
+
+@bot.message_handler(commands=['d'])
+def get_order(message):
+    try:
+        spot, future = token_spot_future_delta()
+        res = f"`只有现货`：{str(spot)}\n"
+        res += f"`只有期货`：{str(future)}\n"
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, "请输入正确的参数格式。示例：/d")
 
 
 @atexit.register
