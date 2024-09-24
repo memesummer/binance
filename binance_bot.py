@@ -1,4 +1,6 @@
 import atexit
+import json
+import os
 import time
 
 import telebot
@@ -6,7 +8,7 @@ import telebot
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
-    get_symbol_open_interest
+    get_symbol_open_interest, get_symbol_info
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
@@ -124,6 +126,23 @@ def get_order(message):
     except Exception as e:
         print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/i btc")
+
+
+@bot.message_handler(commands=['t'])
+def get_order(message):
+    try:
+        symbol = message.text.split()[1:][0]
+        # 获取当前脚本所在的目录
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        token_info_file_path = os.path.join(current_dir, "token_data.json")
+
+        with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
+            data = json.load(json_file)
+        res = get_symbol_info(symbol, data)
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, "请输入正确的参数格式。示例：/t btc")
 
 
 @atexit.register

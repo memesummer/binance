@@ -4,6 +4,7 @@ import random
 
 import requests
 from binance.um_futures import UMFutures
+from dateutil.relativedelta import relativedelta
 
 um_futures_client = UMFutures()
 
@@ -770,4 +771,105 @@ def get_symbol_open_interest(symbol):
             delta_openInterest = (float(ls_ratio['longAccount']) - float(
                 ls_ratio['shortAccount'])) * sumOpenInterestValue
             res.append([interval, round(delta_openInterest, 2)])
+    return res
+
+
+def get_token_info(symbol, data):
+    # 查找符号匹配的代币
+    for token in data['data']:
+        if token['symbol'].lower() == symbol.lower():
+            total_supply = token['total_supply']
+            circulating_supply = token['circulating_supply']
+            circulating_rate = round(circulating_supply / total_supply * 100, 2)
+            infinite_supply = token['infinite_supply']
+            tags = token['tags']
+            market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
+            return market_cap, circulating_rate, infinite_supply, tags
+    print(f"Symbol {symbol} not found in the data.")
+
+
+def get_binance_spot_info(symbol):
+    try:
+        k = get_k_lines(symbol, '3d', 1000)
+        time = k[0][0]
+        timestamp_in_seconds = time / 1000
+
+        # 转换为 datetime 对象
+        utc_time = datetime.datetime.utcfromtimestamp(timestamp_in_seconds)
+
+        # 获取当前时区的时间
+        local_time = utc_time.astimezone()
+
+        # 使用 strftime 来格式化输出
+        formatted_local_time = local_time.strftime("%Y-%m-%d %H:%M")
+        res = f"📅*现货*上币安时间：{formatted_local_time}\t"
+
+        # 获取当前日期
+        current_date = datetime.datetime.utcnow()
+
+        # 计算两个日期的差异
+        difference = relativedelta(current_date, utc_time)
+
+        # 输出结果
+        res += f"⏳已上线： {abs(difference.years)}年{abs(difference.months)}个月{abs(difference.days)}天\n"
+        return res
+    except Exception as e:
+        return None
+
+
+def get_binance_spot_future(symbol):
+    try:
+        para = {
+            'symbol': symbol,
+            'interval': '3d',
+            'limit': 1000
+        }
+        k = um_futures_client.klines(**para)
+
+        data = k[0][0]
+        # 将时间戳从毫秒转换为秒
+        timestamp_in_seconds = data / 1000
+
+        # 转换为 datetime 对象
+        utc_time = datetime.datetime.utcfromtimestamp(timestamp_in_seconds)
+
+        # 获取当前时区的时间
+        local_time = utc_time.astimezone()
+
+        # 使用 strftime 来格式化输出
+        formatted_local_time = local_time.strftime("%Y-%m-%d %H:%M")
+        res = f"📅*合约*上币安时间：{formatted_local_time}\t"
+
+        # 获取当前日期
+        current_date = datetime.datetime.utcnow()
+
+        # 计算两个日期的差异
+        difference = relativedelta(current_date, utc_time)
+
+        # 输出结果
+        res += f"⏳已上线： {abs(difference.years)}年{abs(difference.months)}个月{abs(difference.days)}天\n"
+        return res
+    except Exception as e:
+        return None
+
+
+def get_symbol_info(symbol, data):
+    res = f"💎*symbol*：`{symbol.upper()}`\n"
+    market_cap, circulating_rate, infinite_supply, tags = get_token_info(symbol, data)
+    res += f"💵*市值*：{market_cap}亿\n"
+    res += f"🔄*流通率*：{circulating_rate}%\n"
+    z = "是" if infinite_supply else "否"
+    res += f"⚠️*增发*：{z}\n"
+
+    keywords = ['-portfolio', '-ecosystem', '-estate', 'store-of-value', 'state-channel', 'sha-256',
+                'cmc-crypto-awards', '-chain', '-ecosytem', '-capital']
+    filtered_tags = [item for item in tags if not any(keyword in item for keyword in keywords)]
+    res += f"🏷️*标签*：{str(filtered_tags)}\n"
+
+    spot1 = get_binance_spot_info(symbol.upper() + 'USDT')
+    spot2 = get_binance_spot_info("1000" + symbol.upper() + 'USDT')
+    res += spot1 if spot1 else spot2 if spot2 else "🙅‍️未上币安现货\n"
+    future1 = get_binance_spot_future(symbol.upper() + 'USDT')
+    future2 = get_binance_spot_future("1000" + symbol.upper() + 'USDT')
+    res += future1 if future1 else future2 if future2 else "🙅‍️未上币安期货\n"
     return res
