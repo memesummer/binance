@@ -709,11 +709,30 @@ def parse_interval_to_minutes(interval):
         raise ValueError("无效的时间间隔格式！请使用 'h', 'm', 或 'd' 作为单位。")
 
 
-def fetch_openInterest(symbol, p_chg, interval):
+def parse_interval_to_5minutes(interval):
+    # 获取时间的数值和单位
+    unit = interval[-1]  # 最后一个字符是单位
+    value = int(interval[:-1])  # 前面的部分是数值
+
+    # 将单位转换为分钟
+    if unit == 'm':
+        total_minutes = value
+    elif unit == 'h':
+        total_minutes = value * 60
+    elif unit == 'd':
+        total_minutes = value * 24 * 60
+    else:
+        raise ValueError("Unsupported time unit. Use 'm' for minutes, 'h' for hours, or 'd' for days.")
+
+    # 计算有多少个5分钟
+    return total_minutes // 5
+
+
+def fetch_openInterest(symbol, p_chg, limit):
     para = {
         'symbol': symbol,
-        'period': interval,
-        'limit': 2
+        'period': '5m',
+        'limit': limit
     }
     openInterest = um_futures_client.open_interest_hist(**para)
     if not openInterest:
@@ -734,10 +753,12 @@ def get_openInterest_rank(interval, rank=10, reverse=True):
 
     delta_list = []
 
+    limit = parse_interval_to_5minutes(interval)
+
     # 使用 ThreadPoolExecutor 进行并行 API 请求
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
-        futures = [executor.submit(fetch_openInterest, symbol[0], symbol[1], interval) for symbol in symbols]
+        futures = [executor.submit(fetch_openInterest, symbol[0], symbol[1], limit) for symbol in symbols]
 
         # 等待所有任务完成，并收集结果
         for future in concurrent.futures.as_completed(futures):
@@ -751,15 +772,14 @@ def get_openInterest_rank(interval, rank=10, reverse=True):
 
 
 def get_symbol_open_interest(symbol):
-    interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d"]
+    interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d"]
     res = []
     for interval in interval_list:
-        # 因为合约持仓量的interval是指近interval的时间点的持仓量，但是因为还是按照K线来划分时间点，所以需要取2个然后取第一个值
-        # 不能取最近的值，因为比如现在7点，2h和4h最近的刻度都是6点，如果limit是1的话就都取的6点那个2时刻的持仓量
+        limit = parse_interval_to_5minutes(interval)
         para = {
             'symbol': symbol,
-            'period': interval,
-            'limit': 2
+            'period': '5m',
+            'limit': limit
         }
         openInterest = um_futures_client.open_interest_hist(**para)
         if not openInterest:
