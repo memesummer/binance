@@ -5,8 +5,21 @@ import random
 import requests
 from binance.um_futures import UMFutures
 from dateutil.relativedelta import relativedelta
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 um_futures_client = UMFutures()
+
+# 为扫描任务创建单独的 session
+binance_session = requests.Session()
+binance_retry_strategy = Retry(
+    total=3,
+    backoff_factor=1,
+    status_forcelist=[429, 500, 502, 503, 504],
+)
+binance_adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=binance_retry_strategy)
+binance_session.mount("https://", binance_adapter)
+binance_session.mount("http://", binance_adapter)
 
 
 def binance_api_get(endpoint, params=None):
@@ -25,7 +38,7 @@ def binance_api_get(endpoint, params=None):
     url = f"{base_url}/{endpoint}"
 
     try:
-        response = requests.get(url, params=params)
+        response = binance_session.get(url, params=params)
 
         # Check if the request was successful (status code 200)
         if response.status_code == 200:
@@ -88,7 +101,7 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
         sorted_res_rise = sorted(res, key=lambda x: float(x['priceChangePercent']), reverse=True)
 
         # 过滤出包含 "USDT" 的币种
-        usdt_symbols_rise = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
+        usdt_symbols_rise = [[token['symbol']] for token in sorted_res_rise if
                              'USDT' in token['symbol']]
         # 筛选出前20
         usdt_symbols_rise = usdt_symbols_rise[:rank]
@@ -325,6 +338,8 @@ def get_latest_trade(symbol, endpoint='api/v3/aggTrades'):
 
 
 def get_future_volume(symbol, period, endpoint='futures/data/openInterestHist'):
+    if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+        symbol = '1000' + symbol
     para = {
         'symbol': symbol,
         'period': period
@@ -373,6 +388,9 @@ def search_more_big_buy_spot(symbol, order_value=None, limit=5000, endpoint='api
 
 
 def search_more_big_buy_future(symbol, order_value=None, limit=1000, bpr=0.1, spr=0.1):
+    if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+        symbol = '1000' + symbol
+
     if order_value is None:
         order_value = [100000, 500000, 1000000]
     try:
@@ -429,6 +447,8 @@ def get_aggTrades_spot(symbol, endpoint='api/v3/aggTrades', target=100000):
 
 def get_aggTrades_future(symbol, target=100000):
     try:
+        if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+            symbol = '1000' + symbol
         para = {
             'symbol': symbol
         }
@@ -474,6 +494,9 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         buy = []
         sell = []
 
+        if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+            symbol = '1000' + symbol
+
         para = {
             'symbol': symbol,
             'limit': limit
@@ -497,7 +520,7 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         return [], []
 
 
-def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15):
+def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15, add=None):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
@@ -511,21 +534,18 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15):
         sorted_res_rise = sorted(res, key=lambda x: float(x['priceChangePercent']), reverse=True)
 
         # 过滤出包含 "USDT" 的币种
-        usdt_symbols_rise = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
+        usdt_symbols_rise = [token['symbol'] for token in sorted_res_rise if
                              'USDT' in token['symbol']]
-        # 筛选出前20
+        # 筛选出前15
         usdt_symbols_rise = usdt_symbols_rise[:rank]
         # 增加额外的币种
-        additional_symbols = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
-                              token['symbol'] in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']]
-        usdt_symbols_rise += additional_symbols
+        usdt_symbols_rise += ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']
+        if add:
+            usdt_symbols_rise += add
         # 去重
-        unique_usdt_symbols_rise = {item[0]: item for item in usdt_symbols_rise}.values()
-        # 转换成列表
-        usdt_symbols_rise = list(unique_usdt_symbols_rise)
+        usdt_symbols_rise = list(set(usdt_symbols_rise))
 
-        for symbol_list in usdt_symbols_rise:
-            symbol = symbol_list[0]
+        for symbol in usdt_symbols_rise:
             buy_spot, sell_spot = scan_big_order_spot(symbol)
             buy_future, sell_future = scan_big_order_future(symbol)
             spot = []
@@ -558,6 +578,8 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15):
 
 def get_future_takerlongshortRatio(symbol, interval):
     try:
+        if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+            symbol = '1000' + symbol
         para1 = {
             'symbol': symbol,
             'period': interval,
