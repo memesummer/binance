@@ -772,7 +772,7 @@ def get_openInterest_rank(interval, rank=10, reverse=True):
 
 
 def get_symbol_open_interest(symbol):
-    interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d"]
+    interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "16h", "20h", "1d"]
     res = []
     for interval in interval_list:
         limit = parse_interval_to_5minutes(interval)
