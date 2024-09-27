@@ -929,6 +929,48 @@ def token_spot_future_delta(endpoint="api/v3/ticker/24hr"):
         print("无数据或数据格式不正确")
 
 
+def fetch_gain_lose_spot(symbol, interval, limit):
+    if symbol in ['SATSUSDT']:
+        symbol = '1000' + symbol
+    k_line = get_k_lines(symbol, interval, limit)
+
+    start_price = float(k_line[0][1])
+    # 过滤新币
+    lowest_price = float(k_line[0][3])
+    if start_price == lowest_price:
+        return None
+    highest_price = float(max(item[2] for item in k_line))
+
+    price_chg = int(round(highest_price / start_price * 100, 0))
+    if price_chg < 50:
+        return None
+    return [symbol[:-4], price_chg]
+
+
+def fetch_gain_lose_future(symbol, interval, limit):
+    if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT',
+                  'FLOKIUSDT']:
+        symbol = '1000' + symbol
+    para = {
+        'symbol': symbol,
+        'interval': interval,
+        'limit': limit
+    }
+    k_line = um_futures_client.klines(**para)
+
+    start_price = float(k_line[0][1])
+    # 过滤新币
+    lowest_price = float(k_line[0][3])
+    if start_price == lowest_price:
+        return None
+    highest_price = float(max(item[2] for item in k_line))
+
+    price_chg = int(round(highest_price / start_price * 100, 0))
+    if price_chg < 50:
+        return None
+    return [symbol[:-4], price_chg]
+
+
 def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
     try:
         params = {}
@@ -959,45 +1001,21 @@ def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
                      'closeTime'] > yesterday_timestamp_utc])
             only_future = list(symbols_future - symbols_spot)
 
-            for symbol in symbols_spot:
-                if symbol in ['SATSUSDT']:
-                    symbol = '1000' + symbol
-                k_line = get_k_lines(symbol, interval, limit)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                futures = [executor.submit(fetch_gain_lose_spot, symbol, interval, limit) for symbol in symbols_spot]
 
-                start_price = float(k_line[0][1])
-                # 过滤新币
-                lowest_price = float(k_line[0][3])
-                if start_price == lowest_price:
-                    continue
-                highest_price = float(max(item[2] for item in k_line))
+                for future in concurrent.futures.as_completed(futures):
+                    result = future.result()
+                    if result:
+                        price_chg_res.append(result)
 
-                price_chg = int(round((highest_price - start_price) / start_price * 100, 0))
-                if price_chg < 50:
-                    continue
-                price_chg_res.append([symbol[:-4], price_chg])
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                futures = [executor.submit(fetch_gain_lose_future, symbol, interval, limit) for symbol in only_future]
 
-            for symbol in only_future:
-                if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT',
-                              'FLOKIUSDT']:
-                    symbol = '1000' + symbol
-                para = {
-                    'symbol': symbol,
-                    'interval': interval,
-                    'limit': limit
-                }
-                k_line = um_futures_client.klines(**para)
-
-                start_price = float(k_line[0][1])
-                # 过滤新币
-                lowest_price = float(k_line[0][3])
-                if start_price == lowest_price:
-                    continue
-                highest_price = float(max(item[2] for item in k_line))
-
-                price_chg = int(round((highest_price - start_price) / start_price * 100, 0))
-                if price_chg < 50:
-                    continue
-                price_chg_res.append([symbol[:-4], price_chg])
+                for future in concurrent.futures.as_completed(futures):
+                    result = future.result()
+                    if result:
+                        price_chg_res.append(result)
 
             filtered_sorted_list = sorted(price_chg_res, key=lambda x: x[1], reverse=True)
 
@@ -1042,5 +1060,5 @@ def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
                 res_str += "\n👏`涨幅超过50%：`无\n"
         return res_str
     except Exception as e:
-        print(f"symbol:{symbol}:{e}")
+        print(e)
         return None
