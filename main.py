@@ -942,7 +942,7 @@ def fetch_gain_lose_spot(symbol, interval, limit):
     highest_price = float(max(item[2] for item in k_line))
 
     price_chg = int(round(highest_price / start_price * 100, 0))
-    if price_chg < 50:
+    if price_chg < 150:
         return None
     return [symbol[:-4], price_chg]
 
@@ -966,7 +966,7 @@ def fetch_gain_lose_future(symbol, interval, limit):
     highest_price = float(max(item[2] for item in k_line))
 
     price_chg = int(round(highest_price / start_price * 100, 0))
-    if price_chg < 50:
+    if price_chg < 150:
         return None
     return [symbol[:-4], price_chg]
 
@@ -1021,43 +1021,43 @@ def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
 
             filtered_sorted_list_500 = [item for item in filtered_sorted_list if item[1] >= 500]
             if len(filtered_sorted_list_500) > 0:
-                res_str += "\n🥇`涨幅超过500%：`\n"
+                res_str += "\n🥇`5倍以上：`\n"
                 for fsl in filtered_sorted_list_500:
                     sym = fsl[0]
                     pchg = fsl[1]
-                    res_str += f"*{sym}*: {pchg}%\n"
+                    res_str += f"🪙*{sym}*: {pchg}%\n"
             else:
-                res_str += "\n🥇`涨幅超过500%：`无\n"
+                res_str += "\n🥇`5倍以上：`*无*\n"
 
-            filtered_sorted_list_200 = [item for item in filtered_sorted_list if 200 <= item[1] < 500]
+            filtered_sorted_list_200 = [item for item in filtered_sorted_list if 300 <= item[1] < 500]
             if len(filtered_sorted_list_200) > 0:
-                res_str += "\n🥈`涨幅超过200%：`\n"
+                res_str += "\n🥈`3倍以上：`\n"
                 for fsl in filtered_sorted_list_200:
                     sym = fsl[0]
                     pchg = fsl[1]
-                    res_str += f"*{sym}*: {pchg}%\n"
+                    res_str += f"🪙*{sym}*: {pchg}%\n"
             else:
-                res_str += "\n🥈`涨幅超过200%：`无\n"
+                res_str += "\n🥈`3倍以上：`*无*\n"
 
-            filtered_sorted_list_100 = [item for item in filtered_sorted_list if 100 <= item[1] < 200]
+            filtered_sorted_list_100 = [item for item in filtered_sorted_list if 200 <= item[1] < 300]
             if len(filtered_sorted_list_100) > 0:
-                res_str += "\n🥉`涨幅超过100%：`\n"
+                res_str += "\n🥉`2倍以上：`\n"
                 for fsl in filtered_sorted_list_100:
                     sym = fsl[0]
                     pchg = fsl[1]
-                    res_str += f"*{sym}*: {pchg}%\n"
+                    res_str += f"🪙*{sym}*: {pchg}%\n"
             else:
-                res_str += "\n🥉`涨幅超过100%：`无\n"
+                res_str += "\n🥉`2倍以上：`*无*\n"
 
-            filtered_sorted_list_50 = [item for item in filtered_sorted_list if 50 <= item[1] < 100]
+            filtered_sorted_list_50 = [item for item in filtered_sorted_list if 160 < item[1] < 200]
             if len(filtered_sorted_list_50) > 0:
-                res_str += "\n👏`涨幅超过50%：`\n"
+                res_str += "\n👏`1.6倍以上：`\n"
                 for fsl in filtered_sorted_list_50:
                     sym = fsl[0]
                     pchg = fsl[1]
-                    res_str += f"*{sym}*: {pchg}%\n"
+                    res_str += f"🪙*{sym}*: {pchg}%\n"
             else:
-                res_str += "\n👏`涨幅超过50%：`无\n"
+                res_str += "\n👏`1.6倍以上：`*无*\n"
         return res_str
     except Exception as e:
         print(e)

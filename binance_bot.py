@@ -88,7 +88,6 @@ def get_net_future(message):
         net_list = get_net_volume_rank_future(interval, reverse=reverse)
         res = get_net_rank_table(net_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
-
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/nf 1h d")
 
@@ -222,6 +221,7 @@ def delete_monitor(message):
         res = get_gain_lose_rank(interval, limit)
         bot.reply_to(message, res, parse_mode='Markdown')
     except Exception as e:
+        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/g 1w 2")
 
 
