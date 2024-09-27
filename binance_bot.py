@@ -3,19 +3,18 @@ import json
 import os
 import threading
 import time
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
+import requests
 import telebot
+from requests.adapters import HTTPAdapter
 from requests.exceptions import Timeout
+from urllib3.util.retry import Retry
 
 from binance_future import format_number
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
-    get_symbol_open_interest, get_symbol_info, token_spot_future_delta
-from main import scan_big_order
+    get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
@@ -212,6 +211,20 @@ def delete_monitor(message):
         bot.reply_to(message, "请输入正确的参数格式。示例：/mc")
 
 
+@bot.message_handler(commands=['g'])
+def delete_monitor(message):
+    try:
+        # 将参数分割成两部分
+        param1, param2 = message.text.split()[1:]
+
+        interval = param1
+        limit = param2
+        res = get_gain_lose_rank(interval, limit)
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        bot.reply_to(message, "请输入正确的参数格式。示例：/g 1w 2")
+
+
 @atexit.register
 def exit_handler():
     # 这个函数将在程序退出时自动执行
@@ -298,7 +311,6 @@ def scan():
 
 
 if __name__ == "__main__":
-
     # 创建自定义的 session
     session = requests.Session()
 

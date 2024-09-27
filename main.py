@@ -1,6 +1,7 @@
 import concurrent.futures
 import datetime
 import random
+from datetime import timedelta, timezone
 
 import requests
 from binance.um_futures import UMFutures
@@ -49,42 +50,6 @@ def binance_api_get(endpoint, params=None):
         print(f"Error making request to {url}: {e}")
 
     return None  # Return None if the request fails
-
-
-def get_gain_loss(rank=30, endpoint="api/v3/ticker/24hr"):
-    params = {}
-    result = binance_api_get(endpoint, params)
-    res = result
-
-    # 假设 res 是一个列表，每个元素是一个字典，包含 'symbol' 和 'priceChangePercent' 字段
-
-    # 检查 res 是否是列表，确保不是空列表
-    if isinstance(res, list) and res:
-        # 按涨幅排序
-        sorted_res_rise = sorted(res, key=lambda x: float(x['priceChangePercent']), reverse=True)
-
-        # 过滤出包含 "USDT" 的币种
-        usdt_symbols_rise = [token['symbol'] for token in sorted_res_rise if 'USDT' in token['symbol']]
-
-        # 打印涨幅榜前十
-        print("涨幅榜：")
-        for i, symbol in enumerate(usdt_symbols_rise[:rank]):
-            print(
-                f"{i + 1}. {symbol[:-4]} - 涨幅：{next(token['priceChangePercent'] for token in sorted_res_rise if token['symbol'] == symbol)}%")
-
-        # 按跌幅排序
-        sorted_res_fall = sorted(res, key=lambda x: float(x['priceChangePercent']))
-
-        # 过滤出包含 "USDT" 的币种
-        usdt_symbols_fall = [token['symbol'] for token in sorted_res_fall if 'USDT' in token['symbol']]
-
-        # 打印跌幅榜前十
-        print("\n跌幅榜前十：")
-        for i, symbol in enumerate(usdt_symbols_fall[:rank]):
-            print(
-                f"{i + 1}. {symbol[:-4]} - 跌幅：{next(token['priceChangePercent'] for token in sorted_res_fall if token['symbol'] == symbol)}%")
-    else:
-        print("无数据或数据格式不正确")
 
 
 def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
@@ -632,9 +597,13 @@ def get_net_volume_rank_future(interval, rank=10, reverse=True):
     :return: 排名前的 symbol 列表
     """
     data = um_futures_client.ticker_24hr_price_change()
+    # 获取前一天的时间戳
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=1)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
     symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
                v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
-                   'count'] != 0]
+                   'count'] != 0 and v['closeTime'] > yesterday_timestamp_utc]
 
     net_list = []
     new_interval, limit = parse_interval_to_minutes(interval)
@@ -688,7 +657,7 @@ def get_net_volume_rank_spot(interval, rank=10, reverse=True):
     data = binance_api_get(endpoint, params)
     symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
                v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
-                   'count'] != 0]
+                   'count'] != 0 and float(v['bidPrice']) != 0 and float(v['askPrice']) != 0]
 
     net_list = []
 
@@ -769,9 +738,13 @@ def fetch_openInterest(symbol, p_chg, limit):
 
 def get_openInterest_rank(interval, rank=10, reverse=True):
     data = um_futures_client.ticker_24hr_price_change()
+    # 获取前一天的时间戳
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=1)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
     symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
                v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
-                   'count'] != 0]
+                   'count'] != 0 and v['closeTime'] > yesterday_timestamp_utc]
 
     delta_list = []
 
@@ -833,6 +806,13 @@ def get_token_info(symbol, data):
 def get_binance_spot_info(symbol):
     try:
         k = get_k_lines(symbol, '3d', 1000)
+        # 获取前一天的时间戳
+        now_utc = datetime.datetime.now(timezone.utc)
+        yesterday_utc = now_utc - timedelta(days=1)
+        yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+        if k[len(k) - 1][6] < yesterday_timestamp_utc:
+            return f"\n🚫️*现货已下线*\n"
+
         time = k[0][0]
         timestamp_in_seconds = time / 1000
 
@@ -844,7 +824,7 @@ def get_binance_spot_info(symbol):
 
         # 使用 strftime 来格式化输出
         formatted_local_time = local_time.strftime("%Y-%m-%d %H:%M")
-        res = f"📅*现货*上币安时间：{formatted_local_time}\t"
+        res = f"\n📅*现货*上币安时间：{formatted_local_time}\t"
 
         # 获取当前日期
         current_date = datetime.datetime.utcnow()
@@ -867,6 +847,9 @@ def get_binance_spot_future(symbol):
             'limit': 1000
         }
         k = um_futures_client.klines(**para)
+
+        if k[len(k) - 1][8] == 0:
+            return f"🚫️*合约已下线*\n"
 
         data = k[0][0]
         # 将时间戳从毫秒转换为秒
@@ -910,7 +893,7 @@ def get_symbol_info(symbol, data):
 
     spot1 = get_binance_spot_info(symbol.upper() + 'USDT')
     spot2 = get_binance_spot_info("1000" + symbol.upper() + 'USDT')
-    res += spot1 if spot1 else spot2 if spot2 else "🙅‍️未上币安现货\n"
+    res += spot1 if spot1 else spot2 if spot2 else "\n🙅‍️未上币安现货\n"
     future1 = get_binance_spot_future(symbol.upper() + 'USDT')
     future2 = get_binance_spot_future("1000" + symbol.upper() + 'USDT')
     res += future1 if future1 else future2 if future2 else "🙅‍️未上币安期货\n"
@@ -928,15 +911,136 @@ def token_spot_future_delta(endpoint="api/v3/ticker/24hr"):
             [token['symbol'][4:-4] if token['symbol'].startswith('1000') else token['symbol'][:-4] for token in spot
              if
              token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token['symbol'] and
-             token['count'] != 0])
+             token['count'] != 0 and float(token['bidPrice']) != 0 and float(token['askPrice']) != 0])
+        # 获取前一天的时间戳
+        now_utc = datetime.datetime.now(timezone.utc)
+        yesterday_utc = now_utc - timedelta(days=1)
+        yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
         symbols_future = set(
             [token['symbol'][4:-4] if token['symbol'].startswith('1000') else token['symbol'][:-4] for token in future
              if
              token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token['symbol'] and
-             token['count'] != 0])
+             token['count'] != 0 and token['closeTime'] > yesterday_timestamp_utc])
         only_spot = list(symbols_spot - symbols_future)
         only_future = list(symbols_future - symbols_spot)
         return only_spot, only_future
 
     else:
         print("无数据或数据格式不正确")
+
+
+def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
+    try:
+        params = {}
+        spot = binance_api_get(endpoint, params)
+        future = um_futures_client.ticker_24hr_price_change(**params)
+        price_chg_res = []
+        interval_str = "周" if interval[-1:] == 'w' else "日" if interval[-1:] == 'd' else "月" if interval[
+                                                                                                -1:] == 'M' else "小时"
+        res_str = f"🏆*以下是近{limit}{interval_str}币种涨幅情况：*\n"
+
+        if isinstance(spot, list) and spot and isinstance(future, list) and future:
+            # 过滤出包含 "USDT" 的币种
+            symbols_spot = set(
+                [token['symbol'][4:] if token['symbol'].startswith('1000') else token['symbol'] for token in spot
+                 if
+                 token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token[
+                     'symbol'] and 'BTCDOM' not in token['symbol'] and token['count'] != 0 and float(
+                     token['bidPrice']) != 0 and float(token['askPrice']) != 0])
+            # 获取前一天的时间戳
+            now_utc = datetime.datetime.now(timezone.utc)
+            yesterday_utc = now_utc - timedelta(days=1)
+            yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+            symbols_future = set(
+                [token['symbol'][4:] if token['symbol'].startswith('1000') else token['symbol'] for token in future
+                 if
+                 token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token[
+                     'symbol'] and 'BTCDOM' not in token['symbol'] and token['count'] != 0 and token[
+                     'closeTime'] > yesterday_timestamp_utc])
+            only_future = list(symbols_future - symbols_spot)
+
+            for symbol in symbols_spot:
+                if symbol in ['SATSUSDT']:
+                    symbol = '1000' + symbol
+                k_line = get_k_lines(symbol, interval, limit)
+
+                start_price = float(k_line[0][1])
+                # 过滤新币
+                lowest_price = float(k_line[0][3])
+                if start_price == lowest_price:
+                    continue
+                highest_price = float(max(item[2] for item in k_line))
+
+                price_chg = int(round((highest_price - start_price) / start_price * 100, 0))
+                if price_chg < 50:
+                    continue
+                price_chg_res.append([symbol[:-4], price_chg])
+
+            for symbol in only_future:
+                if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT',
+                              'FLOKIUSDT']:
+                    symbol = '1000' + symbol
+                para = {
+                    'symbol': symbol,
+                    'interval': interval,
+                    'limit': limit
+                }
+                k_line = um_futures_client.klines(**para)
+
+                start_price = float(k_line[0][1])
+                # 过滤新币
+                lowest_price = float(k_line[0][3])
+                if start_price == lowest_price:
+                    continue
+                highest_price = float(max(item[2] for item in k_line))
+
+                price_chg = int(round((highest_price - start_price) / start_price * 100, 0))
+                if price_chg < 50:
+                    continue
+                price_chg_res.append([symbol[:-4], price_chg])
+
+            filtered_sorted_list = sorted(price_chg_res, key=lambda x: x[1], reverse=True)
+
+            filtered_sorted_list_500 = [item for item in filtered_sorted_list if item[1] >= 500]
+            if len(filtered_sorted_list_500) > 0:
+                res_str += "\n🥇`涨幅超过500%：`\n"
+                for fsl in filtered_sorted_list_500:
+                    sym = fsl[0]
+                    pchg = fsl[1]
+                    res_str += f"*{sym}*: {pchg}%\n"
+            else:
+                res_str += "\n🥇`涨幅超过500%：`无\n"
+
+            filtered_sorted_list_200 = [item for item in filtered_sorted_list if 200 <= item[1] < 500]
+            if len(filtered_sorted_list_200) > 0:
+                res_str += "\n🥈`涨幅超过200%：`\n"
+                for fsl in filtered_sorted_list_200:
+                    sym = fsl[0]
+                    pchg = fsl[1]
+                    res_str += f"*{sym}*: {pchg}%\n"
+            else:
+                res_str += "\n🥈`涨幅超过200%：`无\n"
+
+            filtered_sorted_list_100 = [item for item in filtered_sorted_list if 100 <= item[1] < 200]
+            if len(filtered_sorted_list_100) > 0:
+                res_str += "\n🥉`涨幅超过100%：`\n"
+                for fsl in filtered_sorted_list_100:
+                    sym = fsl[0]
+                    pchg = fsl[1]
+                    res_str += f"*{sym}*: {pchg}%\n"
+            else:
+                res_str += "\n🥉`涨幅超过100%：`无\n"
+
+            filtered_sorted_list_50 = [item for item in filtered_sorted_list if 50 <= item[1] < 100]
+            if len(filtered_sorted_list_50) > 0:
+                res_str += "\n👏`涨幅超过50%：`\n"
+                for fsl in filtered_sorted_list_50:
+                    sym = fsl[0]
+                    pchg = fsl[1]
+                    res_str += f"*{sym}*: {pchg}%\n"
+            else:
+                res_str += "\n👏`涨幅超过50%：`无\n"
+        return res_str
+    except Exception as e:
+        print(f"symbol:{symbol}:{e}")
+        return None
