@@ -65,10 +65,12 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
         # 按涨幅排序
         sorted_res_rise = sorted(res, key=lambda x: float(x['priceChangePercent']), reverse=True)
 
+        fil_str_list = ['USDC', 'FDUSD', 'TUSD', 'USDP', 'EURI']
+
         # 过滤出包含 "USDT" 的币种
-        usdt_symbols_rise = [[token['symbol']] for token in sorted_res_rise if
-                             token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in
-                             token['symbol'] and token['count'] != 0]
+        usdt_symbols_rise = [token['symbol'] for token in sorted_res_rise if
+                             token['symbol'].endswith("USDT") and all(
+                                 f not in token['symbol'] for f in fil_str_list) and token['count'] != 0]
         # 筛选出前20
         usdt_symbols_rise = usdt_symbols_rise[:rank]
         # 增加额外的币种
@@ -499,10 +501,12 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15, add=None):
         # 按涨幅排序
         sorted_res_rise = sorted(res, key=lambda x: float(x['priceChangePercent']), reverse=True)
 
+        fil_str_list = ['USDC', 'FDUSD', 'TUSD', 'USDP', 'EURI']
+
         # 过滤出包含 "USDT" 的币种
         usdt_symbols_rise = [token['symbol'] for token in sorted_res_rise if
-                             token['symbol'].endswith("USDT") and 'USDC' not in token['symbol'] and 'FDUSD' not in
-                             token['symbol'] and token['count'] != 0]
+                             token['symbol'].endswith("USDT") and all(
+                                 f not in token['symbol'] for f in fil_str_list) and token['count'] != 0]
         # 筛选出前15
         usdt_symbols_rise = usdt_symbols_rise[:rank]
         # 增加额外的币种
