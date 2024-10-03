@@ -65,7 +65,7 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
         # 按涨幅排序
         sorted_res_rise = sorted(res, key=lambda x: float(x['priceChangePercent']), reverse=True)
 
-        fil_str_list = ['USDC', 'FDUSD', 'TUSD', 'USDP', 'EURI']
+        fil_str_list = ['USDC', 'FDUSD', 'TUSD', 'USDP', 'EUR']
 
         # 过滤出包含 "USDT" 的币种
         usdt_symbols_rise = [token['symbol'] for token in sorted_res_rise if
@@ -501,7 +501,7 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15, add=None):
         # 按涨幅排序
         sorted_res_rise = sorted(res, key=lambda x: float(x['priceChangePercent']), reverse=True)
 
-        fil_str_list = ['USDC', 'FDUSD', 'TUSD', 'USDP', 'EURI']
+        fil_str_list = ['USDC', 'FDUSD', 'TUSD', 'USDP', 'EUR']
 
         # 过滤出包含 "USDT" 的币种
         usdt_symbols_rise = [token['symbol'] for token in sorted_res_rise if
