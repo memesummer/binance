@@ -67,7 +67,7 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
 
         # 过滤出包含 "USDT" 的币种
         usdt_symbols_rise = [[token['symbol']] for token in sorted_res_rise if
-                             'USDT' in token['symbol']]
+                             token['symbol'].endswith('USDT')]
         # 筛选出前20
         usdt_symbols_rise = usdt_symbols_rise[:rank]
         # 增加额外的币种
@@ -500,7 +500,7 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15, add=None):
 
         # 过滤出包含 "USDT" 的币种
         usdt_symbols_rise = [token['symbol'] for token in sorted_res_rise if
-                             'USDT' in token['symbol']]
+                             token['symbol'].endswith("USDT")]
         # 筛选出前15
         usdt_symbols_rise = usdt_symbols_rise[:rank]
         # 增加额外的币种
