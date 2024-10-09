@@ -218,8 +218,12 @@ def get_latest_price(symbol, endpoint='api/v3/ticker/price'):
     para = {
         'symbol': symbol
     }
-    data = binance_api_get(endpoint, para)
-    return float(data['price'])
+    price = float(binance_api_get(endpoint, para)['price'])
+    if symbol.startwith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
+                                              'RATSUSDT', 'FLOKIUSDT']:
+        return price * 1000
+    else:
+        return price
 
 
 # def get_window_chg(symbol, windowSize, endpoint="api/v3/ticker"):
@@ -1066,3 +1070,31 @@ def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
     except Exception as e:
         print(e)
         return None
+
+
+def get_symbol_net_future(symbol):
+    interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "16h", "20h", "1d", "2d", "3d", "4d",
+                     "5d"]
+    res = []
+    for interval in interval_list:
+        limit = parse_interval_to_5minutes(interval)
+        para = {
+            'symbol': symbol,
+            'interval': '5m',
+            'limit': limit
+        }
+        k_line = um_futures_client.klines(**para)
+        # 有可能有些币没有合约~
+        if not k_line:
+            return None
+        else:
+            net = 0
+            for k in k_line:
+                price = float(k[4])
+                v = float(k[5])
+                taker = float(k[9])
+                maker = v - taker
+                net_volume = (taker - maker) * price
+                net += net_volume
+            res.append([interval, round(net, 2)])
+    return res

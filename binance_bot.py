@@ -12,9 +12,11 @@ from urllib3.util.retry import Retry
 
 from binance_future import format_number
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
-    get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table
+    get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
+    get_symbol_nf_table
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
-    get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank
+    get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
+    get_symbol_net_future
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
@@ -129,7 +131,7 @@ def get_open_interest_rank(message):
 
 
 @bot.message_handler(commands=['i'])
-def get_order(message):
+def get_symbol_oi(message):
     try:
         param = message.text.split()[1:][0]
         symbol = param.upper() + 'USDT'
@@ -141,8 +143,21 @@ def get_order(message):
         bot.reply_to(message, "请输入正确的参数格式。示例：/i btc")
 
 
+@bot.message_handler(commands=['n'])
+def get_symbol_net(message):
+    try:
+        param = message.text.split()[1:][0]
+        symbol = param.upper() + 'USDT'
+        symbol_oi = get_symbol_net_future(symbol)
+        res = get_symbol_nf_table(symbol_oi)
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, "请输入正确的参数格式。示例：/n btc")
+
+
 @bot.message_handler(commands=['t'])
-def get_order(message):
+def get_token_info(message):
     try:
         symbol = message.text.split()[1:][0]
         # 获取当前脚本所在的目录
@@ -159,7 +174,7 @@ def get_order(message):
 
 
 @bot.message_handler(commands=['d'])
-def get_order(message):
+def get_token_sf_delta(message):
     try:
         spot, future = token_spot_future_delta()
         res = f"`只有现货`：{str(spot)}\n"
@@ -197,7 +212,7 @@ def delete_monitor(message):
 
 
 @bot.message_handler(commands=['mc'])
-def delete_monitor(message):
+def check_monitor(message):
     try:
         s = ""
         for symbol in monitor_list:
@@ -211,7 +226,7 @@ def delete_monitor(message):
 
 
 @bot.message_handler(commands=['g'])
-def delete_monitor(message):
+def gain_lose_rank(message):
     try:
         # 将参数分割成两部分
         param1, param2 = message.text.split()[1:]

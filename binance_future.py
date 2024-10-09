@@ -19,7 +19,7 @@ def get_future_pending_order_rank(symbol, order_value, limit=1000, bpr=0.1, spr=
             'limit': limit
         }
         data = um_futures_client.depth(**para)
-        fp = float(get_future_price(symbol))
+        fp = get_future_price(symbol)
 
         res = []
         for l in data['bids']:
@@ -190,7 +190,7 @@ def format_number(num):
 
 
 def get_net_rank_table(net_list, interval, m=15, r=30):
-    res = f"`符号        近{interval}净流入值  24h价格变化`\n"
+    res = f"`符号        近{interval}净流入值    24h价格变化`\n"
     for i, l in enumerate(net_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
@@ -208,12 +208,16 @@ def get_future_price(symbol):
     para = {
         'symbol': symbol
     }
-    price = um_futures_client.ticker_price(**para)['price']
-    return price
+    price = float(um_futures_client.ticker_price(**para)['price'])
+    if symbol.startwith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
+                                              'RATSUSDT', 'FLOKIUSDT']:
+        return price * 1000
+    else:
+        return price
 
 
 def get_delta_rank_table(delta_list, interval, m=15, r=30):
-    res = f"`符号        近{interval}净持仓值  24h价格变化`\n"
+    res = f"`符号        近{interval}净持仓值    24h价格变化`\n"
     for i, l in enumerate(delta_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
@@ -228,7 +232,7 @@ def get_delta_rank_table(delta_list, interval, m=15, r=30):
 
 
 def get_symbol_oi_table(symbol_oi, m=10):
-    res = f"`周期     净持仓值`\n"
+    res = f"`周期      净持仓值`\n"
     for i, l in enumerate(symbol_oi):
         line = f"`{l[0]}:"
         n1 = len(line)
@@ -237,6 +241,18 @@ def get_symbol_oi_table(symbol_oi, m=10):
         # n2 = len(line)
         # line += ' ' * (r - n2)
         # line += f"{str(l[2])}%"
+        line += '`\n'
+        res += line
+    return res
+
+
+def get_symbol_nf_table(symbol_nf, m=10):
+    res = f"`周期      净流入值`\n"
+    for i, l in enumerate(symbol_nf):
+        line = f"`{l[0]}:"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += format_number(float(l[1]))
         line += '`\n'
         res += line
     return res
