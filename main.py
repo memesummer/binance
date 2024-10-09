@@ -74,16 +74,14 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
         # 筛选出前20
         usdt_symbols_rise = usdt_symbols_rise[:rank]
         # 增加额外的币种
-        additional_symbols = [[token['symbol'], token['quoteVolume']] for token in sorted_res_rise if
-                              token['symbol'] in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']]
+        additional_symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']
         usdt_symbols_rise += additional_symbols
         # 去重
-        unique_usdt_symbols_rise = {item[0]: item for item in usdt_symbols_rise}.values()
+        unique_usdt_symbols_rise = set(usdt_symbols_rise)
         # 转换成列表
         usdt_symbols_rise = list(unique_usdt_symbols_rise)
 
-        for symbol_list in usdt_symbols_rise:
-            symbol = symbol_list[0]
+        for symbol in usdt_symbols_rise:
             circle_supply = get_circulating_supply(symbol[:-4].lower(), cir_df)
             if not circle_supply:
                 continue
