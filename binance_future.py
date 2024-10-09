@@ -209,7 +209,7 @@ def get_future_price(symbol):
         'symbol': symbol
     }
     price = float(um_futures_client.ticker_price(**para)['price'])
-    if symbol.startwith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
+    if symbol.startswith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
                                               'RATSUSDT', 'FLOKIUSDT']:
         return price * 1000
     else:

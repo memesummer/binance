@@ -219,7 +219,7 @@ def get_latest_price(symbol, endpoint='api/v3/ticker/price'):
         'symbol': symbol
     }
     price = float(binance_api_get(endpoint, para)['price'])
-    if symbol.startwith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
+    if symbol.startswith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
                                               'RATSUSDT', 'FLOKIUSDT']:
         return price * 1000
     else:
