@@ -190,7 +190,7 @@ def format_number(num):
 
 
 def get_net_rank_table(net_list, interval, m=15, r=30):
-    res = f"`符号        近{interval}净流入值    24h价格变化`\n"
+    res = f"`符号        近{interval}净流入值     24h价格变化`\n"
     for i, l in enumerate(net_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
@@ -217,7 +217,7 @@ def get_future_price(symbol):
 
 
 def get_delta_rank_table(delta_list, interval, m=15, r=30):
-    res = f"`符号        近{interval}净持仓值    24h价格变化`\n"
+    res = f"`符号        近{interval}净持仓值     24h价格变化`\n"
     for i, l in enumerate(delta_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
