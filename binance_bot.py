@@ -321,7 +321,7 @@ def scan():
             time.sleep(0.1)
         except Exception as e:
             error_message = f"Error occurred: {str(e)}"
-            # safe_send_message(chat_id, error_message)  # 报错时通知管理员
+            safe_send_message(chat_id, error_message)  # 报错时通知管理员
             time.sleep(1)  # 等待一段时间后再继续，避免频繁重启
 
 

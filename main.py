@@ -220,7 +220,7 @@ def get_latest_price(symbol, endpoint='api/v3/ticker/price'):
     }
     price = float(binance_api_get(endpoint, para)['price'])
     if symbol.startswith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
-                                              'RATSUSDT', 'FLOKIUSDT']:
+                                               'RATSUSDT', 'FLOKIUSDT']:
         return price * 1000
     else:
         return price
@@ -435,28 +435,31 @@ def get_aggTrades_future(symbol, target=100000):
 
 
 def scan_big_order_spot(symbol, limit=1000, endpoint='api/v3/aggTrades', target=100000):
-    buy = []
-    sell = []
+    try:
+        buy = []
+        sell = []
 
-    para = {
-        'symbol': symbol,
-        'limit': limit
-    }
-    data = binance_api_get(endpoint, para)
-
-    for d in data:
-        p = float(d['p'])
-        v = p * float(d['q'])
-        if symbol in ['ETHUSDT', 'SOLUSDT']:
-            target = 1000000
-        if symbol == 'BTCUSDT':
-            target = 2500000
-        if v >= target:
-            if d['m']:
-                sell.append([v, d['T']])
-            else:
-                buy.append([v, d['T']])
-    return buy, sell
+        para = {
+            'symbol': symbol,
+            'limit': limit
+        }
+        data = binance_api_get(endpoint, para)
+        for d in data:
+            p = float(d['p'])
+            v = p * float(d['q'])
+            if symbol in ['ETHUSDT', 'SOLUSDT']:
+                target = 1000000
+            if symbol == 'BTCUSDT':
+                target = 2500000
+            if v >= target:
+                if d['m']:
+                    sell.append([v, d['T']])
+                else:
+                    buy.append([v, d['T']])
+        return buy, sell
+    except Exception as e:
+        print(f"{symbol}big order spot error:{e}")
+        return [], []
 
 
 def scan_big_order_future(symbol, limit=1000, target=100000):
@@ -487,6 +490,7 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
                     buy.append([v, d['T']])
         return buy, sell
     except Exception as e:
+        print(f"{symbol}big order future error:{e}")
         return [], []
 
 
