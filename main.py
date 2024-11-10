@@ -715,7 +715,7 @@ def parse_interval_to_minutes(interval):
 def parse_interval_to_5minutes(interval):
     # 获取时间的数值和单位
     unit = interval[-1]  # 最后一个字符是单位
-    value = int(interval[:-1])  # 前面的部分是数值
+    value = float(interval[:-1])  # 前面的部分是数值
 
     # 将单位转换为分钟
     if unit == 'm':
@@ -728,7 +728,7 @@ def parse_interval_to_5minutes(interval):
         raise ValueError("Unsupported time unit. Use 'm' for minutes, 'h' for hours, or 'd' for days.")
 
     # 计算有多少个5分钟
-    return total_minutes // 5
+    return int(total_minutes // 5)
 
 
 def fetch_openInterest(symbol, p_chg, limit):
@@ -779,7 +779,7 @@ def get_openInterest_rank(interval, rank=10, reverse=True):
 
 
 def get_symbol_open_interest(symbol):
-    interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "16h", "20h", "1d"]
+    interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "16h", "20h", "1d", "1.5d"]
     res = []
     for interval in interval_list:
         limit = parse_interval_to_5minutes(interval)

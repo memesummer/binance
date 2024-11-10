@@ -210,7 +210,7 @@ def get_future_price(symbol):
     }
     price = float(um_futures_client.ticker_price(**para)['price'])
     if symbol.startswith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
-                                              'RATSUSDT', 'FLOKIUSDT']:
+                                               'RATSUSDT', 'FLOKIUSDT']:
         return price * 1000
     else:
         return price
@@ -231,16 +231,21 @@ def get_delta_rank_table(delta_list, interval, m=15, r=30):
     return res
 
 
-def get_symbol_oi_table(symbol_oi, m=10):
-    res = f"`周期      净持仓值`\n"
+def get_symbol_oi_table(symbol_oi, m=10, r=24):
+    res = f"`周期      净持仓值      持仓变化`\n"
     for i, l in enumerate(symbol_oi):
         line = f"`{l[0]}:"
         n1 = len(line)
         line += ' ' * (m - n1)
         line += format_number(float(l[1]))
-        # n2 = len(line)
-        # line += ' ' * (r - n2)
-        # line += f"{str(l[2])}%"
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        if i == len(symbol_oi) - 1:
+            diff = 'NA'
+        else:
+            before = float(symbol_oi[i + 1][1])
+            diff = round((float(l[1]) - before) / before * 100, 0)
+        line += f"{diff}%"
         line += '`\n'
         res += line
     return res
