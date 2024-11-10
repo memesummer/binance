@@ -13,10 +13,10 @@ from urllib3.util.retry import Retry
 from binance_future import format_number
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
-    get_symbol_nf_table
+    get_symbol_nf_table, get_delta_diff_rank_table
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
-    get_symbol_net_future
+    get_symbol_net_future, get_openInterest_diff_rank
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
@@ -130,6 +130,24 @@ def get_open_interest_rank(message):
         bot.reply_to(message, "请输入正确的参数格式。示例：/oi 1h d")
 
 
+@bot.message_handler(commands=['oid'])
+def get_open_interest_diff_rank(message):
+    try:
+        # 将参数分割成两部分
+        param1, param2 = message.text.split()[1:]
+
+        interval = param1
+        reverse = True
+        if param2 == 'a':
+            reverse = False
+        net_list = get_openInterest_diff_rank(interval, reverse=reverse)
+        res = get_delta_diff_rank_table(net_list, interval)
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/oid 1h d")
+
+
 @bot.message_handler(commands=['i'])
 def get_symbol_oi(message):
     try:
@@ -139,7 +157,7 @@ def get_symbol_oi(message):
         res = get_symbol_oi_table(symbol_oi)
         bot.reply_to(message, res, parse_mode='Markdown')
     except Exception as e:
-        print(e)
+        # print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/i btc")
 
 

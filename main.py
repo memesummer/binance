@@ -778,6 +778,61 @@ def get_openInterest_rank(interval, rank=10, reverse=True):
     return sorted_list
 
 
+def fetch_openInterest_diff(symbol, p_chg, limit):
+    para = {
+        'symbol': symbol,
+        'period': '5m',
+        'limit': limit
+    }
+    openInterest = um_futures_client.open_interest_hist(**para)
+    if not openInterest:
+        return None
+    else:
+        oi_before = openInterest[0]
+        oi_now = openInterest[-1]
+        sumOpenInterestValue_before = float(oi_before['sumOpenInterestValue'])
+        sumOpenInterestValue_now = float(oi_now['sumOpenInterestValue'])
+        ls_ratio_before = um_futures_client.top_long_short_position_ratio(**para)[0]
+        ls_ratio_now = um_futures_client.top_long_short_position_ratio(**para)[-1]
+        delta_openInterest_before = (float(ls_ratio_before['longAccount']) - float(
+            ls_ratio_before['shortAccount'])) * sumOpenInterestValue_before
+        delta_openInterest_now = (float(ls_ratio_now['longAccount']) - float(
+            ls_ratio_now['shortAccount'])) * sumOpenInterestValue_now
+        diff = round(delta_openInterest_now - delta_openInterest_before, 2)
+        diff_ratio = round(diff / abs(delta_openInterest_before), 2) * 100
+        return [symbol[:-4], diff, diff_ratio, p_chg]
+
+
+def get_openInterest_diff_rank(interval, rank=10, reverse=True):
+    data = um_futures_client.ticker_24hr_price_change()
+    # 获取前一天的时间戳
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=1)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+    symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+                   'count'] != 0 and v['closeTime'] > yesterday_timestamp_utc]
+
+    delta_list = []
+
+    limit = parse_interval_to_5minutes(interval)
+
+    # 使用 ThreadPoolExecutor 进行并行 API 请求
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(fetch_openInterest_diff, symbol[0], symbol[1], limit) for symbol in symbols]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                delta_list.append(result)
+
+    # 按净持仓量进行排序
+    sorted_list = sorted(delta_list, key=lambda x: x[1], reverse=reverse)[:rank]
+    return sorted_list
+
+
 def get_symbol_open_interest(symbol):
     interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "16h", "20h", "1d", "1.5d"]
     res = []

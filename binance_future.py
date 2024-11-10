@@ -231,6 +231,24 @@ def get_delta_rank_table(delta_list, interval, m=15, r=30):
     return res
 
 
+def get_delta_diff_rank_table(delta_list, interval, m=15, r=30, b=40):
+    res = f"`符号        近{interval}净持仓变化     变化比     24h价格变化`\n"
+    for i, l in enumerate(delta_list):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += format_number(float(l[1]))
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += f"{str(l[2])}%"
+        n3 = len(line)
+        line += ' ' * (b - n3)
+        line += f"{str(l[3])}%"
+        line += '`\n'
+        res += line
+    return res
+
+
 def get_symbol_oi_table(symbol_oi, m=10, r=24):
     res = f"`周期      净持仓值      持仓变化`\n"
     for i, l in enumerate(symbol_oi):
