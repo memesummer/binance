@@ -21,6 +21,8 @@ binance_retry_strategy = Retry(
 binance_adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=binance_retry_strategy)
 binance_session.mount("https://", binance_adapter)
 binance_session.mount("http://", binance_adapter)
+symbol1000 = ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT',
+              '00MOGUSDT', '000MOGUSDT', 'MOG', 'CATUSDT']
 
 
 def binance_api_get(endpoint, params=None):
@@ -219,8 +221,7 @@ def get_latest_price(symbol, endpoint='api/v3/ticker/price'):
         'symbol': symbol
     }
     price = float(binance_api_get(endpoint, para)['price'])
-    if symbol.startswith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
-                                               'RATSUSDT', 'FLOKIUSDT']:
+    if symbol.startswith("1000") or symbol in symbol1000:
         return price * 1000
     else:
         return price
@@ -308,14 +309,23 @@ def get_latest_trade(symbol, endpoint='api/v3/aggTrades'):
 
 
 def get_future_volume(symbol, period, endpoint='futures/data/openInterestHist'):
-    if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+    try:
+        if symbol in symbol1000:
+            symbol = '1000' + symbol
+        para = {
+            'symbol': symbol,
+            'period': period
+        }
+        data = binance_api_get(endpoint, para)
+        return data
+    except Exception as e:
         symbol = '1000' + symbol
-    para = {
-        'symbol': symbol,
-        'period': period
-    }
-    data = binance_api_get(endpoint, para)
-    return data
+        para = {
+            'symbol': symbol,
+            'period': period
+        }
+        data = binance_api_get(endpoint, para)
+        return data
 
 
 def search_more_big_buy_spot(symbol, order_value=None, limit=5000, endpoint='api/v3/depth',
@@ -358,7 +368,7 @@ def search_more_big_buy_spot(symbol, order_value=None, limit=5000, endpoint='api
 
 
 def search_more_big_buy_future(symbol, order_value=None, limit=1000, bpr=0.1, spr=0.1):
-    if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+    if symbol in symbol1000:
         symbol = '1000' + symbol
 
     if order_value is None:
@@ -417,7 +427,7 @@ def get_aggTrades_spot(symbol, endpoint='api/v3/aggTrades', target=100000):
 
 def get_aggTrades_future(symbol, target=100000):
     try:
-        if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+        if symbol in symbol1000:
             symbol = '1000' + symbol
         para = {
             'symbol': symbol
@@ -467,9 +477,8 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         buy = []
         sell = []
 
-        if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+        if symbol in symbol1000:
             symbol = '1000' + symbol
-
         para = {
             'symbol': symbol,
             'limit': limit
@@ -555,8 +564,9 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15, add=None):
 
 def get_future_takerlongshortRatio(symbol, interval):
     try:
-        if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT']:
+        if symbol in symbol1000:
             symbol = '1000' + symbol
+
         para1 = {
             'symbol': symbol,
             'period': interval,
@@ -998,45 +1008,99 @@ def token_spot_future_delta(endpoint="api/v3/ticker/24hr"):
 
 
 def fetch_gain_lose_spot(symbol, interval, limit):
-    if symbol in ['SATSUSDT']:
-        symbol = '1000' + symbol
-    k_line = get_k_lines(symbol, interval, limit)
+    try:
+        if symbol in ['SATSUSDT']:
+            symbol = '1000' + symbol
+        k_line = get_k_lines(symbol, interval, limit)
 
-    start_price = float(k_line[0][1])
-    # 过滤新币
-    lowest_price = float(k_line[0][3])
-    if start_price == lowest_price:
-        return None
-    highest_price = float(max(item[2] for item in k_line))
+        start_price = float(k_line[0][1])
+        # 过滤新币
+        lowest_price = float(k_line[0][3])
+        if start_price == lowest_price:
+            return None
+        highest_price = float(max(item[2] for item in k_line))
 
-    price_chg = int(round(highest_price / start_price * 100, 0))
-    if price_chg < 150:
-        return None
-    return [symbol[:-4], price_chg]
+        price_chg = int(round(highest_price / start_price * 100, 0))
+        if price_chg < 150:
+            return None
+        return [symbol[:-4], price_chg]
+    except Exception as e:
+        if 'invalid symbol' in str(e).lower():
+            try:
+                symbol = '1000' + symbol
+                k_line = get_k_lines(symbol, interval, limit)
+
+                start_price = float(k_line[0][1])
+                # 过滤新币
+                lowest_price = float(k_line[0][3])
+                if start_price == lowest_price:
+                    return None
+                highest_price = float(max(item[2] for item in k_line))
+
+                price_chg = int(round(highest_price / start_price * 100, 0))
+                if price_chg < 150:
+                    return None
+                return [symbol[:-4], price_chg]
+            except Exception as e2:
+                print(f"Failed to fetch data for both {symbol} and 1000{symbol}: {e2}")
+                return None
+        else:
+            # 其他异常错误
+            print(f"Failed to fetch data: {e}")
+            return None
 
 
 def fetch_gain_lose_future(symbol, interval, limit):
-    if symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT',
-                  'FLOKIUSDT']:
-        symbol = '1000' + symbol
-    para = {
-        'symbol': symbol,
-        'interval': interval,
-        'limit': limit
-    }
-    k_line = um_futures_client.klines(**para)
+    try:
+        para = {
+            'symbol': symbol,
+            'interval': interval,
+            'limit': limit
+        }
+        k_line = um_futures_client.klines(**para)
 
-    start_price = float(k_line[0][1])
-    # 过滤新币
-    lowest_price = float(k_line[0][3])
-    if start_price == lowest_price:
-        return None
-    highest_price = float(max(item[2] for item in k_line))
+        start_price = float(k_line[0][1])
+        # 过滤新币
+        lowest_price = float(k_line[0][3])
+        if start_price == lowest_price:
+            return None
+        highest_price = float(max(item[2] for item in k_line))
 
-    price_chg = int(round(highest_price / start_price * 100, 0))
-    if price_chg < 150:
-        return None
-    return [symbol[:-4], price_chg]
+        price_chg = int(round(highest_price / start_price * 100, 0))
+        if price_chg < 150:
+            return None
+        return [symbol[:-4], price_chg]
+    except Exception as e:
+        if 'invalid symbol' in str(e).lower():
+            try:
+                symbol = '1000' + symbol
+
+                para = {
+                    'symbol': symbol,
+                    'interval': interval,
+                    'limit': limit
+                }
+                k_line = um_futures_client.klines(**para)
+
+                start_price = float(k_line[0][1])
+                # 过滤新币
+                lowest_price = float(k_line[0][3])
+                if start_price == lowest_price:
+                    return None
+                highest_price = float(max(item[2] for item in k_line))
+
+                price_chg = int(round(highest_price / start_price * 100, 0))
+                if price_chg < 150:
+                    return None
+                return [symbol[:-4], price_chg]
+
+            except Exception as e2:
+                print(f"Failed to fetch data for both {symbol} and 1000{symbol}: {e2}")
+                return None
+        else:
+            # 其他异常错误
+            print(f"Failed to fetch data: {e}")
+            return None
 
 
 def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
