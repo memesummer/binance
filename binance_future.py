@@ -262,7 +262,7 @@ def get_symbol_oi_table(symbol_oi, m=10, r=24):
             diff = 'NA'
         else:
             before = float(symbol_oi[i + 1][1])
-            diff = round((float(l[1]) - before) / before * 100, 0)
+            diff = round((float(l[1]) - before) / abs(before) * 100, 0)
         line += f"{diff}%"
         line += '`\n'
         res += line
