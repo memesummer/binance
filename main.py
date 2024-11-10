@@ -800,7 +800,7 @@ def fetch_openInterest_diff(symbol, p_chg, limit):
             ls_ratio_now['shortAccount'])) * sumOpenInterestValue_now
         diff = round(delta_openInterest_now - delta_openInterest_before, 2)
         delta_openInterest_before = delta_openInterest_before if delta_openInterest_before != 0 else 1e-10
-        diff_ratio = int(diff / abs(delta_openInterest_before)) * 100
+        diff_ratio = round((diff / abs(delta_openInterest_before)) * 100, 2)
         return [symbol[:-4], diff, diff_ratio, p_chg]
 
 
