@@ -336,9 +336,10 @@ def scan():
                 binance_his.clear()
             if len(record) > 10000:
                 record.clear()
-            time.sleep(0.1)
+            time.sleep(0.5)
         except Exception as e:
             error_message = f"Error occurred: {str(e)}"
+            print(f"Error in scan thread: {e}")
             safe_send_message(chat_id, error_message)  # 报错时通知管理员
             time.sleep(1)  # 等待一段时间后再继续，避免频繁重启
 
