@@ -349,12 +349,12 @@ if __name__ == "__main__":
 
     # 增加连接池的大小，并且设置重试机制
     retry_strategy = Retry(
-        total=3,  # 最大重试次数
-        backoff_factor=1,  # 每次重试间隔的时间倍数
+        total=5,  # 最大重试次数
+        backoff_factor=2,  # 每次重试间隔的时间倍数
         status_forcelist=[429, 500, 502, 503, 504],  # 针对这些状态码进行重试
     )
 
-    adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retries=retry_strategy)
+    adapter = HTTPAdapter(pool_connections=200, pool_maxsize=200, max_retries=retry_strategy)
     session.mount("https://", adapter)
     session.mount("http://", adapter)
 
