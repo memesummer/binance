@@ -334,7 +334,7 @@ def scan():
             # 定期清理历史记录，避免内存泄漏
             if len(binance_his) > 10000:
                 binance_his.clear()
-            if len(record) > 10000:
+            if len(record) > 6000:
                 record.clear()
             time.sleep(0.5)
         except Exception as e:
