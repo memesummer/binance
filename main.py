@@ -138,14 +138,15 @@ def recommend(cir_df, rank=20, endpoint="api/v3/ticker/24hr"):
                     flag.append([5, buy_spot, buy_future])
                     break
 
-            longshortRatio_rate1 = get_future_takerlongshortRatio(symbol, '30m')
-            longshortRatio_rate4 = get_future_takerlongshortRatio(symbol, '1h')
-            if longshortRatio_rate1:
-                if longshortRatio_rate1 > 0.1:
-                    flag.append([7, longshortRatio_rate1])
-            if longshortRatio_rate4:
-                if longshortRatio_rate4 > 0.1:
-                    flag.append([8, longshortRatio_rate4])
+            # longshortRatio_rate1 = get_future_takerlongshortRatio(symbol, '30m')
+            # longshortRatio_rate4 = get_future_takerlongshortRatio(symbol, '1h')
+            # if longshortRatio_rate1:
+            #     if longshortRatio_rate1 > 0.1:
+            #         flag.append([7, longshortRatio_rate1])
+            # if longshortRatio_rate4:
+            #     if longshortRatio_rate4 > 0.1:
+            #         flag.append([8, longshortRatio_rate4])
+
             # agg_spot = get_aggTrades_spot(symbol)
             # agg_future = get_aggTrades_future(symbol)
             # if len(agg_spot) > 0 or len(agg_future) > 0:
@@ -599,7 +600,7 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         return [], []
 
 
-def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15, add=None):
+def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
