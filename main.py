@@ -54,7 +54,7 @@ def binance_api_get(endpoint, params=None):
     return None  # Return None if the request fails
 
 
-def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
+def recommend(cir_df, rank=20, endpoint="api/v3/ticker/24hr"):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
