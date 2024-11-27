@@ -7,6 +7,7 @@
 #
 # ===============================================================
 import os
+import re
 import time
 
 import pandas as pd
@@ -31,13 +32,19 @@ cir_df = pd.read_csv(file_path, sep='\t', header=None, names=['symbol', 'circle_
 bot.send_message(chat_id, "开始推荐新币......")
 
 
+def remove_symbols(text):
+    # 使用正则表达式，保留字母、数字和空格
+    cleaned_text = re.sub(r'[^\w\s]', '', text)
+    return cleaned_text
+
+
 def safe_send_message(chat_id, message):
     try:
         bot.send_message(chat_id, message, timeout=10)  # 设置超时时间为10秒
     except Timeout:
         bot.send_message(chat_id, "发送消息超时，正在重试...")
     except Exception as e:
-        bot.send_message(chat_id, f"消息发送失败: {str(e)}")
+        bot.send_message(chat_id, f"消息发送失败: {remove_symbols(str(e))}")
 
 
 while True:

@@ -1,6 +1,7 @@
 import atexit
 import json
 import os
+import re
 import threading
 import time
 
@@ -27,6 +28,12 @@ monitor_list = []
 chat_id = "-1002213443358"
 
 bot.send_message(chat_id, "开始扫描新币......")
+
+
+def remove_symbols(text):
+    # 使用正则表达式，保留字母、数字和空格
+    cleaned_text = re.sub(r'[^\w\s]', '', text)
+    return cleaned_text
 
 
 @bot.message_handler(commands=['o'])
@@ -283,7 +290,7 @@ def safe_send_message(chat_id, message):
     except Timeout:
         bot.send_message(chat_id, "发送消息超时，正在重试...")
     except Exception as e:
-        bot.send_message(chat_id, f"消息发送失败: {str(e)}")
+        bot.send_message(chat_id, f"消息发送失败: {remove_symbols(str(e))}")
 
 
 def scan():
