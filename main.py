@@ -103,27 +103,33 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
             if not circle_supply:
                 continue
             flag = []
-            p_len4, v_len4, vc_ratio, taker_ratio4, t_len4 = get_price_volume_increase(symbol, '4h', 5, circle_supply)
-            if p_len4 >= 3 and v_len4 >= 2:
-                flag.append([1, p_len4, v_len4])
-            if vc_ratio > 0.05:
-                flag.append([3, vc_ratio])
-            if taker_ratio4 > 0.6:
-                flag.append([9, taker_ratio4])
-            if t_len4 >= 3:
-                flag.append([11, t_len4])
+            try:
+                p_len4, v_len4, vc_ratio, taker_ratio4, t_len4 = get_price_volume_increase(symbol, '4h', 5,
+                                                                                           circle_supply)
+                if p_len4 >= 3 and v_len4 >= 2:
+                    flag.append([1, p_len4, v_len4])
+                if vc_ratio > 0.05:
+                    flag.append([3, vc_ratio])
+                if taker_ratio4 > 0.6:
+                    flag.append([9, taker_ratio4])
+                if t_len4 >= 3:
+                    flag.append([11, t_len4])
+            except Exception as e:
+                print(f'{symbol}:4h error: {e}')
+            try:
+                p_len1, v_len1, vc_ratio, taker_ratio1, t_len1 = get_price_volume_increase(symbol, '1h', 7, circle_supply)
+                if p_len1 >= 4 and v_len1 >= 3:
+                    flag.append([2, p_len1, v_len1])
+                if taker_ratio1 > 0.6:
+                    flag.append([10, taker_ratio1])
+                if t_len1 >= 3:
+                    flag.append([12, t_len1])
 
-            p_len1, v_len1, vc_ratio, taker_ratio1, t_len1 = get_price_volume_increase(symbol, '1h', 7, circle_supply)
-            if p_len1 >= 4 and v_len1 >= 3:
-                flag.append([2, p_len1, v_len1])
-            if taker_ratio1 > 0.6:
-                flag.append([10, taker_ratio1])
-            if t_len1 >= 3:
-                flag.append([12, t_len1])
-
-            v15_list = get_volume_increase_15(symbol)
-            if v15_list[0] == 1:
-                flag.append([4, v15_list[1]])
+                v15_list = get_volume_increase_15(symbol)
+                if v15_list[0] == 1:
+                    flag.append([4, v15_list[1]])
+            except Exception as e:
+                print(f'{symbol}:1h error: {e}')
 
             buy_spot = search_more_big_buy_spot(symbol)
             buy_future = search_more_big_buy_future(symbol)
