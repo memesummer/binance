@@ -116,7 +116,7 @@ while True:
 {st}
 {"-" * 32}
                                                             """
-                if len(message) >= 3000:
+                if len(message) >= 2000:
                     safe_send_message(chat_id, message)
                     message = ""
                 binance_his.add(frozen_dict)
