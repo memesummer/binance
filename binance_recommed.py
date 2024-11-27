@@ -40,11 +40,11 @@ def remove_symbols(text):
 
 def safe_send_message(chat_id, message):
     try:
-        bot.send_message(chat_id, remove_symbols(message), timeout=10)  # 设置超时时间为10秒
+        bot.send_message(chat_id, message, timeout=10)  # 设置超时时间为10秒
     except Timeout:
         bot.send_message(chat_id, "发送消息超时，正在重试...")
     except Exception as e:
-        bot.send_message(chat_id, f"recommend 消息发送失败: {remove_symbols(str(e))}")
+        bot.send_message(chat_id, f"recommend 消息发送失败: {remove_symbols(message)}")
 
 
 while True:
