@@ -75,14 +75,21 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
         # 过滤
         fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
 
-        # 过滤出包含 "USDT" 的币种
-        usdt_symbols = [token['symbol'] for token in result_list if
-                        token['symbol'].endswith("USDT") and all(
-                            f not in token['symbol'] for f in fil_str_list) and token['count'] != 0]
-        # 排序
-        sorted_res = sorted(usdt_symbols, key=lambda x: float(x['priceChangePercent']), reverse=True)
+        filtered_tokens = [
+            token for token in result_list
+            if token['symbol'].endswith("USDT")
+               and all(f not in token['symbol'] for f in fil_str_list)
+               and token['count'] != 0
+        ]
 
-        usdt_symbols_rise = sorted_res[:rank]
+        # 按照 priceChangePercent 进行排序
+        sorted_res = sorted(filtered_tokens, key=lambda x: float(x['priceChangePercent']), reverse=True)
+
+        # 获取排序后的 symbol 列表
+        usdt_symbols = [token['symbol'] for token in sorted_res]
+
+        # 筛选出前15
+        usdt_symbols_rise = usdt_symbols[:rank]
 
         additional_symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']
         usdt_symbols_rise += additional_symbols
@@ -536,14 +543,21 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15, add=None):
         # 过滤
         fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
 
-        # 过滤出包含 "USDT" 的币种
-        usdt_symbols = [token['symbol'] for token in result_list if
-                        token['symbol'].endswith("USDT") and all(
-                            f not in token['symbol'] for f in fil_str_list) and token['count'] != 0]
-        # 排序
-        sorted_res = sorted(usdt_symbols, key=lambda x: float(x['priceChangePercent']), reverse=True)
+        filtered_tokens = [
+            token for token in result_list
+            if token['symbol'].endswith("USDT")
+               and all(f not in token['symbol'] for f in fil_str_list)
+               and token['count'] != 0
+        ]
+
+        # 按照 priceChangePercent 进行排序
+        sorted_res = sorted(filtered_tokens, key=lambda x: float(x['priceChangePercent']), reverse=True)
+
+        # 获取排序后的 symbol 列表
+        usdt_symbols = [token['symbol'] for token in sorted_res]
+
         # 筛选出前15
-        usdt_symbols_rise = sorted_res[:rank]
+        usdt_symbols_rise = usdt_symbols[:rank]
         # 增加额外的币种
         usdt_symbols_rise += ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']
         if add:
