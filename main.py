@@ -59,23 +59,31 @@ def recommend(cir_df, rank=25, endpoint="api/v3/ticker/24hr"):
     params = {}
     result = binance_api_get(endpoint, params)
     res = result
+    result_future = um_futures_client.ticker_24hr_price_change(**params)
+    res1 = result_future
 
     # 假设 res 是一个列表，每个元素是一个字典，包含 'symbol' 和 'priceChangePercent' 字段
 
     # 检查 res 是否是列表，确保不是空列表
-    if isinstance(res, list) and res:
-        # 按涨幅排序
-        sorted_res_rise = sorted(res, key=lambda x: float(x['priceChangePercent']), reverse=True)
+    if isinstance(res, list) and res and isinstance(res1, list) and res1:
+        result_dict = {item['symbol']: item for item in res}
+        for item in res1:
+            if item['symbol'] not in result_dict:
+                result_dict[item['symbol']] = item
+        result_list = list(result_dict.values())
 
+        # 过滤
         fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
 
         # 过滤出包含 "USDT" 的币种
-        usdt_symbols_rise = [token['symbol'] for token in sorted_res_rise if
-                             token['symbol'].endswith("USDT") and all(
-                                 f not in token['symbol'] for f in fil_str_list) and token['count'] != 0]
-        # 筛选出前20
-        usdt_symbols_rise = usdt_symbols_rise[:rank]
-        # 增加额外的币种
+        usdt_symbols = [token['symbol'] for token in result_list if
+                        token['symbol'].endswith("USDT") and all(
+                            f not in token['symbol'] for f in fil_str_list) and token['count'] != 0]
+        # 排序
+        sorted_res = sorted(usdt_symbols, key=lambda x: float(x['priceChangePercent']), reverse=True)
+
+        usdt_symbols_rise = sorted_res[:rank]
+
         additional_symbols = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']
         usdt_symbols_rise += additional_symbols
         # 去重
@@ -511,23 +519,31 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=15, add=None):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
+    result_future = um_futures_client.ticker_24hr_price_change(**params)
     res = result
+    res1 = result_future
 
     # 假设 res 是一个列表，每个元素是一个字典，包含 'symbol' 和 'priceChangePercent' 字段
 
     # 检查 res 是否是列表，确保不是空列表
-    if isinstance(res, list) and res:
-        # 按涨幅排序
-        sorted_res_rise = sorted(res, key=lambda x: float(x['priceChangePercent']), reverse=True)
+    if isinstance(res, list) and res and isinstance(res1, list) and res1:
+        result_dict = {item['symbol']: item for item in res}
+        for item in res1:
+            if item['symbol'] not in result_dict:
+                result_dict[item['symbol']] = item
+        result_list = list(result_dict.values())
 
+        # 过滤
         fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
 
         # 过滤出包含 "USDT" 的币种
-        usdt_symbols_rise = [token['symbol'] for token in sorted_res_rise if
-                             token['symbol'].endswith("USDT") and all(
-                                 f not in token['symbol'] for f in fil_str_list) and token['count'] != 0]
+        usdt_symbols = [token['symbol'] for token in result_list if
+                        token['symbol'].endswith("USDT") and all(
+                            f not in token['symbol'] for f in fil_str_list) and token['count'] != 0]
+        # 排序
+        sorted_res = sorted(usdt_symbols, key=lambda x: float(x['priceChangePercent']), reverse=True)
         # 筛选出前15
-        usdt_symbols_rise = usdt_symbols_rise[:rank]
+        usdt_symbols_rise = sorted_res[:rank]
         # 增加额外的币种
         usdt_symbols_rise += ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']
         if add:
