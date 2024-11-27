@@ -290,7 +290,7 @@ def safe_send_message(chat_id, message):
     except Timeout:
         bot.send_message(chat_id, "发送消息超时，正在重试...")
     except Exception as e:
-        bot.send_message(chat_id, f"消息发送失败: {remove_symbols(str(e))}")
+        bot.send_message(chat_id, f"scan 消息发送失败: {remove_symbols(str(e))}")
 
 
 def scan():
