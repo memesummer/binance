@@ -151,7 +151,7 @@ def get_open_interest_diff_rank(message):
         res = get_delta_diff_rank_table(net_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
     except Exception as e:
-        print(e)
+        # print(e)
         bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/oid 1h d")
 
 
