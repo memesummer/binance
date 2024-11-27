@@ -169,56 +169,107 @@ def max_increasing_length(data, is_volume=0):
 
 
 def get_price_volume_increase(symbol, interval, limit, circle_supply):
-    data = get_k_lines(symbol, interval, limit)
+    try:
+        data = get_k_lines(symbol, interval, limit)
 
-    volume_list = []
-    endprice_list = []
-    taker_list = []
+        volume_list = []
+        endprice_list = []
+        taker_list = []
 
-    # 先看1h/4h红绿绿以及绿绿绿趋势,以及交易量趋势
-    for l in data:
-        endprice = float(l[4])
-        vol = float(l[7])
-        taker_vol = float(l[10])
+        # 先看1h/4h红绿绿以及绿绿绿趋势,以及交易量趋势
+        for l in data:
+            endprice = float(l[4])
+            vol = float(l[7])
+            taker_vol = float(l[10])
 
-        endprice_list.append(endprice)
-        volume_list.append(vol)
-        if vol > 0:
-            taker_ratio = taker_vol / vol
-            taker_list.append(taker_ratio)
-        else:
-            taker_list.append(0)
+            endprice_list.append(endprice)
+            volume_list.append(vol)
+            if vol > 0:
+                taker_ratio = taker_vol / vol
+                taker_list.append(taker_ratio)
+            else:
+                taker_list.append(0)
 
-    p_len = max_increasing_length(endprice_list)
-    v_len = max_increasing_length(volume_list, is_volume=1)
-    t_len = max_increasing_length(taker_list)
+        p_len = max_increasing_length(endprice_list)
+        v_len = max_increasing_length(volume_list, is_volume=1)
+        t_len = max_increasing_length(taker_list)
 
-    # 再看交易量占比
-    flag = -2 if volume_list[-2] > volume_list[-1] else -1
-    volume = volume_list[flag]
-    price = endprice_list[flag]
-    cmc = circle_supply * price
-    vc_ratio = round(float(volume / cmc), 2)
+        # 再看交易量占比
+        flag = -2 if volume_list[-2] > volume_list[-1] else -1
+        volume = volume_list[flag]
+        price = endprice_list[flag]
+        cmc = circle_supply * price
+        vc_ratio = round(float(volume / cmc), 2)
 
-    # 看主动成交额占比
-    taker_vol0 = float(data[0][10])
-    vol0 = float(data[0][7])
-    taker_ratio = round(taker_vol0 / vol0, 2)
+        # 看主动成交额占比
+        taker_vol0 = float(data[0][10])
+        vol0 = float(data[0][7])
+        taker_ratio = round(taker_vol0 / vol0, 2)
 
-    return p_len, v_len, vc_ratio, taker_ratio, t_len
+        return p_len, v_len, vc_ratio, taker_ratio, t_len
+    except Exception as e:
+        data = get_k_lines_future(symbol, interval, limit)
+
+        volume_list = []
+        endprice_list = []
+        taker_list = []
+
+        # 先看1h/4h红绿绿以及绿绿绿趋势,以及交易量趋势
+        for l in data:
+            endprice = float(l[4])
+            vol = float(l[7])
+            taker_vol = float(l[10])
+
+            endprice_list.append(endprice)
+            volume_list.append(vol)
+            if vol > 0:
+                taker_ratio = taker_vol / vol
+                taker_list.append(taker_ratio)
+            else:
+                taker_list.append(0)
+
+        p_len = max_increasing_length(endprice_list)
+        v_len = max_increasing_length(volume_list, is_volume=1)
+        t_len = max_increasing_length(taker_list)
+
+        # 再看交易量占比
+        flag = -2 if volume_list[-2] > volume_list[-1] else -1
+        volume = volume_list[flag]
+        price = endprice_list[flag]
+        cmc = circle_supply * price
+        vc_ratio = round(float(volume / cmc), 2)
+
+        # 看主动成交额占比
+        taker_vol0 = float(data[0][10])
+        vol0 = float(data[0][7])
+        taker_ratio = round(taker_vol0 / vol0, 2)
+
+        return p_len, v_len, vc_ratio, taker_ratio, t_len
 
 
 def get_volume_increase_15(symbol):
-    data15 = get_k_lines(symbol, '15m', 2)
-    # 再看15min内是否有交易量激增
-    v_now = float(data15[1][7])
-    v_past = float(data15[0][7])
-    v_ratio = round(float(v_now / v_past), 2)
-    if v_ratio >= 3:
-        v15_list = [1, v_ratio]
-    else:
-        v15_list = [0, v_ratio]
-    return v15_list
+    try:
+        data15 = get_k_lines(symbol, '15m', 2)
+        # 再看15min内是否有交易量激增
+        v_now = float(data15[1][7])
+        v_past = float(data15[0][7])
+        v_ratio = round(float(v_now / v_past), 2)
+        if v_ratio >= 3:
+            v15_list = [1, v_ratio]
+        else:
+            v15_list = [0, v_ratio]
+        return v15_list
+    except Exception as e:
+        data15 = get_k_lines_future(symbol, '15m', 2)
+        # 再看15min内是否有交易量激增
+        v_now = float(data15[1][7])
+        v_past = float(data15[0][7])
+        v_ratio = round(float(v_now / v_past), 2)
+        if v_ratio >= 3:
+            v15_list = [1, v_ratio]
+        else:
+            v15_list = [0, v_ratio]
+        return v15_list
 
 
 def get_k_lines(symbol, interval, limit, endpoint="api/v3/klines"):
@@ -231,15 +282,35 @@ def get_k_lines(symbol, interval, limit, endpoint="api/v3/klines"):
     return data
 
 
-def get_latest_price(symbol, endpoint='api/v3/ticker/price'):
+def get_k_lines_future(symbol, interval, limit):
     para = {
-        'symbol': symbol
+        'symbol': symbol,
+        'interval': interval,
+        'limit': limit
     }
-    price = float(binance_api_get(endpoint, para)['price'])
-    if symbol.startswith("1000") or symbol in symbol1000:
-        return price * 1000
-    else:
-        return price
+    data = um_futures_client.klines(**para)
+    return data
+
+
+def get_latest_price(symbol, endpoint='api/v3/ticker/price'):
+    try:
+        para = {
+            'symbol': symbol
+        }
+        price = float(binance_api_get(endpoint, para)['price'])
+        if symbol.startswith("1000") or symbol in symbol1000:
+            return price * 1000
+        else:
+            return price
+    except Exception as e:
+        para = {
+            'symbol': symbol
+        }
+        price = float(um_futures_client.ticker_price(**para)['price'])
+        if symbol.startswith("1000") or symbol in symbol1000:
+            return price * 1000
+        else:
+            return price
 
 
 # def get_window_chg(symbol, windowSize, endpoint="api/v3/ticker"):
