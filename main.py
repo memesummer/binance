@@ -600,7 +600,7 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         return [], []
 
 
-def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
+def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=14, add=None):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
