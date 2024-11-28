@@ -343,7 +343,7 @@ def scan():
                 binance_his.clear()
             if len(record) > 6000:
                 record.clear()
-            time.sleep(1.5)
+            time.sleep(2)
         except Exception as e:
             error_message = f"Error occurred: {str(e)}"
             print(f"Error in scan thread: {e}")
