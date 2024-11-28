@@ -11,7 +11,7 @@ from requests.adapters import HTTPAdapter
 from requests.exceptions import Timeout
 from urllib3.util.retry import Retry
 
-from binance_future import format_number
+from binance_future import format_number, format_price
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
     get_symbol_nf_table, get_delta_diff_rank_table
@@ -302,33 +302,33 @@ def scan():
                 res = scan_big_order(record, add=monitor_list)
             message = ""
             for item in res:
-                frozen_dict = '；'.join(f"{key}:{','.join(map(str, values[1]))}" for key, values in item.items())
+                frozen_dict = '；'.join(f"{key}:{','.join(map(str, values))}" for key, values in item.items())
                 if frozen_dict in binance_his:
                     continue
                 for k, vl in item.items():
                     st = ""
-                    spot = vl[1][0]
-                    future = vl[1][1]
+                    spot = vl[0]
+                    future = vl[1]
                     if len(spot) > 0:
                         for l in spot:
                             fn = format_number(l[1])
+                            price = format_price(k, l[2])
                             if l[0] == 0:
-                                st += f"🟥现货卖出了{fn}，达到阈值\n"
+                                st += f"🟥现货在`{price}`卖出了`{fn}`，达到阈值\n"
                             if l[0] == 1:
-                                st += f"🟩现货买入了{fn}，达到阈值\n"
+                                st += f"🟩现货在`{price}`买入了`{fn}`，达到阈值\n"
                     if len(future) > 0:
                         for l in future:
                             fn = format_number(l[1])
+                            price = format_price(k, l[2])
                             if l[0] == 0:
-                                st += f"🟥期货卖出了{fn}，达到阈值\n"
+                                st += f"🟥期货在`{price}`卖出了`{fn}`，达到阈值\n"
                             if l[0] == 1:
-                                st += f"🟩期货买入了{fn}，达到阈值\n"
+                                st += f"🟩期货在`{price}`买入了`{fn}`，达到阈值\n"
                     if not st:
                         continue
-                    price = vl[0]
                     message += f"""
 *🚧symbol：*`{k}` 🚧 
-*💰价格：*`{price}`
 {st}
 {"-" * 32}
                                                                 """
@@ -348,7 +348,7 @@ def scan():
             error_message = f"Error occurred: {str(e)}"
             print(f"Error in scan thread: {e}")
             safe_send_message(chat_id, error_message)  # 报错时通知管理员
-            time.sleep(1)  # 等待一段时间后再继续，避免频繁重启
+            time.sleep(30)  # 等待一段时间后再继续，避免频繁重启
 
 
 if __name__ == "__main__":

@@ -117,7 +117,8 @@ def recommend(cir_df, rank=16, endpoint="api/v3/ticker/24hr"):
             except Exception as e:
                 print(f'{symbol}:4h error: {e}')
             try:
-                p_len1, v_len1, vc_ratio, taker_ratio1, t_len1 = get_price_volume_increase(symbol, '1h', 7, circle_supply)
+                p_len1, v_len1, vc_ratio, taker_ratio1, t_len1 = get_price_volume_increase(symbol, '1h', 7,
+                                                                                           circle_supply)
                 if p_len1 >= 4 and v_len1 >= 3:
                     flag.append([2, p_len1, v_len1])
                 if taker_ratio1 > 0.6:
@@ -558,9 +559,9 @@ def scan_big_order_spot(symbol, limit=1000, endpoint='api/v3/aggTrades', target=
                 target = 500000
             if v >= target:
                 if d['m']:
-                    sell.append([v, d['T']])
+                    sell.append([v, d['T'], p])
                 else:
-                    buy.append([v, d['T']])
+                    buy.append([v, d['T'], p])
         return buy, sell
     except Exception as e:
         print(f"{symbol}big order spot error:{e}")
@@ -591,16 +592,16 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
                 target = 500000
             if v >= target:
                 if d['m']:
-                    sell.append([v, d['T']])
+                    sell.append([v, d['T'], p])
                 else:
-                    buy.append([v, d['T']])
+                    buy.append([v, d['T'], p])
         return buy, sell
     except Exception as e:
         print(f"{symbol}big order future error:{e}")
         return [], []
 
 
-def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=14, add=None):
+def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
@@ -651,26 +652,25 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=14, add=None):
             if len(buy_spot) > 0:
                 for v in buy_spot:
                     if v[1] not in record:
-                        spot.append([1, v[0]])
+                        spot.append([1, v[0], v[2]])
                         record.add(v[1])
             if len(sell_spot) > 0:
                 for v in sell_spot:
                     if v[1] not in record:
-                        spot.append([0, v[0]])
+                        spot.append([0, v[0], v[2]])
                         record.add(v[1])
             if len(buy_future) > 0:
                 for v in buy_future:
                     if v[1] not in record:
-                        future.append([1, v[0]])
+                        future.append([1, v[0], v[2]])
                         record.add(v[1])
             if len(sell_future) > 0:
                 for v in sell_future:
                     if v[1] not in record:
-                        future.append([0, v[0]])
+                        future.append([0, v[0], v[2]])
                         record.add(v[1])
             if len(spot) > 0 or len(future) > 0:
-                price = get_latest_price(symbol)
-                recommend_list.append({symbol[:-4]: [price, [spot, future]]})
+                recommend_list.append({symbol[:-4]: [spot, future]})
     return recommend_list
 
 

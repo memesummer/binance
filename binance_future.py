@@ -7,7 +7,7 @@
 #
 # ==============================================================
 from binance.um_futures import UMFutures
-from main import binance_api_get, get_latest_price
+from main import binance_api_get, get_latest_price, symbol1000
 
 um_futures_client = UMFutures()
 
@@ -187,6 +187,13 @@ def format_number(num):
         return f"{num / 1000:.2f}K"
     else:
         return str(num)
+
+
+def format_price(symbol, price):
+    if symbol.startswith("1000") or symbol in symbol1000:
+        return price * 1000
+    else:
+        return price
 
 
 def get_net_rank_table(net_list, interval, m=15, r=30):
