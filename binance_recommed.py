@@ -134,7 +134,7 @@ while True:
         if len(binance_his) > 10000:
             binance_his.clear()
 
-        time.sleep(60)
+        time.sleep(90)
     except Exception as e:
         error_message = f"Error occurred: {str(e)}"
         safe_send_message(chat_id, error_message)  # 报错时通知管理员
