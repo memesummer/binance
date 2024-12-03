@@ -276,13 +276,22 @@ def get_symbol_oi_table(symbol_oi, m=10, r=24):
     return res
 
 
-def get_symbol_nf_table(symbol_nf, m=10):
-    res = f"`周期      净流入值`\n"
+def get_symbol_nf_table(symbol_nf, m=10, k=22):
+    res = f"`周期     期货净流入    现货净流入`\n"
     for i, l in enumerate(symbol_nf):
         line = f"`{l[0]}:"
         n1 = len(line)
         line += ' ' * (m - n1)
-        line += format_number(float(l[1]))
+        if l[1]:
+            line += format_number(float(l[1]))
+        else:
+            line += 'None'
+        n2 = len(line)
+        line += ' ' * (k - n2)
+        if l[2]:
+            line += format_number(float(l[2]))
+        else:
+            line += 'None'
         line += '`\n'
         res += line
     return res

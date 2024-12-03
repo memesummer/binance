@@ -1308,10 +1308,12 @@ def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
         return None
 
 
-def get_symbol_net_future(symbol):
+def get_symbol_net_v(symbol):
     interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "16h", "20h", "1d", "2d", "3d", "4d",
                      "5d"]
     res = []
+    f = True
+    s = True
     for interval in interval_list:
         limit = parse_interval_to_5minutes(interval)
         para = {
@@ -1319,18 +1321,43 @@ def get_symbol_net_future(symbol):
             'interval': '5m',
             'limit': limit
         }
-        k_line = um_futures_client.klines(**para)
-        # 有可能有些币没有合约~
-        if not k_line:
+        net_future = None
+        net_spot = None
+        if f:
+            try:
+                k_line_future = um_futures_client.klines(**para)
+                net = 0
+                for k in k_line_future:
+                    price = float(k[4])
+                    v = float(k[5])
+                    taker = float(k[9])
+                    maker = v - taker
+                    net_volume = (taker - maker) * price
+                    net += net_volume
+                net_future = net
+            except Exception as e:
+                f = False
+        if s:
+            k_line_spot = get_k_lines(**para)
+            if not k_line_spot:
+                s = False
+            else:
+                net = 0
+                for k in k_line_spot:
+                    price = float(k[4])
+                    v = float(k[5])
+                    taker = float(k[9])
+                    maker = v - taker
+                    net_volume = (taker - maker) * price
+                    net += net_volume
+                net_spot = net
+        if not net_future and not net_spot:
             return None
         else:
-            net = 0
-            for k in k_line:
-                price = float(k[4])
-                v = float(k[5])
-                taker = float(k[9])
-                maker = v - taker
-                net_volume = (taker - maker) * price
-                net += net_volume
-            res.append([interval, round(net, 2)])
+            if net_future and net_spot:
+                res.append([interval, round(net_future, 2), round(net_spot, 2)])
+            elif net_future and not net_spot:
+                res.append([interval, round(net_future, 2), None])
+            else:
+                res.append([interval, None, round(net_spot, 2)])
     return res
