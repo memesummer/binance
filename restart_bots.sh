@@ -17,7 +17,7 @@ source /opt/anaconda3/bin/activate bot
 
 
 # 获取进程 ID 并杀掉相应的程序
-pids=$(ps aux | grep -E 'binance_bot.py|binance_recommed.py|scan_big_order.py' | grep -v grep | awk '{print $2}')
+pids=$(ps aux | grep -E 'binance_bot.py|binance_recommed.py|binance_oid.py' | grep -v grep | awk '{print $2}')
 
 
 if [ -n "$pids" ]; then
@@ -38,6 +38,6 @@ python /opt/daixin/binance/cmc.py
 echo "正在重新启动程序..."
 /usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_bot.py >> bot.log 2>&1 &
 /usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_recommed.py >> push.log 2>&1 &
-#/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/scan_big_order.py >> scan.log 2>&1 &
+/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_oid.py >> oid.log 2>&1 &
 
 echo "程序已重新启动"
