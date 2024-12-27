@@ -1119,6 +1119,24 @@ def token_spot_future_delta(endpoint="api/v3/ticker/24hr"):
         print("无数据或数据格式不正确")
 
 
+def binance_spot_list(endpoint="api/v3/ticker/24hr"):
+    params = {}
+    spot = binance_api_get(endpoint, params)
+
+    if isinstance(spot, list) and spot:
+        # 过滤出包含 "USDT" 的币种
+        symbols_spot = set(
+            [token['symbol'] for token in spot
+             if
+             token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token['symbol'] and
+             token['count'] != 0 and float(token['bidPrice']) != 0 and float(token['askPrice']) != 0])
+
+        return symbols_spot
+
+    else:
+        print("无数据或数据格式不正确")
+
+
 def fetch_gain_lose_spot(symbol, interval, limit):
     try:
         if symbol in ['SATSUSDT']:
