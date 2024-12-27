@@ -175,10 +175,9 @@ def fetch_large_trades_future(symbol, threshold=5000):
         print(f"Request failed: {e}")
 
 
-bitget_his = set()
-binance_list = binance_spot_list()
-
 if __name__ == "__main__":
+    bitget_his = set()
+    binance_list = binance_spot_list()
     while True:
         tickers_spot = fetch_bitget_tickers_spot()
         tickers_future = fetch_bitget_tickers_future()
