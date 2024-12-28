@@ -95,7 +95,7 @@ def fetch_bitget_tickers_future(limit=25):
 
 
 def fetch_large_trades_spot(symbol, limit=500, threshold=5000):
-    thresholds = {"BGB": 50000, "BWB": 10000, "VIRTUAL": 20000}
+    thresholds = {"BGB": 100000, "BWB": 10000, "VIRTUAL": 20000}
     threshold = thresholds.get(symbol[:-4], threshold)
     url = "https://api.bitget.com/api/v2/spot/market/fills"
     params = {"symbol": symbol, "limit": limit}
@@ -136,7 +136,7 @@ def fetch_large_trades_spot(symbol, limit=500, threshold=5000):
 
 
 def fetch_large_trades_future(symbol, threshold=5000):
-    thresholds = {"BGB": 50000, "BWB": 10000, "VIRTUAL": 20000}
+    thresholds = {"BGB": 100000, "BWB": 10000, "VIRTUAL": 20000}
     threshold = thresholds.get(symbol[:-4], threshold)
     url = "https://api.bitget.com/api/v2/mix/market/fills"
     params = {"symbol": symbol, "productType": 'usdt-futures'}
