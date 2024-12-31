@@ -22,7 +22,7 @@ binance_adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retrie
 binance_session.mount("https://", binance_adapter)
 binance_session.mount("http://", binance_adapter)
 symbol1000 = ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT',
-              '00MOGUSDT', '000MOGUSDT', 'MOG', 'CATUSDT', 'WHY', 'CHEEMS']
+              '00MOGUSDT', '000MOGUSDT', 'MOG', 'CATUSDT', 'WHY', 'CHEEMS', 'PEPE']
 
 
 def binance_api_get(endpoint, params=None):
