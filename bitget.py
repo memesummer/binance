@@ -165,7 +165,7 @@ def fetch_large_trades_future(symbol, threshold, thresholds):
                 return ""
             else:
                 message = f"""
-*🚧symbol：*`{symbol}` 🚧 
+*🚧symbol：*`{symbol[:-4]}` 🚧 
 {st}
 {"-" * 32}
                                                                         """
@@ -248,8 +248,8 @@ if __name__ == "__main__":
     bitget_his = set()
     binance_list = binance_spot_list()
     tickers_num = 50
-    threshold = 8000
-    thresholds = {"BGB": 100000, "BWB": 10000, "VIRTUAL": 20000}
+    threshold = 10000
+    thresholds = {"BGB": 100000, "BWB": 10000, "VIRTUAL": 20000, "BRETT": 20000}
     while True:
         tickers_spot = fetch_bitget_tickers_spot(limit=tickers_num)
         tickers_future = fetch_bitget_tickers_future(limit=tickers_num)
