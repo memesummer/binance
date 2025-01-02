@@ -125,7 +125,7 @@ def fetch_large_trades_spot(symbol, threshold, thresholds, limit=500):
                 return ""
             else:
                 message = f"""
-*🚧symbol：*`{symbol}` 🚧 
+*🚧symbol：*`{symbol[:-4]}` 🚧 
 {st}
 {"-" * 32}
                                                                             """
