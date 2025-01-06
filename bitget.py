@@ -249,7 +249,7 @@ if __name__ == "__main__":
     binance_list = binance_spot_list()
     tickers_num = 50
     threshold = 10000
-    thresholds = {"BGB": 100000, "BWB": 10000, "VIRTUAL": 20000, "BRETT": 20000}
+    thresholds = {"BGB": 100000, "BWB": 10000, "VIRTUAL": 20000, "BRETT": 20000, "MOCA": 50000}
     while True:
         tickers_spot = fetch_bitget_tickers_spot(limit=tickers_num)
         tickers_future = fetch_bitget_tickers_future(limit=tickers_num)
