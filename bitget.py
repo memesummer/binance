@@ -67,7 +67,8 @@ def fetch_bitget_tickers_spot(limit=50):
 
         if data.get("code") == "00000":
             tickers = data.get("data", [])
-            usdt_tickers = [ticker for ticker in tickers if ticker["symbol"].endswith("USDT")]
+            usdt_tickers = [ticker for ticker in tickers if
+                            (ticker["symbol"].endswith("USDT") and ticker["symbol"] != "USDCUSDT")]
             sorted_usdt_tickers = sorted(usdt_tickers, key=lambda x: float(x.get("change24h", 0)), reverse=True)
             return [ticker["symbol"] for ticker in sorted_usdt_tickers[:limit]]
         else:
@@ -249,7 +250,7 @@ if __name__ == "__main__":
     binance_list = binance_spot_list()
     tickers_num = 50
     threshold = 10000
-    thresholds = {"BGB": 100000, "BWB": 10000, "VIRTUAL": 20000, "BRETT": 20000, "MOCA": 50000}
+    thresholds = {"BGB": 100000, "BWB": 10000, "VIRTUAL": 20000, "BRETT": 20000, "MOCA": 50000, "SONIC": 100000}
     while True:
         tickers_spot = fetch_bitget_tickers_spot(limit=tickers_num)
         tickers_future = fetch_bitget_tickers_future(limit=tickers_num)
