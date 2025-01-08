@@ -64,11 +64,13 @@ def fetch_bitget_tickers_spot(limit=50):
         response = session.get(url, timeout=10)  # 使用自定义 session
         response.raise_for_status()
         data = response.json()
+        # 过滤
+        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'DAI', 'WUSD', 'USDE']
 
         if data.get("code") == "00000":
             tickers = data.get("data", [])
             usdt_tickers = [ticker for ticker in tickers if
-                            (ticker["symbol"].endswith("USDT") and ticker["symbol"] != "USDCUSDT")]
+                            ticker["symbol"].endswith("USDT") and all(f not in ticker['symbol'] for f in fil_str_list)]
             sorted_usdt_tickers = sorted(usdt_tickers, key=lambda x: float(x.get("change24h", 0)), reverse=True)
             return [ticker["symbol"] for ticker in sorted_usdt_tickers[:limit]]
         else:
