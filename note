@@ -1,0 +1,7 @@
+现货获取24小时价格变化时
+如果 float(['bidPrice']) == 0 and float(['askPrice']) == 0
+表示之前上过现货，后面下架了
+
+期货获取24小时价格变化时
+如果['closeTime'] <= yesterday_timestamp_utc
+表示之前上过期货，后面下架了
