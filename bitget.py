@@ -264,7 +264,6 @@ if __name__ == "__main__":
             time.sleep(10)
             continue
 
-        message = ""
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             futures = []
             for symbol in tickers_spot:
@@ -276,13 +275,9 @@ if __name__ == "__main__":
             for future in concurrent.futures.as_completed(futures):
                 message_part = future.result()
                 if message_part:
-                    message += message_part
-                    if len(message) >= 3000:
-                        safe_send_message(chat_id, message)
-                        message = ""
+                    safe_send_message(chat_id, message_part)
+                    time.sleep(1)
 
-        if message:
-            safe_send_message(chat_id, message)
         # 定期清理历史记录，避免内存泄漏
         if len(bitget_his) > 10000:
             bitget_his.clear()
