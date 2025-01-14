@@ -149,7 +149,7 @@ def get_new_token_recommend():
             data = response.json()['pairs'][0]
             if data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000:
                 pchg = data['priceChange']['h24']
-                star = 5 if pchg > 10000 else 4 if pchg > 5000 else 3 if pchg > 3000 else 2 if pchg > 2000 else 1
+                star = 5 if pchg >= 10000 else 4 if pchg >= 5000 else 3 if pchg >= 3000 else 2 if pchg >= 2000 else 1
                 sym = {
                     'ca': token['tokenAddress'],
                     'symbol': data['baseToken']['symbol'],
@@ -189,7 +189,7 @@ def scan_new():
         new_list = get_new_token_recommend()
         for token in new_list:
             message += f"""
-*🌱{token['symbol']}：{token['name']}* | ⭐*{token['star']}
+*🌱{token['symbol']}：{token['name']}* | {token['star']* "⭐"}
 [{token['ca']}](https://gmgn.ai/sol/token/{token['ca']})
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
