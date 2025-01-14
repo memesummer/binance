@@ -189,8 +189,7 @@ def scan_new():
         new_list = get_new_token_recommend()
         for token in new_list:
             message += f"""
-*🌱{token['symbol']}：{token['name']}* | {token['star'] * "⭐"}
-[{token['ca']}](https://gmgn.ai/sol/token/{token['ca']})
+*🌱{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) | {token['star'] * "⭐"}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
