@@ -189,7 +189,7 @@ def scan_new():
         new_list = get_new_token_recommend()
         for token in new_list:
             message += f"""
-*🌱{token['symbol']}：{token['name']}* | {token['star']* "⭐"}
+*🌱{token['symbol']}：{token['name']}* | {token['star'] * "⭐"}
 [{token['ca']}](https://gmgn.ai/sol/token/{token['ca']})
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
@@ -247,45 +247,40 @@ def token_recommend():
 def recommend_scan():
     while True:
         rec_list = token_recommend()
-        message = ""
         for token in rec_list:
-            buy5 = token.get('txns', {}).get('m5', {}).get('buys', 0)
-            sell5 = token.get('txns', {}).get('m5', {}).get('sells', 0)
-            pchg5 = format_number(token.get('priceChange', {}).get('m5', 0), True)
-            buy1 = token.get('txns', {}).get('h1', {}).get('buys', 0)
-            sell1 = token.get('txns', {}).get('h1', {}).get('sells', 0)
-            pchg1 = format_number(token.get('priceChange', {}).get('h1', 0), True)
-            buy6 = token.get('txns', {}).get('h6', {}).get('buys', 0)
-            sell6 = token.get('txns', {}).get('h6', {}).get('sells', 0)
-            pchg6 = format_number(token.get('priceChange', {}).get('h6', 0), True)
-            buy24 = token.get('txns', {}).get('h24', {}).get('buys', 0)
-            sell24 = token.get('txns', {}).get('h24', {}).get('sells', 0)
-            pchg24 = format_number(token.get('priceChange', {}).get('h24', 0), True)
-            v5 = format_number(token.get('volume', {}).get('m5', 0), True)
-            v1 = format_number(token.get('volume', {}).get('h1', 0), True)
-            v6 = format_number(token.get('volume', {}).get('h6', 0), True)
-            v24 = format_number(token.get('volume', {}).get('h24', 0), True)
-            table = f"""
-   |  P%  Vol    B/S 
------------------------
-5m |  {pchg5}   {v5}   {format_number(buy5)}/{format_number(sell5)}
-1h |  {pchg1}  {v1}  {format_number(buy1)}/{format_number(sell1)}
-6h |  {pchg6}  {v6}  {format_number(buy6)}/{format_number(sell6)}
-24h|  {pchg24}  {v24}  {format_number(buy24)}/{format_number(sell24)}
-"""
-            message += f"""
+            #             buy5 = token.get('txns', {}).get('m5', {}).get('buys', 0)
+            #             sell5 = token.get('txns', {}).get('m5', {}).get('sells', 0)
+            #             pchg5 = format_number(token.get('priceChange', {}).get('m5', 0), True)
+            #             buy1 = token.get('txns', {}).get('h1', {}).get('buys', 0)
+            #             sell1 = token.get('txns', {}).get('h1', {}).get('sells', 0)
+            #             pchg1 = format_number(token.get('priceChange', {}).get('h1', 0), True)
+            #             buy6 = token.get('txns', {}).get('h6', {}).get('buys', 0)
+            #             sell6 = token.get('txns', {}).get('h6', {}).get('sells', 0)
+            #             pchg6 = format_number(token.get('priceChange', {}).get('h6', 0), True)
+            #             buy24 = token.get('txns', {}).get('h24', {}).get('buys', 0)
+            #             sell24 = token.get('txns', {}).get('h24', {}).get('sells', 0)
+            #             pchg24 = format_number(token.get('priceChange', {}).get('h24', 0), True)
+            #             v5 = format_number(token.get('volume', {}).get('m5', 0), True)
+            #             v1 = format_number(token.get('volume', {}).get('h1', 0), True)
+            #             v6 = format_number(token.get('volume', {}).get('h6', 0), True)
+            #             v24 = format_number(token.get('volume', {}).get('h24', 0), True)
+            #             table = f"""
+            #    |  P%  Vol    B/S
+            # -----------------------
+            # 5m |  {pchg5}   {v5}   {format_number(buy5)}/{format_number(sell5)}
+            # 1h |  {pchg1}  {v1}  {format_number(buy1)}/{format_number(sell1)}
+            # 6h |  {pchg6}  {v6}  {format_number(buy6)}/{format_number(sell6)}
+            # 24h|  {pchg24}  {v24}  {format_number(buy24)}/{format_number(sell24)}
+            # """
+            message = f"""
 ✅ *{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']})
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
-```{table}```
 {"-" * 32}
             """
-            if len(message) >= 3000:
-                safe_send_message(chat_id, message)
-                message = ""
-        if message:
             safe_send_message(chat_id, message)
+            time.sleep(1)
         time.sleep(60)
 
 
