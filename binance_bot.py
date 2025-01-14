@@ -332,12 +332,9 @@ def scan():
 {st}
 {"-" * 32}
                                                                 """
-                    if len(message) >= 3000:
-                        safe_send_message(chat_id, message)
-                        message = ""
+                    safe_send_message(chat_id, message)
                     binance_his.add(frozen_dict)
-            if message:
-                safe_send_message(chat_id, message)
+                    time.sleep(1)
             # 定期清理历史记录，避免内存泄漏
             if len(binance_his) > 10000:
                 binance_his.clear()
