@@ -164,7 +164,7 @@ if __name__ == "__main__":
     symbol_all = "all"
     base_url = "https://api.lbank.info/"
     rank = 30
-    threshold = 2000
+    threshold = 5000
     thresholds = {"bitsun": 10000}
 
     binance_list = binance_spot_list()
@@ -172,7 +172,6 @@ if __name__ == "__main__":
     while True:
         ticker_info = lbank_get_top_ticker_info(symbol=symbol_all, base_url=base_url, rank=rank)
 
-        message = ""
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             futures = []
             for symbol in ticker_info:
@@ -182,12 +181,9 @@ if __name__ == "__main__":
             for future in concurrent.futures.as_completed(futures):
                 message_part = future.result()
                 if message_part:
-                    message += message_part
-                    if len(message) >= 3000:
-                        safe_send_message(chat_id, message)
-                        message = ""
-        if message:
-            safe_send_message(chat_id, message)
+                    safe_send_message(chat_id, message_part)
+                    time.sleep(1)
+
         # 定期清理历史记录，避免内存泄漏
         if len(lbank_his) > 10000:
             lbank_his.clear()
