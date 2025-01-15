@@ -40,13 +40,13 @@ def get_if_str(flag):
 
 def get_safe_str(des):
     if des == "high":
-        return "🔴—— 高风险：\n"
+        return "🔴-- 高风险：\n"
     elif des == "moderate":
-        return "🟡—— 中风险：\n"
+        return "🟡-- 中风险：\n"
     elif des == "low":
-        return "🔵—— 低风险：\n"
+        return "🔵-- 低风险：\n"
     elif des == "specific":
-        return "🟣—— 特殊风险：\n"
+        return "🟣-- 特殊风险：\n"
     elif des == "Mintable risks found":
         return " ｜-- Mint权限未丢弃\n"
     elif des == "Freeze risks found":
