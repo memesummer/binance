@@ -1,4 +1,5 @@
 import json
+import random
 import re
 import threading
 import time
@@ -14,6 +15,10 @@ sol_id = 1399811149
 define1 = "1d1cfa84305b78b1ab8cd4205a45f77b231f9686"
 define2 = "eab19d30e8cb0d3c39e949aac2dd38ca19da87dc"
 codex_api_key = "1d1cfa84305b78b1ab8cd4205a45f77b231f9686"
+sol_sniffer_api_key_list = ['i2e0pwyjlztqemeok2sa6uc2vrk798', 'zkm1hkgigkrwgpvfdximp7qaoqylkk',
+                            '6iu82h8hbz9axilnazunu2oyad8mfl', 'aau5mqrwpn9a0ykj8bmwgxo6ywwwr3',
+                            "ouwnjyt0ckpornm1ojj4tkl9rhiry6"]
+probabilities = [0.2, 0.2, 0.2, 0.2, 0.2]
 
 url = "https://graph.defined.fi/graphql"
 
@@ -87,16 +92,74 @@ def get_safe_str(des):
         return "未找到匹配风险"
 
 
-def get_sol_sniffer_datas(new_list):
+def get_sol_sniffer_data(ca):
     try:
-        ca_list = [i['ca'] for i in new_list]
-        url = f'https://solsniffer.com/api/v2/tokens'
-        api_key = 'i2e0pwyjlztqemeok2sa6uc2vrk798'
+        url = f'https://solsniffer.com/api/v2/token/{ca}'
+        api_key = random.choices(sol_sniffer_api_key_list, probabilities)[0]
 
         # 设置请求头，包含API密钥
         headers = {
             'accept': 'application/json',
-            # 'Content-Type': 'application/json',
+            'X-API-KEY': api_key  # 注意：如果API需要在请求头中发送API密钥
+        }
+
+        # 发送GET请求
+        response = requests.get(url, headers=headers)
+
+        # 检查响应状态码
+        if response.status_code == 200:
+            # 如果请求成功，打印JSON响应
+            res = response.json()['tokenData']
+
+            risk_str = "⚠️风险提示：\n"
+            indicator = res['indicatorData']
+            for k, v in indicator.items():
+                if v['count'] > 0:
+                    risk_str += get_safe_str(k)
+                    details = json.loads(v['details'].replace("'", '"'))
+                    for m, n in details.items():
+                        if n is False:
+                            risk_str += get_safe_str(m)
+            if risk_str == "⚠️风险提示：\n":
+                risk_str = "⚠️风险提示：无🎉\n"
+
+            ownersList = res['ownersList']
+            top10 = 0
+            top5 = []
+            for i, holder in enumerate(ownersList[:10]):
+                top10 += float(holder['percentage'])
+                if i < 5:
+                    top5.append(float(holder['percentage']))
+            top10 = int(round(top10, 0))
+            t5 = ""
+            for k in top5:
+                t5 += f"| {k} "
+            top_str = f"👥Top10占比:{top10}% {t5}\n"
+
+            safe_score_str = f"🛡️安全评分：{res['score']}\n"
+            audit = res['auditRisk']
+            audit_str = f"🔍丢权限{get_if_str(audit['mintDisabled'])}烧池子{get_if_str(audit['lpBurned'])}无冻结权限{get_if_str(audit['freezeDisabled'])}Top10{get_if_str(audit['top10Holders'])}\n"
+
+            final_str = safe_score_str + top_str + audit_str + risk_str
+            return final_str
+        else:
+            # 如果请求失败，打印错误信息
+            print(f"Request failed with status code {response.status_code}")
+            print(response.text)
+    except Exception as e:
+        print(e)
+        return None
+
+
+def get_sol_sniffer_datas(new_list):
+    try:
+        ca_list = [i['ca'] for i in new_list]
+        url = f'https://solsniffer.com/api/v2/tokens'
+        api_key = random.choices(sol_sniffer_api_key_list, probabilities)[0]
+
+        # 设置请求头，包含API密钥
+        headers = {
+            'accept': 'application/json',
             'X-API-KEY': api_key  # 注意：如果API需要在请求头中发送API密钥
         }
         request_body = {
@@ -315,7 +378,8 @@ def scan_new():
     while True:
         message = ""
         new_list = get_new_token_recommend()
-        sol_sniffer = get_sol_sniffer_datas(new_list)
+        if len(new_list) > 0:
+            sol_sniffer = get_sol_sniffer_datas(new_list)
         for token in new_list:
             message += f"""
 🤖*AI扫链-潜力新币推荐*🧠
@@ -355,7 +419,8 @@ def token_recommend():
                 headers={},
             )
             data = response.json()['pairs'][0]
-            if data['fdv'] < 100000000 and data['liquidity']['usd'] > 100000 and data['priceChange'].get('m5', 0) > 0 and \
+            if data['fdv'] < 100000000 and data['liquidity']['usd'] > 100000 and data['priceChange'].get('m5',
+                                                                                                         0) > 0 and \
                     data['priceChange']['h1'] > 0 and \
                     data['priceChange']['h6'] > 0 and data['priceChange']['h24'] > 0:
                 sym = {
@@ -405,7 +470,7 @@ def recommend_scan():
             # """
             message = f"""
 🥇*AI严选-金狗挖掘*🚜
-💶*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']})
+🐕*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']})
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
@@ -414,6 +479,39 @@ def recommend_scan():
             safe_send_message(chat_id, message)
             time.sleep(1)
         time.sleep(60)
+
+
+def return_ca_info(ca):
+    try:
+        response = requests.get(
+            f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
+            headers={},
+        )
+        data = response.json()['pairs'][0]
+        symbol = data['baseToken']['symbol']
+        name = data['baseToken']['name'],
+        price = data['priceUsd'],
+        liquidity = data['liquidity']['usd'],
+        fdv = data['fdv'],
+        pair_created_at = data['pairCreatedAt'],
+        message = f"""
+🪙*{symbol}*：[{name[0]}](https://gmgn.ai/sol/token/{ca})
+💧池子：{format_number(liquidity[0])} ｜ 💸市值：{format_number(fdv[0])}
+💰价格：{price[0]}
+⌛{get_token_age(pair_created_at[0])}
+{get_sol_sniffer_data(ca)}
+{"-" * 32}
+                    """
+        return message
+    except Exception as e:
+        print(e)
+        return None
+
+
+@bot.message_handler(func=lambda msg: True)
+def echo_all(message):
+    res = return_ca_info(message.text)
+    safe_send_message(chat_id, res) if len(res) else safe_send_message(chat_id, "未查询到合约信息")
 
 
 @bot.message_handler(commands=['top'])
