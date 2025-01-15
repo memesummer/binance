@@ -147,7 +147,7 @@ def get_new_token_recommend():
                 headers={},
             )
             data = response.json()['pairs'][0]
-            if data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000:
+            if data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity']['usd'] > 10000:
                 pchg = data['priceChange']['h24']
                 star = 5 if pchg >= 10000 else 4 if pchg >= 5000 else 3 if pchg >= 3000 else 2 if pchg >= 2000 else 1
                 sym = {
