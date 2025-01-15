@@ -275,7 +275,7 @@ def get_new_token_recommend():
                 headers={},
             )
             data = response.json()['pairs'][0]
-            if data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity']['usd'] > 10000:
+            if data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity']['usd'] > 50000:
                 pchg = data['priceChange']['h24']
                 star = 5 if pchg >= 10000 else 4 if pchg >= 5000 else 3 if pchg >= 3000 else 2 if pchg >= 2000 else 1
                 sym = {
@@ -318,15 +318,16 @@ def scan_new():
         sol_sniffer = get_sol_sniffer_datas(new_list)
         for token in new_list:
             message += f"""
-*🌱{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) | {token['star'] * "⭐"}
+🤖*AI扫链-潜力新币推荐*🧠
+🌱*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) | {token['star'] * "⭐"}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
 {sol_sniffer.get(token['ca'])}
 {"-" * 32}
 """
-        if message:
             safe_send_message(chat_id, message)
+            time.sleep(1)
         time.sleep(60)
 
 
@@ -354,7 +355,8 @@ def token_recommend():
                 headers={},
             )
             data = response.json()['pairs'][0]
-            if data['fdv'] < 100000000 and data['priceChange'].get('m5', 0) > 0 and data['priceChange']['h1'] > 0 and \
+            if data['fdv'] < 100000000 and data['liquidity']['usd'] > 50000 and data['priceChange'].get('m5', 0) > 0 and \
+                    data['priceChange']['h1'] > 0 and \
                     data['priceChange']['h6'] > 0 and data['priceChange']['h24'] > 0:
                 sym = {
                     'ca': ca,
@@ -402,7 +404,8 @@ def recommend_scan():
             # 24h|  {pchg24}  {v24}  {format_number(buy24)}/{format_number(sell24)}
             # """
             message = f"""
-✅ *{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']})
+🥇*AI严选-金狗挖掘*🚜
+💶*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']})
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
