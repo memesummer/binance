@@ -508,12 +508,6 @@ def return_ca_info(ca):
         return None
 
 
-@bot.message_handler(func=lambda msg: True)
-def echo_all(message):
-    res = return_ca_info(message.text)
-    safe_send_message(chat_id, res) if len(res) else safe_send_message(chat_id, "未查询到合约信息")
-
-
 @bot.message_handler(commands=['top'])
 def get_top(message):
     try:
@@ -523,6 +517,12 @@ def get_top(message):
         safe_send_message(chat_id, data)
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/top")
+
+
+@bot.message_handler(func=lambda msg: True)
+def echo_all(message):
+    res = return_ca_info(message.text)
+    safe_send_message(chat_id, res) if len(res) else safe_send_message(chat_id, "未查询到合约信息")
 
 
 def start_bot():
