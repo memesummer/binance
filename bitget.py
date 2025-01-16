@@ -1,4 +1,6 @@
 import concurrent.futures
+import json
+import os
 import re
 import time
 from datetime import datetime, timedelta
@@ -98,8 +100,7 @@ def fetch_bitget_tickers_future(limit=50):
         print(f"Request failed: {e}")
 
 
-def fetch_large_trades_spot(symbol, threshold, thresholds, limit=500):
-    threshold = thresholds.get(symbol[:-4], threshold)
+def fetch_large_trades_spot(symbol, threshold, limit=500):
     url = "https://api.bitget.com/api/v2/spot/market/fills"
     params = {"symbol": symbol, "limit": limit}
 
@@ -138,8 +139,7 @@ def fetch_large_trades_spot(symbol, threshold, thresholds, limit=500):
         print(f"Request failed: {e}")
 
 
-def fetch_large_trades_future(symbol, threshold, thresholds):
-    threshold = thresholds.get(symbol[:-4], threshold)
+def fetch_large_trades_future(symbol, threshold):
     url = "https://api.bitget.com/api/v2/mix/market/fills"
     params = {"symbol": symbol, "productType": 'usdt-futures'}
 
@@ -247,12 +247,25 @@ def get_whale_buy_ratio_rank(interval, rank=10, reverse=True):
         return []
 
 
+def map_mc_to_threshold(mc):
+    if mc < 0.3:
+        return 8000
+    elif 0.3 <= mc < 1:
+        return 10000
+    elif 1 <= mc < 2:
+        return 20000
+    elif 2 <= mc < 5:
+        return 50000
+    elif 5 <= mc < 10:
+        return 80000
+    else:
+        return 100000
+
+
 if __name__ == "__main__":
     bitget_his = set()
     binance_list = binance_spot_list()
     tickers_num = 50
-    threshold = 10000
-    thresholds = {"BGB": 100000, "BWB": 10000, "VIRTUAL": 20000, "BRETT": 20000, "MOCA": 50000, "SONIC": 100000}
     while True:
         tickers_spot = fetch_bitget_tickers_spot(limit=tickers_num)
         tickers_future = fetch_bitget_tickers_future(limit=tickers_num)
@@ -268,9 +281,19 @@ if __name__ == "__main__":
             futures = []
             for symbol in tickers_spot:
                 if symbol not in binance_list:
-                    futures.append(executor.submit(fetch_large_trades_spot, symbol, threshold, thresholds))
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    token_info_file_path = os.path.join(current_dir, "token_data.json")
+                    with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
+                        data = json.load(json_file)
+                        market_cap = 0
+                        for token in data['data']:
+                            if token['symbol'].lower() == symbol[:-4].lower():
+                                market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
+                                break
+                    threshold = map_mc_to_threshold(market_cap)
+                    futures.append(executor.submit(fetch_large_trades_spot, symbol, threshold))
                     if symbol in tickers_future:
-                        futures.append(executor.submit(fetch_large_trades_future, symbol, threshold, thresholds))
+                        futures.append(executor.submit(fetch_large_trades_future, symbol, threshold))
 
             for future in concurrent.futures.as_completed(futures):
                 message_part = future.result()

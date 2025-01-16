@@ -1,4 +1,6 @@
 import concurrent.futures
+import json
+import os
 import re
 import time
 from datetime import datetime, timedelta
@@ -99,8 +101,7 @@ def lbank_get_top_ticker_info(symbol, base_url, rank):
     return None
 
 
-def lbank_get_big_trades(symbol, base_url, threshold, thresholds, size=500):
-    threshold = thresholds.get(symbol[:-5], threshold)
+def lbank_get_big_trades(symbol, base_url, threshold, size=500):
     endpoint = f"{base_url}v2/supplement/trades.do"
     params = {
         "symbol": symbol,
@@ -158,14 +159,27 @@ def lbank_get_big_trades(symbol, base_url, threshold, thresholds, size=500):
     return None
 
 
+def map_mc_to_threshold(mc):
+    if mc < 0.3:
+        return 5000
+    elif 0.3 <= mc < 1:
+        return 8000
+    elif 1 <= mc < 2:
+        return 10000
+    elif 2 <= mc < 5:
+        return 20000
+    elif 5 <= mc < 10:
+        return 50000
+    else:
+        return 80000
+
+
 if __name__ == "__main__":
     lbank_his = set()
 
     symbol_all = "all"
     base_url = "https://api.lbank.info/"
     rank = 30
-    threshold = 5000
-    thresholds = {"bitsun": 10000}
 
     binance_list = binance_spot_list()
 
@@ -176,7 +190,17 @@ if __name__ == "__main__":
             futures = []
             for symbol in ticker_info:
                 if symbol.replace("_", "").upper() not in binance_list:
-                    futures.append(executor.submit(lbank_get_big_trades, symbol, base_url, threshold, thresholds))
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    token_info_file_path = os.path.join(current_dir, "token_data.json")
+                    with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
+                        data = json.load(json_file)
+                        market_cap = 0
+                        for token in data['data']:
+                            if token['symbol'].lower() == symbol[:-5].lower():
+                                market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
+                                break
+                    threshold = map_mc_to_threshold(market_cap)
+                    futures.append(executor.submit(lbank_get_big_trades, symbol, base_url, threshold))
 
             for future in concurrent.futures.as_completed(futures):
                 message_part = future.result()
