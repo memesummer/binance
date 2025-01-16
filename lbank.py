@@ -180,6 +180,8 @@ if __name__ == "__main__":
     symbol_all = "all"
     base_url = "https://api.lbank.info/"
     rank = 30
+    # 小写
+    thresholds = {}
 
     binance_list = binance_spot_list()
 
@@ -190,16 +192,20 @@ if __name__ == "__main__":
             futures = []
             for symbol in ticker_info:
                 if symbol.replace("_", "").upper() not in binance_list:
-                    current_dir = os.path.dirname(os.path.abspath(__file__))
-                    token_info_file_path = os.path.join(current_dir, "token_data.json")
-                    with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
-                        data = json.load(json_file)
-                        market_cap = 0
-                        for token in data['data']:
-                            if token['symbol'].lower() == symbol[:-5].lower():
-                                market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
-                                break
-                    threshold = map_mc_to_threshold(market_cap)
+                    if symbol[:-5] in thresholds.keys():
+                        threshold = thresholds[symbol[:-5]]
+                    else:
+                        current_dir = os.path.dirname(os.path.abspath(__file__))
+                        token_info_file_path = os.path.join(current_dir, "token_data.json")
+                        with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
+                            data = json.load(json_file)
+                            market_cap = 0
+                            for token in data['data']:
+                                if token['symbol'].lower() == symbol[:-5].lower():
+                                    market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
+                                    break
+                        threshold = map_mc_to_threshold(market_cap)
+
                     futures.append(executor.submit(lbank_get_big_trades, symbol, base_url, threshold))
 
             for future in concurrent.futures.as_completed(futures):

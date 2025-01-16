@@ -266,6 +266,8 @@ if __name__ == "__main__":
     bitget_his = set()
     binance_list = binance_spot_list()
     tickers_num = 50
+    # 大写
+    thresholds = {'X': 30000}
     while True:
         tickers_spot = fetch_bitget_tickers_spot(limit=tickers_num)
         tickers_future = fetch_bitget_tickers_future(limit=tickers_num)
@@ -281,16 +283,19 @@ if __name__ == "__main__":
             futures = []
             for symbol in tickers_spot:
                 if symbol not in binance_list:
-                    current_dir = os.path.dirname(os.path.abspath(__file__))
-                    token_info_file_path = os.path.join(current_dir, "token_data.json")
-                    with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
-                        data = json.load(json_file)
-                        market_cap = 0
-                        for token in data['data']:
-                            if token['symbol'].lower() == symbol[:-4].lower():
-                                market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
-                                break
-                    threshold = map_mc_to_threshold(market_cap)
+                    if symbol[:-4] in thresholds.keys():
+                        threshold = thresholds[symbol[:-4]]
+                    else:
+                        current_dir = os.path.dirname(os.path.abspath(__file__))
+                        token_info_file_path = os.path.join(current_dir, "token_data.json")
+                        with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
+                            data = json.load(json_file)
+                            market_cap = 0
+                            for token in data['data']:
+                                if token['symbol'].lower() == symbol[:-4].lower():
+                                    market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
+                                    break
+                        threshold = map_mc_to_threshold(market_cap)
                     futures.append(executor.submit(fetch_large_trades_spot, symbol, threshold))
                     if symbol in tickers_future:
                         futures.append(executor.submit(fetch_large_trades_future, symbol, threshold))
