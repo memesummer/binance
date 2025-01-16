@@ -273,10 +273,10 @@ def new_pair_parse(res_list, min_liquidity=8000):
     return token_list
 
 
-def get_top_token(limit, network_id=sol_id):
+def get_top_token(limit, is_volume_based=False, network_id=sol_id):
     try:
         getTopToken = f"""query {{
-          listTopTokens (limit:{limit},networkFilter:{network_id},resolution:"60") {{
+          listTopTokens (limit:{1000 if is_volume_based else limit},networkFilter:{network_id},resolution:"60") {{
             name
             symbol
             address
@@ -291,13 +291,15 @@ def get_top_token(limit, network_id=sol_id):
         response = requests.post(url, headers=headers2, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['listTopTokens']
+        if is_volume_based:
+            res_list = sorted(res_list, key=lambda x: float(x['volume']), reverse=True)[:limit]
         return res_list
     except BaseException as e:
         print(e)
 
 
-def return_top_token(top_token_list):
-    res = "🔥*1h trending tokens：*\n"
+def return_top_token(top_token_list, is_volume_based):
+    res = "🔥*1h trending tokens：*\n" if not is_volume_based else "🚀*1h high volume tokens：*\n"
     res += f"| Token | 池子 | 交易量(B/S) | 交易额 | 价格变化 |\n"
 
     for index, token in enumerate(top_token_list):
@@ -508,18 +510,51 @@ def return_ca_info(ca):
         return None
 
 
-@bot.message_handler(commands=['top'])
+@bot.message_handler(func=lambda message: message.text and message.text.startswith('/top'))
 def get_top(message):
+    """
+    :param message: 用户输入/top12 v 则会按照交易量排前12，如果不写，就默认按照热门排序前10
+    :return:
+    """
     try:
+        if not message.text:
+            bot.reply_to(message, "命令不能为空，请输入正确的格式！示例：/top10 v")
+            return
+
         limit = 10
-        t = get_top_token(limit=limit)
-        data = return_top_token(t)
+        is_volume_based = False
+        # 分割用户输入内容
+        parts = message.text.split()
+
+        # 检查命令是否是类似 /top10
+        if parts[0].startswith('/top') and parts[0][4:].isdigit():
+            limit = int(parts[0][4:])  # 提取 /top 后的数字部分
+
+        # 检查是否有 'v' 参数
+        if len(parts) > 1:
+            is_volume_based = True
+
+        # 获取代币信息
+        t = get_top_token(limit=limit, is_volume_based=is_volume_based)
+        if t is None:
+            bot.reply_to(message, "无法获取代币数据，请稍后再试！")
+            return
+
+        # 返回代币结果
+        data = return_top_token(t, is_volume_based)
+        if data is None:
+            bot.reply_to(message, "获取结果为空，请检查参数后重试！")
+            return
+
+        # 发送信息
         safe_send_message(chat_id, data)
+
     except Exception as e:
-        bot.reply_to(message, "请输入正确的参数格式。示例：/top")
+        print(f"Error occurred: {e}")
+        bot.reply_to(message, "请输入正确的参数格式。示例：/top10 v")
 
 
-@bot.message_handler(func=lambda msg: True)
+@bot.message_handler(func=lambda msg: not msg.text.startswith('/'))
 def echo_all(message):
     res = return_ca_info(message.text)
     safe_send_message(chat_id, res) if len(res) else safe_send_message(chat_id, "未查询到合约信息")
@@ -531,7 +566,7 @@ def start_bot():
             bot.session = session
             bot.polling(none_stop=True, interval=1, timeout=60)
         except Exception as e:
-            print(f"Error occurred: {e}")
+            print(f"Bot Error occurred: {e}")
             bot.stop_polling()
             time.sleep(5)  # 等待5秒后重新启动
             continue
