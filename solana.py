@@ -330,31 +330,62 @@ def get_new_token():
     return res
 
 
+def get_latest_boosted_token():
+    response = requests.get(
+        "https://api.dexscreener.com/token-boosts/latest/v1",
+        headers={},
+    )
+    data = response.json()
+    res = []
+    for token in data:
+        if token['chainId'] == 'solana':
+            res.append(token)
+    return res
+
+
 def get_new_token_recommend():
     res = []
     new_token = get_new_token()
-    for token in new_token:
-        if token['tokenAddress'] not in new_his:
+    latest_boosted_token = get_latest_boosted_token()
+    merge = {}
+
+    # 先处理集合 a
+    for item in new_token:
+        merge[item['tokenAddress']] = [0, 0]
+
+    # 然后用集合 b 来更新或添加
+    for item in latest_boosted_token:
+        merge[item['tokenAddress']] = [item['amount'], item['totalAmount']]
+
+    for ca, boost in merge.items():
+        if ca + "|" + str(boost[0]) + "|" + str(boost[1]) not in new_his:
             response = requests.get(
-                f"https://api.dexscreener.com/latest/dex/tokens/{token['tokenAddress']}",
+                f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
                 headers={},
             )
-            data = response.json()['pairs'][0]
-            if data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity']['usd'] > 100000:
-                pchg = data['priceChange']['h24']
-                star = 5 if pchg >= 10000 else 4 if pchg >= 5000 else 3 if pchg >= 3000 else 2 if pchg >= 2000 else 1
-                sym = {
-                    'ca': token['tokenAddress'],
-                    'symbol': data['baseToken']['symbol'],
-                    'name': data['baseToken']['name'],
-                    'price': data['priceUsd'],
-                    'liquidity': data['liquidity']['usd'],
-                    'fdv': data['fdv'],
-                    'pairCreatedAt': data['pairCreatedAt'],
-                    'star': star
-                }
-                res.append(sym)
-                new_his.add(token['tokenAddress'])
+            d = response.json()['pairs']
+            for i, data in enumerate(d):
+                if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
+                    continue
+                elif data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity'][
+                    'usd'] > 100000:
+                    pchg = data['priceChange']['h24']
+                    star = 5 if pchg >= 10000 else 4 if pchg >= 5000 else 3 if pchg >= 3000 else 2 if pchg >= 2000 else 1
+                    sym = {
+                        'ca': ca,
+                        'symbol': data['baseToken']['symbol'],
+                        'name': data['baseToken']['name'],
+                        'price': data['priceUsd'],
+                        'liquidity': data['liquidity']['usd'],
+                        'fdv': data['fdv'],
+                        'pairCreatedAt': data['pairCreatedAt'],
+                        'star': star,
+                        'amount': boost[0],
+                        'totalAmount': boost[1]
+                    }
+                    res.append(sym)
+                    new_his.add(ca + "|" + str(boost[0]) + "|" + str(boost[1]))
+                break
     return res
 
 
@@ -385,7 +416,8 @@ def scan_new():
         for token in new_list:
             message += f"""
 🤖*AI扫链-潜力新币推荐*🧠
-🌱*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) | {token['star'] * "⭐"}
+🌱*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) ｜ {token['star'] * "⭐"}
+⚡️{token['amount']}｜️️{token['totalAmount']}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
@@ -410,35 +442,46 @@ def token_recommend():
     res = []
     top_list = get_top_token(30)
     boost_list = get_boosted_token()
-    addresses_from_list1 = {item['address'] for item in top_list}
-    addresses_from_list2 = {item['tokenAddress'] for item in boost_list}
-    merge = addresses_from_list1.union(addresses_from_list2)
+    merge = {}
 
-    for ca in merge:
-        if ca not in recommend_his:
+    # 先处理集合 a
+    for item in top_list:
+        merge[item['address']] = 0
+
+    # 然后用集合 b 来更新或添加
+    for item in boost_list:
+        merge[item['tokenAddress']] = item['totalAmount']
+
+    for ca, amount in merge.items():
+        if ca + "|" + str(amount) not in recommend_his:
             response = requests.get(
                 f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
                 headers={},
             )
-            data = response.json()['pairs'][0]
-            if data['fdv'] < 100000000 and data['liquidity']['usd'] > 100000 and data['priceChange'].get('m5',
-                                                                                                         0) > 0 and \
-                    data['priceChange']['h1'] > 0 and \
-                    data['priceChange']['h6'] > 0 and data['priceChange']['h24'] > 0:
-                sym = {
-                    'ca': ca,
-                    'symbol': data['baseToken']['symbol'],
-                    'name': data['baseToken']['name'],
-                    'price': data['priceUsd'],
-                    'liquidity': data['liquidity']['usd'],
-                    'fdv': data['fdv'],
-                    'pairCreatedAt': data['pairCreatedAt'],
-                    'txns': data['txns'],
-                    'volume': data['volume'],
-                    'priceChange': data['priceChange']
-                }
-                res.append(sym)
-                recommend_his.add(ca)
+            d = response.json()['pairs']
+            # 有可能会有pump.fun的池子放在前面，没有liquidity这个字段
+            for data in d:
+                if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
+                    continue
+                elif data['fdv'] < 100000000 and data.get('liquidity', {'usd': 0})['usd'] > 100000 and \
+                        data['priceChange'].get('m5', 0) > 0 and data['priceChange']['h1'] > 0 and \
+                        data['priceChange']['h6'] > 0 and data['priceChange']['h24'] > 0:
+                    sym = {
+                        'ca': ca,
+                        'symbol': data['baseToken']['symbol'],
+                        'name': data['baseToken']['name'],
+                        'price': data['priceUsd'],
+                        'liquidity': data['liquidity']['usd'],
+                        'fdv': data['fdv'],
+                        'pairCreatedAt': data['pairCreatedAt'],
+                        'txns': data['txns'],
+                        'volume': data['volume'],
+                        'priceChange': data['priceChange'],
+                        'boost_amount': amount
+                    }
+                    res.append(sym)
+                    recommend_his.add(ca + "|" + str(amount))
+                break
     return res
 
 
@@ -472,7 +515,7 @@ def recommend_scan():
             # """
             message = f"""
 🥇*AI严选-金狗挖掘*🚜
-🐕*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']})
+🐕*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) | ⚡️{token['boost_amount']}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
@@ -489,22 +532,26 @@ def return_ca_info(ca):
             f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
             headers={},
         )
-        data = response.json()['pairs'][0]
-        symbol = data['baseToken']['symbol']
-        name = data['baseToken']['name'],
-        price = data['priceUsd'],
-        liquidity = data['liquidity']['usd'],
-        fdv = data['fdv'],
-        pair_created_at = data['pairCreatedAt'],
-        message = f"""
+        d = response.json()['pairs']
+        for data in d:
+            if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
+                continue
+            else:
+                symbol = data['baseToken']['symbol']
+                name = data['baseToken']['name'],
+                price = data['priceUsd'],
+                liquidity = data['liquidity']['usd'],
+                fdv = data['fdv'],
+                pair_created_at = data['pairCreatedAt'],
+                message = f"""
 🪙*{symbol}*：[{name[0]}](https://gmgn.ai/sol/token/{ca})
 💧池子：{format_number(liquidity[0])} ｜ 💸市值：{format_number(fdv[0])}
 💰价格：{price[0]}
 ⌛{get_token_age(pair_created_at[0])}
 {get_sol_sniffer_data(ca)}
 {"-" * 32}
-                    """
-        return message
+                            """
+                return message
     except Exception as e:
         print(e)
         return None
@@ -582,7 +629,7 @@ if __name__ == "__main__":
     retry_strategy = Retry(
         total=5,  # 最大重试次数
         backoff_factor=2,  # 每次重试间隔的时间倍数
-        status_forcelist=[429, 500, 502, 503, 504],  # 针对这些状态码进行重试
+        status_forcelist=[429, 500, 502, 503, 504]  # 针对这些状态码进行重试
     )
 
     adapter = HTTPAdapter(pool_connections=200, pool_maxsize=200, max_retries=retry_strategy)
