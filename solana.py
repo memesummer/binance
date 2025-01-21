@@ -416,14 +416,14 @@ def scan_new():
                 sol_sniffer = get_sol_sniffer_datas(new_list)
             for token in new_list:
                 message += f"""
-    🤖*AI扫链-潜力新币推荐*🧠
-    🌱*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) ｜ {token['star'] * "⭐"}
-    ⚡️{token['amount']}｜️️{token['totalAmount']}
-    💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
-    💰价格：{token['price']}
-    ⌛{get_token_age(token['pairCreatedAt'])}
-    {sol_sniffer.get(token['ca'])}
-    {"-" * 32}
+🤖*AI扫链-潜力新币推荐*🧠
+🌱*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) ｜ {token['star'] * "⭐"}
+⚡️{token['amount']}｜️️{token['totalAmount']}
+💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
+💰价格：{token['price']}
+⌛{get_token_age(token['pairCreatedAt'])}
+{sol_sniffer.get(token['ca'])}
+{"-" * 32}
     """
                 safe_send_message(chat_id, message)
                 time.sleep(1)
