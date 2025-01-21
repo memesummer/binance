@@ -347,7 +347,13 @@ def get_new_token_recommend():
     try:
         res = []
         new_token = get_new_token()
+        if not new_token:
+            safe_send_message(chat_id, "没有获取到新币")
+            return None
         latest_boosted_token = get_latest_boosted_token()
+        if not latest_boosted_token:
+            safe_send_message(chat_id, "没有获取到boost币")
+            return None
         merge = {}
 
         # 先处理集合 a
@@ -416,6 +422,9 @@ def scan_new():
         while True:
             message = ""
             new_list = get_new_token_recommend()
+            if not new_list:
+                safe_send_message(chat_id, "本次新币扫描失败")
+                continue
             if len(new_list) > 0:
                 sol_sniffer = get_sol_sniffer_datas(new_list)
             for token in new_list:
