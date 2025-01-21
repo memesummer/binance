@@ -344,49 +344,53 @@ def get_latest_boosted_token():
 
 
 def get_new_token_recommend():
-    res = []
-    new_token = get_new_token()
-    latest_boosted_token = get_latest_boosted_token()
-    merge = {}
+    try:
+        res = []
+        new_token = get_new_token()
+        latest_boosted_token = get_latest_boosted_token()
+        merge = {}
 
-    # 先处理集合 a
-    for item in new_token:
-        merge[item['tokenAddress']] = [0, 0]
+        # 先处理集合 a
+        for item in new_token:
+            merge[item['tokenAddress']] = [0, 0]
 
-    # 然后用集合 b 来更新或添加
-    for item in latest_boosted_token:
-        merge[item['tokenAddress']] = [item['amount'], item['totalAmount']]
+        # 然后用集合 b 来更新或添加
+        for item in latest_boosted_token:
+            merge[item['tokenAddress']] = [item['amount'], item['totalAmount']]
 
-    for ca, boost in merge.items():
-        if ca + "|" + str(boost[0]) + "|" + str(boost[1]) not in new_his:
-            response = requests.get(
-                f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
-                headers={},
-            )
-            d = response.json()['pairs']
-            for i, data in enumerate(d):
-                if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
-                    continue
-                elif data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity'][
-                    'usd'] > 100000:
-                    pchg = data['priceChange']['h24']
-                    star = 5 if pchg >= 10000 else 4 if pchg >= 5000 else 3 if pchg >= 3000 else 2 if pchg >= 2000 else 1
-                    sym = {
-                        'ca': ca,
-                        'symbol': data['baseToken']['symbol'],
-                        'name': data['baseToken']['name'],
-                        'price': data['priceUsd'],
-                        'liquidity': data['liquidity']['usd'],
-                        'fdv': data['fdv'],
-                        'pairCreatedAt': data['pairCreatedAt'],
-                        'star': star,
-                        'amount': boost[0],
-                        'totalAmount': boost[1]
-                    }
-                    res.append(sym)
-                    new_his.add(ca + "|" + str(boost[0]) + "|" + str(boost[1]))
-                break
-    return res
+        for ca, boost in merge.items():
+            if ca + "|" + str(boost[0]) + "|" + str(boost[1]) not in new_his:
+                response = requests.get(
+                    f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
+                    headers={},
+                )
+                d = response.json()['pairs']
+                for i, data in enumerate(d):
+                    if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
+                        continue
+                    elif data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity'][
+                        'usd'] > 100000:
+                        pchg = data['priceChange']['h24']
+                        star = 5 if pchg >= 10000 else 4 if pchg >= 5000 else 3 if pchg >= 3000 else 2 if pchg >= 2000 else 1
+                        sym = {
+                            'ca': ca,
+                            'symbol': data['baseToken']['symbol'],
+                            'name': data['baseToken']['name'],
+                            'price': data['priceUsd'],
+                            'liquidity': data['liquidity']['usd'],
+                            'fdv': data['fdv'],
+                            'pairCreatedAt': data['pairCreatedAt'],
+                            'star': star,
+                            'amount': boost[0],
+                            'totalAmount': boost[1]
+                        }
+                        res.append(sym)
+                        new_his.add(ca + "|" + str(boost[0]) + "|" + str(boost[1]))
+                    break
+        return res
+    except Exception as e:
+        safe_send_message(chat_id, f"get_latest_token error:{e}")
+        return None
 
 
 def get_token_age(pair_created_at):
