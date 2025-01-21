@@ -215,10 +215,10 @@ def get_sol_sniffer_datas(new_list):
             return multi_res
         else:
             # 如果请求失败，打印错误信息
-            print(f"Request failed with status code {response.status_code}")
-            print(response.text)
+            p = f"Request failed with status code {response.status_code}"
+            safe_send_message(chat_id, p + "/" + response.text)
     except Exception as e:
-        print(e)
+        safe_send_message(chat_id, f"sol sniffer error:{e}")
         return None
 
 
