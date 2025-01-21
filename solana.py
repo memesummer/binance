@@ -318,29 +318,37 @@ def return_top_token(top_token_list, is_volume_based):
 
 
 def get_new_token():
-    response = requests.get(
-        "https://api.dexscreener.com/token-profiles/latest/v1",
-        headers={},
-    )
-    data = response.json()
-    res = []
-    for token in data:
-        if token['chainId'] == 'solana':
-            res.append(token)
-    return res
+    try:
+        response = requests.get(
+            "https://api.dexscreener.com/token-profiles/latest/v1",
+            headers={},
+        )
+        data = response.json()
+        res = []
+        for token in data:
+            if token['chainId'] == 'solana':
+                res.append(token)
+        return res
+    except Exception as e:
+        safe_send_message(chat_id, f"获取新币时出现错误{e}")
+        return None
 
 
 def get_latest_boosted_token():
-    response = requests.get(
-        "https://api.dexscreener.com/token-boosts/latest/v1",
-        headers={},
-    )
-    data = response.json()
-    res = []
-    for token in data:
-        if token['chainId'] == 'solana':
-            res.append(token)
-    return res
+    try:
+        response = requests.get(
+            "https://api.dexscreener.com/token-boosts/latest/v1",
+            headers={},
+        )
+        data = response.json()
+        res = []
+        for token in data:
+            if token['chainId'] == 'solana':
+                res.append(token)
+        return res
+    except Exception as e:
+        safe_send_message(chat_id, f"获取新boost时出现错误{e}")
+        return None
 
 
 def get_new_token_recommend():
