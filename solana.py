@@ -432,6 +432,7 @@ def scan_new():
             new_list = get_new_token_recommend()
             if not new_list:
                 safe_send_message(chat_id, "本次新币扫描失败")
+                time.sleep(60)
                 continue
             if len(new_list) > 0:
                 sol_sniffer = get_sol_sniffer_datas(new_list)
