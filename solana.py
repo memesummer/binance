@@ -381,7 +381,7 @@ def get_new_token_recommend():
                 )
                 d = response.json()['pairs']
                 for i, data in enumerate(d):
-                    if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
+                    if 'liquidity' not in data.keys() or 'fdv' not in data.keys() or 'h24' not in data['priceChange'].keys():
                         continue
                     elif data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity'][
                         'usd'] > 100000:
@@ -404,7 +404,7 @@ def get_new_token_recommend():
                     break
         return res
     except Exception as e:
-        safe_send_message(chat_id, f"get_latest_token error:{e}")
+        safe_send_message(chat_id, f"get_latest_token error:{e},ca:{ca}")
         return None
 
 
