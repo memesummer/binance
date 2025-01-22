@@ -358,22 +358,23 @@ def get_new_token_recommend():
         if not new_token:
             safe_send_message(chat_id, "没有获取到新币")
             return None
-        latest_boosted_token = get_latest_boosted_token()
-        if not latest_boosted_token:
-            safe_send_message(chat_id, "没有获取到boost币")
-            return None
-        merge = {}
+        # latest_boosted_token = get_latest_boosted_token()
+        # if not latest_boosted_token:
+        #     safe_send_message(chat_id, "没有获取到boost币")
+        #     return None
+        # merge = {}
+        #
+        # # 先处理集合 a
+        # for item in new_token:
+        #     merge[item['tokenAddress']] = [0, 0]
+        #
+        # # 然后用集合 b 来更新或添加
+        # for item in latest_boosted_token:
+        #     merge[item['tokenAddress']] = [item['amount'], item['totalAmount']]
 
-        # 先处理集合 a
-        for item in new_token:
-            merge[item['tokenAddress']] = [0, 0]
-
-        # 然后用集合 b 来更新或添加
-        for item in latest_boosted_token:
-            merge[item['tokenAddress']] = [item['amount'], item['totalAmount']]
-
-        for ca, boost in merge.items():
-            if ca + "|" + str(boost[0]) + "|" + str(boost[1]) not in new_his:
+        for token in new_token:
+            ca = token['tokenAddress']
+            if ca not in new_his:
                 response = requests.get(
                     f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
                     headers={},
@@ -394,12 +395,12 @@ def get_new_token_recommend():
                             'liquidity': data['liquidity']['usd'],
                             'fdv': data['fdv'],
                             'pairCreatedAt': data['pairCreatedAt'],
-                            'star': star,
-                            'amount': boost[0],
-                            'totalAmount': boost[1]
+                            'star': star
+                            # 'amount': boost[0],
+                            # 'totalAmount': boost[1]
                         }
                         res.append(sym)
-                        new_his.add(ca + "|" + str(boost[0]) + "|" + str(boost[1]))
+                        new_his.add(ca)
                     break
         return res
     except Exception as e:
@@ -440,7 +441,6 @@ def scan_new():
                 message += f"""
 🤖*AI扫链-潜力新币推荐*🧠
 🌱*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) ｜ {token['star'] * "⭐"}
-⚡️{token['amount']}｜️️{token['totalAmount']}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
