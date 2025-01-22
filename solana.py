@@ -431,7 +431,7 @@ def scan_new():
         while True:
             message = ""
             new_list = get_new_token_recommend()
-            if not new_list:
+            if new_list is None:
                 safe_send_message(chat_id, "本次新币扫描失败")
                 time.sleep(60)
                 continue
