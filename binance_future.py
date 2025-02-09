@@ -363,13 +363,17 @@ def get_funding_rate_info():
 
 def get_funding_info_str():
     lr, sr, lt, st = get_funding_rate_info()
-    res = f"🟢⚖️资金费率为正的比率：{lr}%\n🔴⚖️资金费率为负的比率：{sr}%\n"
+    res = f"🟢⚖️资金费率为正的比率：*{lr}%*\n🔴⚖️资金费率为负的比率：*{sr}%*\n"
     res += '\n'
-    res += "📈🔝高资金费率top10:\n"
+    res += "📈🔝*高资金费率top10:*\n"
     for v in lt:
-        res += f"{v[0][:-4]}  {v[1]}\n"
+        symbol = v[0][:-4]
+        n = len(symbol)
+        res += f"{symbol}{' ' * (15 - n)}{v[1]}\n"
     res += '\n'
-    res += "📉🔝低资金费率top10:\n"
+    res += "📉🔝*低资金费率top10:*\n"
     for v in st:
-        res += f"{v[0][:-4]}  {v[1]}\n"
+        symbol = v[0][:-4]
+        n = len(symbol)
+        res += f"{symbol}{' ' * (15 - n)}{v[1]}\n"
     return res
