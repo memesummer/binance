@@ -6,8 +6,11 @@
 #    @Description   : 
 #
 # ==============================================================
+import concurrent.futures
+
 from binance.um_futures import UMFutures
-from main import binance_api_get, get_latest_price, symbol1000
+
+from main import binance_api_get, get_latest_price, symbol1000, binance_future_list
 
 um_futures_client = UMFutures()
 
@@ -296,18 +299,56 @@ def get_symbol_nf_table(symbol_nf, m=10, k=22):
         res += line
     return res
 
-# para = {
-#     'symbol': 'TNSRUSDT'
-# }
-# a = um_futures_client.agg_trades(**para)
-# res = 0
-# for d in a:
-#     if float(d['p']) * float(d['q']) >= 500000:
-#         res += 1
-# print(res)
 
-# a, b, c, d = get_future_takerlongshortRatio('BTCUSDT')
-# print(a)
-# print(b)
-# print(c)
-# print(d)
+def get_funding_rate(symbol):
+    try:
+        para = {
+            'symbol': symbol,
+            'limit': 1
+        }
+        data = um_futures_client.funding_rate(**para)
+        fr = float(data[0]['fundingRate'])
+        return [symbol, fr]
+    except Exception as e:
+        print(e)
+        return 0
+
+
+def get_funding_rate_info():
+    fr_list = []
+    future_list = binance_future_list()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(get_funding_rate, symbol) for symbol in
+                   future_list]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                fr_list.append(result)
+
+    # 按净成交量进行排序
+    positive_count = sum(1 for v in fr_list if v[1] > 0)
+    total_count = len(fr_list)
+    percentage_positive = (positive_count / total_count) * 100 if total_count > 0 else 0
+    percentage_negative = 100 - percentage_positive
+
+    # 按value降序和升序排序，取前十
+    sorted_descending = sorted(fr_list, key=lambda x: x[1], reverse=True)[:10]
+    sorted_ascending = sorted(fr_list, key=lambda x: x[1])[:10]
+    return round(percentage_positive, 2), round(percentage_negative, 2), sorted_descending, sorted_ascending
+
+
+def get_funding_info_str():
+    lr, sr, lt, st = get_funding_rate_info()
+    res = f"🟢⚖️资金费率为正的比率：{lr}%\n🔴⚖️资金费率为负的比率：{sr}%\n"
+    res += '\n'
+    res += "📈🔝高资金费率top10:\n"
+    for v in lt:
+        res += f"{v[0][:-4]}  {v[1]}\n"
+    res += '\n'
+    res += "📉🔝低资金费率top10:\n"
+    for v in st:
+        res += f"{v[0][:-4]}  {v[1]}\n"
+    return res
