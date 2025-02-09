@@ -7,10 +7,12 @@
 #
 # ==============================================================
 import concurrent.futures
+import datetime
+from datetime import timedelta, timezone
 
 from binance.um_futures import UMFutures
 
-from main import binance_api_get, get_latest_price, symbol1000, binance_future_list
+from main import binance_api_get, get_latest_price, symbol1000
 
 um_futures_client = UMFutures()
 
@@ -298,6 +300,25 @@ def get_symbol_nf_table(symbol_nf, m=10, k=22):
         line += '`\n'
         res += line
     return res
+
+
+def binance_future_list():
+    params = {}
+    future = um_futures_client.ticker_24hr_price_change(**params)
+    if isinstance(future, list) and future:
+        now_utc = datetime.datetime.now(timezone.utc)
+        yesterday_utc = now_utc - timedelta(days=1)
+        yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+        symbols_future = set(
+            [token['symbol'] for token in future
+             if
+             token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token['symbol'] and
+             token['count'] != 0 and token['closeTime'] > yesterday_timestamp_utc])
+
+        return symbols_future
+
+    else:
+        print("无数据或数据格式不正确")
 
 
 def get_funding_rate(symbol):
