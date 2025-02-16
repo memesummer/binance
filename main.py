@@ -22,7 +22,7 @@ binance_adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retrie
 binance_session.mount("https://", binance_adapter)
 binance_session.mount("http://", binance_adapter)
 symbol1000 = ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT',
-              '00MOGUSDT', '000MOGUSDT', 'MOG', 'CATUSDT', 'WHY', 'CHEEMS', 'PEPE']
+              '00MOGUSDT', '000MOGUSDT', 'MOGUSDT', 'CATUSDT', 'WHYUSDT', 'CHEEMSUSDT', 'XUSDT']
 
 
 def binance_api_get(endpoint, params=None):
@@ -1334,15 +1334,15 @@ def get_symbol_net_v(symbol):
     s = True
     for interval in interval_list:
         limit = parse_interval_to_5minutes(interval)
-        para = {
-            'symbol': symbol,
-            'interval': '5m',
-            'limit': limit
-        }
         net_future = None
         net_spot = None
         if f:
             try:
+                para = {
+                    'symbol': symbol if symbol not in symbol1000 else '1000' + symbol,
+                    'interval': '5m',
+                    'limit': limit
+                }
                 k_line_future = um_futures_client.klines(**para)
                 net = 0
                 for k in k_line_future:
@@ -1356,6 +1356,11 @@ def get_symbol_net_v(symbol):
             except Exception as e:
                 f = False
         if s:
+            para = {
+                'symbol': symbol,
+                'interval': '5m',
+                'limit': limit
+            }
             k_line_spot = get_k_lines(**para)
             if not k_line_spot:
                 s = False
