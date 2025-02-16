@@ -178,12 +178,6 @@ def fetch_large_trades_future(symbol, threshold):
 
 
 def fetch_whale_buy_ratio(symbol, period='15m'):
-    """
-    获取每个 symbol 的净成交量数据
-    :param symbol: 交易对
-    :param period: 时间间隔
-    :return: 返回 symbol 和净成交量（如果获取失败返回 None）
-    """
     url = "https://api.bitget.com/api/v2/spot/market/fund-flow"
     params = {"symbol": symbol, "period": period}
     try:
@@ -262,7 +256,42 @@ def map_mc_to_threshold(mc):
         return 100000
 
 
+def get_volume_increase_15_bitget(symbol):
+    url = "https://api.bitget.com/api/v2/spot/market/candles"
+    params = {"symbol": symbol, "granularity": "15min", "limit": 2}
+    try:
+        response = session.get(url, params=params, timeout=10)  # 使用自定义 session
+        response.raise_for_status()
+        data = response.json()
+
+        if data.get("code") == "00000":
+            k = data.get("data", [])
+            v_now = float(k[1][6])
+            v_past = float(k[0][6])
+            if v_past == 0:
+                return None
+            v_ratio = round(float(v_now / v_past), 2)
+            if v_ratio >= 3:
+                res = f"""
+*💎symbol：*`{symbol[:-4]}`
+💰价格：{k[1][4]}
+🚀近15分钟交易量增长：`{round(v_ratio * 100, 0)}%`
+                """
+                return res
+            else:
+                return None
+    except requests.exceptions.RequestException as e:
+        print(f"Request failed: {e}")
+        return None
+
+
 if __name__ == "__main__":
+    # 设置间隔时间（以秒为单位）
+    interval = 300
+    # 使用 datetime 记录上一次执行的时间
+    last_run = datetime.now()
+    flag = True
+
     bitget_his = set()
     binance_list = binance_spot_list()
     tickers_num = 50
@@ -309,5 +338,20 @@ if __name__ == "__main__":
         # 定期清理历史记录，避免内存泄漏
         if len(bitget_his) > 10000:
             bitget_his.clear()
+
+        current_time = datetime.now()
+        if flag or (current_time - last_run).total_seconds() >= interval:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                futures = []
+                for symbol in tickers_spot:
+                    if symbol not in binance_list:
+                        futures.append(executor.submit(get_volume_increase_15_bitget, symbol))
+                for future in concurrent.futures.as_completed(futures):
+                    message_part = future.result()
+                    if message_part:
+                        safe_send_message(chat_id, message_part)
+                        time.sleep(1)
+            last_run = current_time
+            flag = False
 
         time.sleep(5)
