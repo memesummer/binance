@@ -276,6 +276,7 @@ def get_volume_increase_15_bitget(symbol):
 *💎symbol：*`{symbol[:-4]}`
 💰价格：{k[1][4]}
 🚀近15分钟交易量增长：`{round(v_ratio * 100, 0)}%`
+{"-" * 32}
                 """
                 return res
             else:
