@@ -271,7 +271,7 @@ def get_volume_increase_15_bitget(symbol):
             if v_past == 0:
                 return None
             v_ratio = round(float(v_now / v_past), 2)
-            if v_ratio >= 3:
+            if v_ratio >= 5:
                 res = f"""
 *💎symbol：*`{symbol[:-4]}`
 💰价格：{k[1][4]}
