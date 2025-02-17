@@ -328,7 +328,7 @@ def get_funding_rate(symbol):
             'limit': 1
         }
         data = um_futures_client.funding_rate(**para)
-        fr = float(data[0]['fundingRate'])
+        fr = round(float(data[0]['fundingRate']) * 100, 2)
         return [symbol, fr]
     except Exception as e:
         print(e)
@@ -369,11 +369,11 @@ def get_funding_info_str():
     for v in lt:
         symbol = v[0][:-4]
         n = len(symbol)
-        res += f"{symbol}{' ' * (15 - n)}{v[1]}\n"
+        res += f"{symbol}{' ' * (15 - n)}{v[1]}%\n"
     res += '\n'
     res += "📉🔝*低资金费率top10:*\n"
     for v in st:
         symbol = v[0][:-4]
         n = len(symbol)
-        res += f"{symbol}{' ' * (15 - n)}{v[1]}\n"
+        res += f"{symbol}{' ' * (15 - n)}{v[1]}%\n"
     return res
