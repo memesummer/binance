@@ -380,8 +380,12 @@ def get_new_token_recommend():
                     headers={},
                 )
                 d = response.json()['pairs']
+                if not d:
+                    print(f"dexscreener api未获取到代币信息,ca:{ca}")
+                    continue
                 for i, data in enumerate(d):
-                    if 'liquidity' not in data.keys() or 'fdv' not in data.keys() or 'h24' not in data['priceChange'].keys():
+                    if 'liquidity' not in data.keys() or 'fdv' not in data.keys() or 'h24' not in data[
+                        'priceChange'].keys():
                         continue
                     elif data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity'][
                         'usd'] > 100000:
@@ -444,7 +448,7 @@ def scan_new():
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
-{sol_sniffer.get(token['ca'])}
+{sol_sniffer.get(token['ca']) if sol_sniffer else ""}
 {"-" * 32}
     """
                 safe_send_message(chat_id, message)
