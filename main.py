@@ -1,5 +1,7 @@
 import concurrent.futures
 import datetime
+import json
+import os
 import random
 from datetime import timedelta, timezone
 
@@ -551,12 +553,6 @@ def scan_big_order_spot(symbol, limit=1000, endpoint='api/v3/aggTrades', target=
         for d in data:
             p = float(d['p'])
             v = p * float(d['q'])
-            if symbol in ['ETHUSDT', 'SOLUSDT']:
-                target = 1000000
-            if symbol == 'BTCUSDT':
-                target = 2500000
-            if symbol in ['DOGEUSDT', 'XRPUSDT']:
-                target = 500000
             if v >= target:
                 if d['m']:
                     sell.append([v, d['T'], p])
@@ -584,12 +580,6 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         for d in data:
             p = float(d['p'])
             v = p * float(d['q'])
-            if symbol in ['ETHUSDT', 'SOLUSDT']:
-                target = 1000000
-            if symbol == 'BTCUSDT':
-                target = 2500000
-            if symbol in ['DOGEUSDT', 'XRPUSDT']:
-                target = 500000
             if v >= target:
                 if d['m']:
                     sell.append([v, d['T'], p])
@@ -601,7 +591,23 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
         return [], []
 
 
+def map_mc_to_threshold(mc):
+    if mc < 0.3:
+        return 10000
+    elif 0.3 <= mc < 1:
+        return 20000
+    elif 1 <= mc < 2:
+        return 50000
+    elif 2 <= mc < 5:
+        return 80000
+    elif 5 <= mc < 10:
+        return 100000
+    else:
+        return 200000
+
+
 def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
+    thresholds = {'BTC': 2500000, 'ETH': 1000000, 'SOL': 1000000, 'DOGE': 500000, 'XRP': 500000}
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
@@ -645,8 +651,21 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
         usdt_symbols_rise = list(set(usdt_symbols_rise))
 
         for symbol in usdt_symbols_rise:
-            buy_spot, sell_spot = scan_big_order_spot(symbol)
-            buy_future, sell_future = scan_big_order_future(symbol)
+            if symbol[:-4] in thresholds.keys():
+                threshold = thresholds[symbol[:-4]]
+            else:
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                token_info_file_path = os.path.join(current_dir, "token_data.json")
+                with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
+                    data = json.load(json_file)
+                    market_cap = 0
+                    for token in data['data']:
+                        if token['symbol'].lower() == symbol[:-4].lower():
+                            market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
+                            break
+                threshold = map_mc_to_threshold(market_cap)
+            buy_spot, sell_spot = scan_big_order_spot(symbol, target=threshold)
+            buy_future, sell_future = scan_big_order_future(symbol, target=threshold)
             spot = []
             future = []
             if len(buy_spot) > 0:
