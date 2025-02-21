@@ -17,7 +17,7 @@ from binance_future import get_future_pending_order_rank, get_spot_pending_order
     get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
-    get_symbol_net_v, get_openInterest_diff_rank
+    get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
