@@ -10,6 +10,7 @@ import concurrent.futures
 import datetime
 from datetime import timedelta, timezone
 
+import requests
 from binance.um_futures import UMFutures
 
 from main import binance_api_get, get_latest_price, symbol1000
@@ -321,18 +322,32 @@ def binance_future_list():
         print("无数据或数据格式不正确")
 
 
-def get_funding_rate(symbol):
+def get_funding_rate(symbol, BASE_URL="https://fapi.binance.com", ENDPOINT="/fapi/v1/premiumIndex"):
     try:
-        para = {
-            'symbol': symbol,
-            'limit': 1
+        # 构建URL
+        url = BASE_URL + ENDPOINT
+
+        # 设置请求参数
+        params = {'symbol': symbol}
+
+        # 设置请求头
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
         }
-        data = um_futures_client.funding_rate(**para)
-        fr = round(float(data[0]['fundingRate']) * 100, 2)
-        return [symbol, fr]
+
+        # 发送GET请求
+        response = requests.get(url, headers=headers, params=params)
+
+        # 检查响应状态码
+        if response.status_code == 200:
+            # 解析JSON响应
+            data = response.json()
+            fr = round(float(data['lastFundingRate']) * 100, 2)
+            return [symbol, fr]
     except Exception as e:
         print(e)
-        return 0
+        return [symbol, 0]
 
 
 def get_funding_rate_info():
