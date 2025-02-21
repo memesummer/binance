@@ -1467,3 +1467,142 @@ def statistic_coin_time(symbol):
     except Exception as e:
         print(f"无法统计币和时间：{e}")
         return None
+
+
+def statistic_token_time(symbol):
+    try:
+        k = get_k_lines(symbol, '1h', 1000)
+        if not k:
+            k = get_k_lines_future(symbol, '1h', 1000)
+            if not k:
+                return None
+        res = []
+        for i in k:
+            timestamp_ms = i[0]
+            # 将毫秒转换为秒，并创建 UTC 时间
+            utc_time = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000)
+            # 转换为 UTC+8 时间（加 8 小时）
+            utc8_time = utc_time + timedelta(hours=8)
+            # 提取小时数（24小时制）
+            hour = utc8_time.hour
+            if i[1] < i[4]:
+                res.append([hour, 1])
+            else:
+                res.append([hour, 0])
+
+        # 筛选第二位是 1 的子数组，并提取第一位
+        first_nums = [sub[0] for sub in res if sub[1] == 1]
+
+        # 统计每个第一位数字的出现次数
+        count_dict = {}
+        for num in first_nums:
+            count_dict[num] = count_dict.get(num, 0) + 1
+
+        # 转换为二维数组并按次数降序排序
+        result = [[num, count] for num, count in count_dict.items()]
+        result.sort(key=lambda x: x[1], reverse=True)  # 按第二位（次数）降序排序
+        return {symbol: result}
+    except Exception as e:
+        print(f"无法统计币和时间：{e}")
+        return None
+
+
+# 第一部分：计算每个时间的平均 count 并排序
+def calculate_time_averages(data):
+    # 使用字典存储每个时间的 count 总和和出现次数
+    time_counts = {}
+
+    # 遍历数据
+    for item in data:
+        for symbol, time_list in item.items():
+            for time, count in time_list:
+                if time not in time_counts:
+                    time_counts[time] = {'sum': 0, 'count': 0}
+                time_counts[time]['sum'] += count
+                time_counts[time]['count'] += 1
+
+    # 计算平均值
+    time_averages = {}
+    for time, stats in time_counts.items():
+        time_averages[time] = stats['sum'] / stats['count']
+
+    # 按平均值降序排序
+    sorted_times = sorted(time_averages.items(), key=lambda x: x[1], reverse=True)
+    return sorted_times[:5]
+
+
+# 第二部分：对于特定时间，找出 count 最大的 symbol
+def get_top_symbols_for_time(data, target_time):
+    # 存储特定时间的 symbol 和 count
+    symbol_counts = []
+
+    # 遍历数据
+    for item in data:
+        for symbol, time_list in item.items():
+            for time, count in time_list:
+                if time == target_time:
+                    symbol_counts.append((symbol, count))
+
+    # 按 count 降序排序
+    sorted_symbols = sorted(symbol_counts, key=lambda x: x[1], reverse=True)
+    return sorted_symbols[:10]
+
+
+def statistic_time(endpoint='api/v3/ticker/24hr'):
+    try:
+        params = {}
+        result = binance_api_get(endpoint, params)
+        result_future = um_futures_client.ticker_24hr_price_change(**params)
+        res = result
+        res1 = result_future
+
+        # 假设 res 是一个列表，每个元素是一个字典，包含 'symbol' 和 'priceChangePercent' 字段
+
+        # 检查 res 是否是列表，确保不是空列表
+        if isinstance(res, list) and res and isinstance(res1, list) and res1:
+            result_dict = {item['symbol']: item for item in res}
+            for item in res1:
+                if item['symbol'] not in result_dict:
+                    result_dict[item['symbol']] = item
+            result_list = list(result_dict.values())
+
+            # 过滤
+            fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
+
+            tokens = [
+                token['symbol'] for token in result_list
+                if token['symbol'].endswith("USDT")
+                   and all(f not in token['symbol'] for f in fil_str_list)
+                   and token['count'] != 0
+            ]
+            stat = []
+            # 使用 ThreadPoolExecutor 进行并行 API 请求
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+                futures = [executor.submit(statistic_token_time, symbol) for symbol
+                           in tokens]
+
+                # 等待所有任务完成，并收集结果
+                for future in concurrent.futures.as_completed(futures):
+                    result = future.result()
+                    if result:
+                        stat.append(result)
+            res_str = "⏰全局统计拉盘最多的时间点是：\n"
+            time_averages = calculate_time_averages(stat)
+            for time, avg in time_averages:
+                res_str += f"`{time}`点，平均拉盘次数: {avg:.1f}\n"
+
+            # 获取当前 UTC 时间
+            utc_time = datetime.datetime.utcnow()
+            utc8_time = utc_time + timedelta(hours=8)
+            # 提取小时数（24小时制）
+            target_time = utc8_time.hour
+
+            res_str += f"\n🕒此时*{target_time}*点，拉盘次数最多的symbol是：\n"
+            top_symbols = get_top_symbols_for_time(stat, target_time)
+            for symbol, count in top_symbols:
+                res_str += f"`{symbol[:-4]}`：{count}\n"
+            return res_str
+    except Exception as e:
+        print(f"无法统计币和时间：{e}")
+        return None

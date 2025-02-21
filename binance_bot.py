@@ -17,7 +17,7 @@ from binance_future import get_future_pending_order_rank, get_spot_pending_order
     get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
-    get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time
+    get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
@@ -279,9 +279,16 @@ def funding_rate(message):
 def stat_coin_time(message):
     try:
         param = message.text.split()[1:][0]
-        symbol = param.upper() + 'USDT'
-        res = statistic_coin_time(symbol)
-        bot.reply_to(message, res, parse_mode='Markdown')
+        if param != 'all':
+            symbol = param.upper() + 'USDT'
+            res = statistic_coin_time(symbol)
+            if not res:
+                bot.reply_to(message, "请输入正确的参数格式。示例：/stat btc", parse_mode='Markdown')
+            else:
+                bot.reply_to(message, res, parse_mode='Markdown')
+        else:
+            res = statistic_time()
+            bot.reply_to(message, res, parse_mode='Markdown')
     except Exception as e:
         print(e)
         bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/stat btc")
@@ -294,10 +301,25 @@ def exit_handler():
     bot.stop_polling()
 
 
+def clear_pending_updates(bot):
+    """清理离线时的积压更新"""
+    try:
+        updates = bot.get_updates()
+        if updates:
+            last_update_id = updates[-1].update_id
+            bot.get_updates(offset=last_update_id + 1)
+            print(f"已清理积压更新，最后的 update_id: {last_update_id}")
+        else:
+            print("没有积压更新需要清理")
+    except Exception as e:
+        print(f"清理积压更新时出错: {e}")
+
+
 def start_bot():
     while True:
         try:
             bot.session = session
+            clear_pending_updates(bot)
             bot.polling(none_stop=True, interval=1, timeout=60)
         except Exception as e:
             print(f"Error occurred: {e}")
