@@ -275,6 +275,18 @@ def funding_rate(message):
         bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/f")
 
 
+@bot.message_handler(commands=['stat'])
+def stat_coin_time(message):
+    try:
+        param = message.text.split()[1:][0]
+        symbol = param.upper() + 'USDT'
+        res = statistic_coin_time(symbol)
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/stat btc")
+
+
 @atexit.register
 def exit_handler():
     # 这个函数将在程序退出时自动执行

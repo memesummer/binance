@@ -1403,3 +1403,67 @@ def get_symbol_net_v(symbol):
             else:
                 res.append([interval, None, round(net_spot, 2)])
     return res
+
+
+def statistic_coin_time(symbol):
+    try:
+        k = get_k_lines(symbol, '1h', 1000)
+        if not k:
+            k = get_k_lines_future(symbol, '1h', 1000)
+            if not k:
+                return None
+        res = []
+        for i in k:
+            timestamp_ms = i[0]
+            # 将毫秒转换为秒，并创建 UTC 时间
+            utc_time = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000)
+            # 转换为 UTC+8 时间（加 8 小时）
+            utc8_time = utc_time + timedelta(hours=8)
+            # 提取小时数（24小时制）
+            hour = utc8_time.hour
+            # # 输出结果
+            # print(f"UTC+8 时间: {utc8_time}")  # 输出完整时间
+            # print(f"小时数: {hour}")  # 输出小时数
+
+            if i[1] < i[4]:
+                res.append([hour, 1])
+            else:
+                res.append([hour, 0])
+
+        # 筛选第二位是 1 的子数组，并提取第一位
+        first_nums = [sub[0] for sub in res if sub[1] == 1]
+
+        # 统计每个第一位数字的出现次数
+        count_dict = {}
+        for num in first_nums:
+            count_dict[num] = count_dict.get(num, 0) + 1
+
+        # 转换为二维数组并按次数降序排序
+        result = [[num, count] for num, count in count_dict.items()]
+        result.sort(key=lambda x: x[1], reverse=True)  # 按第二位（次数）降序排序
+
+        t = {}
+        for first, second in result:
+            if second not in t:
+                t[second] = []  # 初始化空列表
+            t[second].append(first)  # 将第一位加入对应第二位的列表
+
+        str = f"📊*{symbol[:-4]}*近期拉盘时间点统计：\n"
+        for i, (k, v) in enumerate(t.items()):
+            if i > 2:
+                break
+            st = ""
+            for tz in v:
+                st += f"`{tz}`点|"
+            if i == 0:
+                pre = "1️⃣最容易拉盘的时间点是："
+            elif i == 1:
+                pre = "2️⃣第二容易拉盘的时间点是："
+            else:
+                pre = "3️⃣第三容易拉盘的时间点是："
+            str += f"{pre}{st}一共拉盘过{k}次\n"
+        return str
+
+    except Exception as e:
+        print(f"无法统计币和时间：{e}")
+        return None
