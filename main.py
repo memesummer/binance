@@ -1587,7 +1587,7 @@ def statistic_time(endpoint='api/v3/ticker/24hr'):
                     result = future.result()
                     if result:
                         stat.append(result)
-            res_str = "⏰全局统计拉盘最多的时间点是：\n"
+            res_str = "📊全局统计拉盘最多的时间点是：\n"
             time_averages = calculate_time_averages(stat)
             for time, avg in time_averages:
                 res_str += f"`{time}`点，平均拉盘次数: {avg:.1f}\n"
