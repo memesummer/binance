@@ -4,6 +4,7 @@ import os
 import re
 import threading
 import time
+from datetime import datetime, timedelta
 
 import requests
 import telebot
@@ -344,11 +345,11 @@ def scan():
                 res = scan_big_order(record)
             else:
                 res = scan_big_order(record, add=monitor_list)
-            message = ""
             for item in res:
                 frozen_dict = '；'.join(f"{key}:{','.join(map(str, values))}" for key, values in item.items())
                 if frozen_dict in binance_his:
                     continue
+                message = ""
                 for k, vl in item.items():
                     st = ""
                     spot = vl[0]
@@ -357,18 +358,26 @@ def scan():
                         for l in spot:
                             fn = format_number(l[1])
                             price = format_price(k, l[2])
+                            trade_time = l[3]
+                            utc_timestamp = int(trade_time) // 1000
+                            utc_plus_8_time = datetime.utcfromtimestamp(utc_timestamp) + timedelta(hours=8)
+                            time_only = utc_plus_8_time.strftime("%H:%M")
                             if l[0] == 0:
-                                st += f"🟥现货在`{price}`卖出了`{fn}`，达到阈值\n"
+                                st += f"🟥现货在{time_only}以`{price}`卖出了`{fn}`，达到阈值\n"
                             if l[0] == 1:
-                                st += f"🟩现货在`{price}`买入了`{fn}`，达到阈值\n"
+                                st += f"🟩现货在{time_only}以`{price}`买入了`{fn}`，达到阈值\n"
                     if len(future) > 0:
                         for l in future:
                             fn = format_number(l[1])
                             price = format_price(k, l[2])
+                            trade_time = l[3]
+                            utc_timestamp = int(trade_time) // 1000
+                            utc_plus_8_time = datetime.utcfromtimestamp(utc_timestamp) + timedelta(hours=8)
+                            time_only = utc_plus_8_time.strftime("%H:%M")
                             if l[0] == 0:
-                                st += f"🟥期货在`{price}`卖出了`{fn}`，达到阈值\n"
+                                st += f"🟥期货在{time_only}以`{price}`卖出了`{fn}`，达到阈值\n"
                             if l[0] == 1:
-                                st += f"🟩期货在`{price}`买入了`{fn}`，达到阈值\n"
+                                st += f"🟩期货在{time_only}以`{price}`买入了`{fn}`，达到阈值\n"
                     if not st:
                         continue
                     message += f"""
@@ -380,9 +389,9 @@ def scan():
                     binance_his.add(frozen_dict)
                     time.sleep(1)
             # 定期清理历史记录，避免内存泄漏
-            if len(binance_his) > 10000:
+            if len(binance_his) > 50000:
                 binance_his.clear()
-            if len(record) > 6000:
+            if len(record) > 50000:
                 record.clear()
             time.sleep(2)
         except Exception as e:
