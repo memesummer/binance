@@ -671,22 +671,22 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
             if len(buy_spot) > 0:
                 for v in buy_spot:
                     if v[1] not in record:
-                        spot.append([1, v[0], v[2]])
+                        spot.append([1, v[0], v[2], v[1]])
                         record.add(v[1])
             if len(sell_spot) > 0:
                 for v in sell_spot:
                     if v[1] not in record:
-                        spot.append([0, v[0], v[2]])
+                        spot.append([0, v[0], v[2], v[1]])
                         record.add(v[1])
             if len(buy_future) > 0:
                 for v in buy_future:
                     if v[1] not in record:
-                        future.append([1, v[0], v[2]])
+                        future.append([1, v[0], v[2], v[1]])
                         record.add(v[1])
             if len(sell_future) > 0:
                 for v in sell_future:
                     if v[1] not in record:
-                        future.append([0, v[0], v[2]])
+                        future.append([0, v[0], v[2], v[1]])
                         record.add(v[1])
             if len(spot) > 0 or len(future) > 0:
                 recommend_list.append({symbol[:-4]: [spot, future]})
