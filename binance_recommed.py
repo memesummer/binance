@@ -15,11 +15,11 @@ import telebot
 from requests.exceptions import Timeout
 
 from main import recommend
+from binance_future import format_number
 
 binance_his = set()
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
-# chat_id = "-4020273113"
 chat_id = "-1002213443358"
 
 # 获取当前脚本所在的目录
@@ -112,6 +112,12 @@ while True:
                     if value[0] == 12:
                         t_len1 = value[1]
                         st += f"💪📈近*1小时现货*主动买入占比连续增长：{t_len1}\n"
+                    if value[0] == 13:
+                        om_list = value[1]
+                        oi = om_list[0]
+                        mc = om_list[1]
+                        om_ratio = om_list[2]
+                        st += f"🏦持仓{format_number(oi)}占市值{format_number(mc)}比例达到{int(oi / mc * 100)}%\n"
                 if not st:
                     continue
                 price = vl[0]

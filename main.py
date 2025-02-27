@@ -101,7 +101,11 @@ def recommend(cir_df, rank=16, endpoint="api/v3/ticker/24hr"):
         usdt_symbols_rise = list(unique_usdt_symbols_rise)
 
         for symbol in usdt_symbols_rise:
-            circle_supply = get_circulating_supply(symbol[:-4].lower(), cir_df)
+            new_symbol = symbol[4:-4].lower() if symbol.startswith("1000") else symbol[:-4].lower()
+            new_symbol = map_cmc_symbol(new_symbol)
+            circle_supply = get_speicial_supply(new_symbol)
+            if not circle_supply:
+                circle_supply = get_circulating_supply(new_symbol, cir_df)
             if not circle_supply:
                 continue
             flag = []
@@ -141,6 +145,10 @@ def recommend(cir_df, rank=16, endpoint="api/v3/ticker/24hr"):
                     flag.append([5, buy_spot, buy_future])
                     break
 
+            om_list = get_oi_mc_ratio(symbol, circle_supply)
+            if om_list:
+                if om_list[2] > 0.5:
+                    flag.append([13, om_list])
             # longshortRatio_rate1 = get_future_takerlongshortRatio(symbol, '30m')
             # longshortRatio_rate4 = get_future_takerlongshortRatio(symbol, '1h')
             # if longshortRatio_rate1:
@@ -505,6 +513,30 @@ def search_more_big_buy_future(symbol, order_value=None, limit=1000, bpr=0.1, sp
         return res
     except Exception as e:
         return [0, 0, 0]
+
+
+def get_oi_mc_ratio(symbol, supply):
+    try:
+        para = {
+            'symbol': symbol,
+            'period': '5m',
+            'limit': 1
+        }
+        openInterest = um_futures_client.open_interest_hist(**para)
+        if not openInterest:
+            return None
+        else:
+            openInterest = openInterest[0]
+            oi_value = float(openInterest['sumOpenInterestValue'])
+            para = {
+                'symbol': symbol
+            }
+            price = float(um_futures_client.ticker_price(**para)['price'])
+            mc = price * supply
+            return [oi_value, mc, oi_value / mc]
+    except Exception as e:
+        print(e)
+        return None
 
 
 def get_aggTrades_spot(symbol, endpoint='api/v3/aggTrades', target=100000):
@@ -1606,3 +1638,25 @@ def statistic_time(endpoint='api/v3/ticker/24hr'):
     except Exception as e:
         print(f"无法统计币和时间：{e}")
         return None
+
+
+def map_cmc_symbol(symbol):
+    symbol_dict = {
+        "luna2": "luna",
+        "ronin": "ron",
+        "avaai": "ava",
+        "000mog": "mog",
+        "sonic": "s",
+        "1mbabydoge": 'babydoge',
+        "raysol": 'ray'
+    }
+    return symbol_dict.get(symbol, symbol)
+
+
+def get_speicial_supply(symbol):
+    supply = {
+        "velodrome": 2014733589.72,
+        "neiroeth": 1000000000,
+        "quick": 749764355.6046581
+    }
+    return supply.get(symbol, None)

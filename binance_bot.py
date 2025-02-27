@@ -15,7 +15,7 @@ from urllib3.util.retry import Retry
 from binance_future import format_number, format_price
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
-    get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str
+    get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str, get_oi_mc_str
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time
@@ -274,6 +274,16 @@ def funding_rate(message):
     except Exception as e:
         print(e)
         bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/f")
+
+
+@bot.message_handler(commands=['om'])
+def oi_mc_ratio(message):
+    try:
+        st = get_oi_mc_str()
+        bot.reply_to(message, st, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/om")
 
 
 @bot.message_handler(commands=['stat'])

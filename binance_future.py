@@ -8,12 +8,15 @@
 # ==============================================================
 import concurrent.futures
 import datetime
+import os
 from datetime import timedelta, timezone
 
+import pandas as pd
 import requests
 from binance.um_futures import UMFutures
 
-from main import binance_api_get, get_latest_price, symbol1000
+from main import binance_api_get, get_latest_price, symbol1000, get_circulating_supply, map_cmc_symbol, \
+    get_speicial_supply
 
 um_futures_client = UMFutures()
 
@@ -187,7 +190,9 @@ def get_order_table_sell(l1, l3, limit=10):
 
 
 def format_number(num):
-    if abs(num) >= 1000000:
+    if abs(num) >= 1000000000:  # 10亿
+        return f"{num / 1000000000:.2f}B"
+    elif abs(num) >= 1000000:
         return f"{num / 1000000:.2f}M"
     elif abs(num) >= 1000:
         return f"{num / 1000:.2f}K"
@@ -222,8 +227,7 @@ def get_future_price(symbol):
         'symbol': symbol
     }
     price = float(um_futures_client.ticker_price(**para)['price'])
-    if symbol.startswith("1000") or symbol in ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT',
-                                               'RATSUSDT', 'FLOKIUSDT']:
+    if symbol.startswith("1000") or symbol in symbol1000:
         return price * 1000
     else:
         return price
@@ -244,8 +248,8 @@ def get_delta_rank_table(delta_list, interval, m=15, r=30):
     return res
 
 
-def get_delta_diff_rank_table(delta_list, interval, m=15, r=30, b=40):
-    res = f"`符号        近{interval}净持仓变化     变化比     24h价格变化`\n"
+def get_delta_diff_rank_table(delta_list, interval, m=14, r=26, b=34):
+    res = f"`符号      近{interval}净持仓变化   变化比   价格变化`\n"
     for i, l in enumerate(delta_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
@@ -391,4 +395,73 @@ def get_funding_info_str():
         symbol = v[0][:-4]
         n = len(symbol)
         res += f"{symbol}{' ' * (15 - n)}{v[1]}%\n"
+    return res
+
+
+def get_symbol_oi_mc(symbol, cir_df):
+    try:
+        new_symbol = symbol[4:-4].lower() if symbol.startswith("1000") else symbol[:-4].lower()
+        new_symbol = map_cmc_symbol(new_symbol)
+        supply = get_speicial_supply(new_symbol)
+        if not supply:
+            supply = get_circulating_supply(new_symbol, cir_df)
+            if not supply:
+                print(f"{new_symbol}仍然没找到流通量")
+                return None
+        para = {
+            'symbol': symbol,
+            'period': '5m',
+            'limit': 1
+        }
+        openInterest = um_futures_client.open_interest_hist(**para)
+        if not openInterest:
+            return None
+        else:
+            openInterest = openInterest[0]
+            oi_value = float(openInterest['sumOpenInterestValue'])
+            price = get_future_price(symbol)
+            mc = price * supply
+            return [new_symbol, oi_value, mc, int(oi_value / mc * 100)]
+    except Exception as e:
+        print(e)
+        return None
+
+
+def get_oi_mc_info():
+    om_list = []
+    future_list = binance_future_list()
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, "circulating.txt")
+    cir_df = pd.read_csv(file_path, sep='\t', header=None, names=['symbol', 'circle_supply'], encoding='utf-8')
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(get_symbol_oi_mc, symbol, cir_df) for symbol in
+                   future_list]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                om_list.append(result)
+
+    sorted_list = sorted(om_list, key=lambda x: x[3], reverse=True)[:10]
+    return sorted_list
+
+
+def get_oi_mc_str(m=13, r=22, b=32):
+    om_list = get_oi_mc_info()
+    res = f"`符号         持仓      市值      比例`\n"
+    for i, l in enumerate(om_list):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += format_number(l[1])
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += format_number(l[2])
+        n3 = len(line)
+        line += ' ' * (b - n3)
+        line += f"{str(l[3])}%"
+        line += '`\n'
+        res += line
     return res
