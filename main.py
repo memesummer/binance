@@ -1644,7 +1644,6 @@ def map_cmc_symbol(symbol):
     symbol_dict = {
         "luna2": "luna",
         "ronin": "ron",
-        "avaai": "ava",
         "000mog": "mog",
         "sonic": "s",
         "1mbabydoge": 'babydoge',
@@ -1657,6 +1656,7 @@ def get_speicial_supply(symbol):
     supply = {
         "velodrome": 2014733589.72,
         "neiroeth": 1000000000,
-        "quick": 749764355.6046581
+        "quick": 749764355.6046581,
+        "avaai": 999994070
     }
     return supply.get(symbol, None)
