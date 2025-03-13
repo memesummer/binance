@@ -256,7 +256,7 @@ def map_mc_to_threshold(mc):
 
 def get_volume_increase_15_bitget(symbol):
     url = "https://api.bitget.com/api/v2/spot/market/candles"
-    params = {"symbol": symbol, "granularity": "15min", "limit": 2}
+    params = {"symbol": symbol, "granularity": "15min", "limit": 3}
     try:
         response = session.get(url, params=params, timeout=10)  # 使用自定义 session
         response.raise_for_status()
@@ -264,12 +264,13 @@ def get_volume_increase_15_bitget(symbol):
 
         if data.get("code") == "00000":
             k = data.get("data", [])
-            v_now = float(k[1][6])
-            v_past = float(k[0][6])
-            if v_past == 0:
+            v_now = float(k[2][6])
+            v_past = float(k[1][6])
+            v_old = float(k[0][6])
+            if v_past == 0 or v_past < v_old:
                 return None
             v_ratio = round(float(v_now / v_past), 2)
-            if v_ratio >= 5:
+            if v_ratio >= 10:
                 res = f"""
 *💎symbol：*`{symbol[:-4]}`
 💰价格：{k[1][4]}
