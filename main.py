@@ -671,7 +671,7 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
         sorted_res = sorted(filtered_tokens, key=lambda x: float(x['priceChangePercent']), reverse=True)
 
         # 获取排序后的 symbol 列表
-        usdt_symbols = [token['symbol'][4:] if token['symbol'].startwith("1000") else token['symbol'] for token in
+        usdt_symbols = [token['symbol'][4:] if token['symbol'].startswith("1000") else token['symbol'] for token in
                         sorted_res]
 
         # 筛选出前15
