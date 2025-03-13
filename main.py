@@ -68,10 +68,12 @@ def recommend(cir_df, rank=16, endpoint="api/v3/ticker/24hr"):
 
     # 检查 res 是否是列表，确保不是空列表
     if isinstance(res, list) and res and isinstance(res1, list) and res1:
-        result_dict = {item['symbol']: item for item in res}
+        result_dict = {item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']: item for item in
+                       res}
         for item in res1:
-            if item['symbol'] not in result_dict:
-                result_dict[item['symbol']] = item
+            sym = item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']
+            if sym not in result_dict:
+                result_dict[sym] = item
         result_list = list(result_dict.values())
 
         # 过滤
@@ -651,12 +653,13 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
 
     # 检查 res 是否是列表，确保不是空列表
     if isinstance(res, list) and res and isinstance(res1, list) and res1:
-        result_dict = {item['symbol']: item for item in res}
+        result_dict = {item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']: item for item in
+                       res}
         for item in res1:
-            if item['symbol'] not in result_dict:
-                result_dict[item['symbol']] = item
+            sym = item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']
+            if sym not in result_dict:
+                result_dict[sym] = item
         result_list = list(result_dict.values())
-
         # 过滤
         fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
 
@@ -671,8 +674,7 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
         sorted_res = sorted(filtered_tokens, key=lambda x: float(x['priceChangePercent']), reverse=True)
 
         # 获取排序后的 symbol 列表
-        usdt_symbols = [token['symbol'][4:] if token['symbol'].startswith("1000") else token['symbol'] for token in
-                        sorted_res]
+        usdt_symbols = [token['symbol'] for token in sorted_res]
 
         # 筛选出前15
         usdt_symbols_rise = usdt_symbols[:rank]
@@ -1624,10 +1626,12 @@ def statistic_time(endpoint='api/v3/ticker/24hr'):
         res1 = result_future
 
         if isinstance(res, list) and res and isinstance(res1, list) and res1:
-            result_dict = {item['symbol']: item for item in res}
+            result_dict = {item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']: item for item in
+                           res}
             for item in res1:
-                if item['symbol'] not in result_dict:
-                    result_dict[item['symbol']] = item
+                sym = item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']
+                if sym not in result_dict:
+                    result_dict[sym] = item
             result_list = list(result_dict.values())
 
             fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
