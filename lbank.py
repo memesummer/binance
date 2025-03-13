@@ -160,9 +160,7 @@ def lbank_get_big_trades(symbol, base_url, threshold, size=500):
 
 
 def map_mc_to_threshold(mc):
-    if mc < 0.3:
-        return 5000
-    elif 0.3 <= mc < 1:
+    if mc < 1:
         return 8000
     elif 1 <= mc < 2:
         return 10000
