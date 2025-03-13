@@ -242,9 +242,7 @@ def get_whale_buy_ratio_rank(interval, rank=10, reverse=True):
 
 
 def map_mc_to_threshold(mc):
-    if mc < 0.3:
-        return 8000
-    elif 0.3 <= mc < 1:
+    if mc < 1:
         return 10000
     elif 1 <= mc < 2:
         return 20000

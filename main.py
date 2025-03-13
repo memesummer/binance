@@ -626,12 +626,10 @@ def scan_big_order_future(symbol, limit=1000, target=100000):
 
 
 def map_mc_to_threshold(mc):
-    if mc < 0.3:
-        return 10000
-    elif 0.3 <= mc < 1:
-        return 20000
-    elif 1 <= mc < 2:
+    if mc < 1:
         return 50000
+    elif 1 <= mc < 2:
+        return 60000
     elif 2 <= mc < 5:
         return 80000
     elif 5 <= mc < 10:
