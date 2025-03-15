@@ -56,7 +56,7 @@ def binance_api_get(endpoint, params=None):
     return None  # Return None if the request fails
 
 
-def recommend(cir_df, rank=16, endpoint="api/v3/ticker/24hr"):
+def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
     recommend_list = []
     params = {}
     result = binance_api_get(endpoint, params)
@@ -125,14 +125,14 @@ def recommend(cir_df, rank=16, endpoint="api/v3/ticker/24hr"):
             except Exception as e:
                 print(f'{symbol}:4h error: {e}')
             try:
-                p_len1, v_len1, vc_ratio, taker_ratio1, t_len1 = get_price_volume_increase(symbol, '1h', 7,
-                                                                                           circle_supply)
-                if p_len1 >= 4 and v_len1 >= 3:
-                    flag.append([2, p_len1, v_len1])
-                if taker_ratio1 > 0.6:
-                    flag.append([10, taker_ratio1])
-                if t_len1 >= 3:
-                    flag.append([12, t_len1])
+                # p_len1, v_len1, vc_ratio, taker_ratio1, t_len1 = get_price_volume_increase(symbol, '1h', 7,
+                #                                                                            circle_supply)
+                # if p_len1 >= 4 and v_len1 >= 3:
+                #     flag.append([2, p_len1, v_len1])
+                # if taker_ratio1 > 0.6:
+                #     flag.append([10, taker_ratio1])
+                # if t_len1 >= 3:
+                #     flag.append([12, t_len1])
 
                 v15_list = get_volume_increase_15(symbol)
                 if v15_list[0] == 1:
@@ -140,17 +140,18 @@ def recommend(cir_df, rank=16, endpoint="api/v3/ticker/24hr"):
             except Exception as e:
                 print(f'{symbol}:1h error: {e}')
 
-            buy_spot = search_more_big_buy_spot(symbol)
-            buy_future = search_more_big_buy_future(symbol)
-            for i in range(3):
-                if buy_spot[i] == 1 or buy_future == 1:
-                    flag.append([5, buy_spot, buy_future])
-                    break
+            # buy_spot = search_more_big_buy_spot(symbol)
+            # buy_future = search_more_big_buy_future(symbol)
+            # for i in range(3):
+            #     if buy_spot[i] == 1 or buy_future == 1:
+            #         flag.append([5, buy_spot, buy_future])
+            #         break
 
             om_list = get_oi_mc_ratio(symbol, circle_supply)
             if om_list:
                 if om_list[2] > 0.5:
                     flag.append([13, om_list])
+
             # longshortRatio_rate1 = get_future_takerlongshortRatio(symbol, '30m')
             # longshortRatio_rate4 = get_future_takerlongshortRatio(symbol, '1h')
             # if longshortRatio_rate1:
