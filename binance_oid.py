@@ -57,7 +57,7 @@ def run_task():
         frozen = ''.join(map(str, l))
         if frozen in binance_his:
             continue
-        diff_ratio = l[4]
+        diff_ratio = l[5]
         if diff_ratio >= 3:
             res += f"🌪️*{l[0][4:] if l[0].startswith('1000') else l[0]}*近15分钟持仓增加`{format_number(float(l[4]))}`｜`{str(l[5])}%`｜`{str(l[3])}%`\n"
             binance_his.add(''.join(map(str, l)))
