@@ -233,7 +233,7 @@ def get_future_price(symbol):
         return price
 
 
-def get_delta_rank_table(delta_list, interval, m=15, r=30):
+def get_delta_rank_table(delta_list, all_list, interval, m=15, r=30):
     res = f"`符号        近{interval}净持仓值     24h价格变化`\n"
     for i, l in enumerate(delta_list):
         line = f"`{i + 1}.{l[0]}"
@@ -245,10 +245,21 @@ def get_delta_rank_table(delta_list, interval, m=15, r=30):
         line += f"{str(l[2])}%"
         line += '`\n'
         res += line
+    res += f"\n`符号        近{interval}持仓值      24h价格变化`\n"
+    for i, l in enumerate(all_list):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += format_number(float(l[3]))
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += f"{str(l[2])}%"
+        line += '`\n'
+        res += line
     return res
 
 
-def get_delta_diff_rank_table(delta_list, interval, m=14, r=26, b=34):
+def get_delta_diff_rank_table(delta_list, all_list, interval, m=14, r=26, b=34):
     res = f"`符号      近{interval}净持仓变化   变化比   价格变化`\n"
     for i, l in enumerate(delta_list):
         line = f"`{i + 1}.{l[0]}"
@@ -258,6 +269,20 @@ def get_delta_diff_rank_table(delta_list, interval, m=14, r=26, b=34):
         n2 = len(line)
         line += ' ' * (r - n2)
         line += f"{str(l[2])}%"
+        n3 = len(line)
+        line += ' ' * (b - n3)
+        line += f"{str(l[3])}%"
+        line += '`\n'
+        res += line
+    res += f"\n`符号      近{interval}持仓变化    变化比   价格变化`\n"
+    for i, l in enumerate(all_list):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += format_number(float(l[4]))
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += f"{str(l[5])}%"
         n3 = len(line)
         line += ' ' * (b - n3)
         line += f"{str(l[3])}%"
@@ -280,6 +305,23 @@ def get_symbol_oi_table(symbol_oi, m=10, r=24):
         else:
             before = float(symbol_oi[i + 1][1])
             diff = round((float(l[1]) - before) / abs(before) * 100, 0)
+        line += f"{diff}%"
+        line += '`\n'
+        res += line
+
+    res += f"\n`周期      持仓值       持仓变化`\n"
+    for i, l in enumerate(symbol_oi):
+        line = f"`{l[0]}:"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += format_number(float(l[2]))
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        if i == len(symbol_oi) - 1:
+            diff = 'NA'
+        else:
+            before = float(symbol_oi[i + 1][2])
+            diff = round((float(l[2]) - before) / abs(before) * 100, 0)
         line += f"{diff}%"
         line += '`\n'
         res += line

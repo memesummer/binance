@@ -920,7 +920,7 @@ def fetch_openInterest(symbol, p_chg, limit):
         sumOpenInterestValue = float(openInterest['sumOpenInterestValue'])
         ls_ratio = um_futures_client.top_long_short_position_ratio(**para)[0]
         delta_openInterest = (float(ls_ratio['longAccount']) - float(ls_ratio['shortAccount'])) * sumOpenInterestValue
-        return [symbol[:-4], round(delta_openInterest, 2), p_chg]
+        return [symbol[:-4], round(delta_openInterest, 2), p_chg, sumOpenInterestValue]
 
 
 def get_openInterest_rank(interval, rank=10, reverse=True):
@@ -949,8 +949,9 @@ def get_openInterest_rank(interval, rank=10, reverse=True):
                 delta_list.append(result)
 
     # 按净持仓量进行排序
-    sorted_list = sorted(delta_list, key=lambda x: x[1], reverse=reverse)[:rank]
-    return sorted_list
+    sorted_list_net = sorted(delta_list, key=lambda x: x[1], reverse=reverse)[:rank]
+    sorted_list_all = sorted(delta_list, key=lambda x: x[3], reverse=reverse)[:rank]
+    return sorted_list_net, sorted_list_all
 
 
 def fetch_openInterest_diff(symbol, p_chg, limit):
@@ -974,9 +975,12 @@ def fetch_openInterest_diff(symbol, p_chg, limit):
         delta_openInterest_now = (float(ls_ratio_now['longAccount']) - float(
             ls_ratio_now['shortAccount'])) * sumOpenInterestValue_now
         diff = round(delta_openInterest_now - delta_openInterest_before, 2)
+        diff_total = round(sumOpenInterestValue_now - sumOpenInterestValue_before, 2)
         delta_openInterest_before = delta_openInterest_before if delta_openInterest_before != 0 else 1e-10
+        sumopenInterest_before = sumOpenInterestValue_before if sumOpenInterestValue_before != 0 else 1e-10
         diff_ratio = round((diff / abs(delta_openInterest_before)) * 100, 2)
-        return [symbol[:-4], diff, diff_ratio, p_chg]
+        diff_ratio_total = round((diff_total / abs(sumopenInterest_before)) * 100, 2)
+        return [symbol[:-4], diff, diff_ratio, p_chg, diff_total, diff_ratio_total]
 
 
 def get_openInterest_diff_rank(interval, rank=10, reverse=True):
@@ -1005,8 +1009,9 @@ def get_openInterest_diff_rank(interval, rank=10, reverse=True):
                 delta_list.append(result)
 
     # 按净持仓量进行排序
-    sorted_list = sorted(delta_list, key=lambda x: x[1], reverse=reverse)[:rank]
-    return sorted_list
+    sorted_list_net = sorted(delta_list, key=lambda x: x[1], reverse=reverse)[:rank]
+    sorted_list_all = sorted(delta_list, key=lambda x: x[4], reverse=reverse)[:rank]
+    return sorted_list_net, sorted_list_all
 
 
 def get_symbol_open_interest(symbol):
@@ -1028,7 +1033,7 @@ def get_symbol_open_interest(symbol):
             ls_ratio = um_futures_client.top_long_short_position_ratio(**para)[0]
             delta_openInterest = (float(ls_ratio['longAccount']) - float(
                 ls_ratio['shortAccount'])) * sumOpenInterestValue
-            res.append([interval, round(delta_openInterest, 2)])
+            res.append([interval, round(delta_openInterest, 2), round(sumOpenInterestValue, 2)])
     return res
 
 

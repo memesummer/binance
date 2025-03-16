@@ -41,7 +41,7 @@ def safe_send_message(chat_id, message):
 
 
 def run_task():
-    net_list = get_openInterest_diff_rank("15m")
+    net_list, all_list = get_openInterest_diff_rank("15m")
     res = ""
     for l in net_list:
         frozen = ''.join(map(str, l))
@@ -50,6 +50,16 @@ def run_task():
         diff_ratio = l[2]
         if diff_ratio >= 3:
             res += f"🌀*{l[0][4:] if l[0].startswith('1000') else l[0]}*近15分钟净持仓增加`{format_number(float(l[1]))}`｜`{str(l[2])}%`｜`{str(l[3])}%`\n"
+            binance_his.add(''.join(map(str, l)))
+        else:
+            continue
+    for l in all_list:
+        frozen = ''.join(map(str, l))
+        if frozen in binance_his:
+            continue
+        diff_ratio = l[4]
+        if diff_ratio >= 3:
+            res += f"🌪️*{l[0][4:] if l[0].startswith('1000') else l[0]}*近15分钟持仓增加`{format_number(float(l[4]))}`｜`{str(l[5])}%`｜`{str(l[3])}%`\n"
             binance_his.add(''.join(map(str, l)))
         else:
             continue

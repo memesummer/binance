@@ -130,10 +130,9 @@ def get_open_interest_rank(message):
         reverse = True
         if param2 == 'a':
             reverse = False
-        net_list = get_openInterest_rank(interval, reverse=reverse)
-        res = get_delta_rank_table(net_list, interval)
+        net_list, all_list = get_openInterest_rank(interval, reverse=reverse)
+        res = get_delta_rank_table(net_list, all_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
-
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/oi 1h d")
 
@@ -148,8 +147,8 @@ def get_open_interest_diff_rank(message):
         reverse = True
         if param2 == 'a':
             reverse = False
-        net_list = get_openInterest_diff_rank(interval, reverse=reverse)
-        res = get_delta_diff_rank_table(net_list, interval)
+        net_list, all_list = get_openInterest_diff_rank(interval, reverse=reverse)
+        res = get_delta_diff_rank_table(net_list, all_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
     except Exception as e:
         # print(e)
