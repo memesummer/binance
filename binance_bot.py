@@ -5,6 +5,7 @@ import re
 import threading
 import time
 from datetime import datetime, timedelta
+from functools import wraps
 
 import requests
 import telebot
@@ -21,6 +22,7 @@ from main import get_latest_price, get_net_volume_rank_future, get_net_volume_ra
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
+AUTHORIZED_USERS = [546797136]  # 替换为实际用户 ID
 
 binance_his = set()
 record = set()
@@ -37,7 +39,21 @@ def remove_symbols(text):
     return cleaned_text
 
 
+# 授权检查装饰器
+def restricted(func):
+    @wraps(func)
+    def wrapper(message):
+        user_id = message.from_user.id
+        if user_id not in AUTHORIZED_USERS:
+            bot.reply_to(message, "抱歉，你没有权限使用此机器人！")
+            return
+        return func(message)
+
+    return wrapper
+
+
 @bot.message_handler(commands=['o'])
+@restricted
 def get_order(message):
     try:
         # 将参数分割成两部分
@@ -86,6 +102,7 @@ def get_order(message):
 
 
 @bot.message_handler(commands=['nf'])
+@restricted
 def get_net_future(message):
     try:
         # 将参数分割成两部分
@@ -103,6 +120,7 @@ def get_net_future(message):
 
 
 @bot.message_handler(commands=['ns'])
+@restricted
 def get_net_spot(message):
     try:
         # 将参数分割成两部分
@@ -121,6 +139,7 @@ def get_net_spot(message):
 
 
 @bot.message_handler(commands=['oi'])
+@restricted
 def get_open_interest_rank(message):
     try:
         # 将参数分割成两部分
@@ -138,6 +157,7 @@ def get_open_interest_rank(message):
 
 
 @bot.message_handler(commands=['oid'])
+@restricted
 def get_open_interest_diff_rank(message):
     try:
         # 将参数分割成两部分
@@ -156,6 +176,7 @@ def get_open_interest_diff_rank(message):
 
 
 @bot.message_handler(commands=['i'])
+@restricted
 def get_symbol_oi(message):
     try:
         param = message.text.split()[1:][0]
@@ -169,6 +190,7 @@ def get_symbol_oi(message):
 
 
 @bot.message_handler(commands=['n'])
+@restricted
 def get_symbol_net(message):
     try:
         param = message.text.split()[1:][0]
@@ -182,6 +204,7 @@ def get_symbol_net(message):
 
 
 @bot.message_handler(commands=['t'])
+@restricted
 def get_token_info(message):
     try:
         symbol = message.text.split()[1:][0]
@@ -199,6 +222,7 @@ def get_token_info(message):
 
 
 @bot.message_handler(commands=['d'])
+@restricted
 def get_token_sf_delta(message):
     try:
         spot, future = token_spot_future_delta()
@@ -211,6 +235,7 @@ def get_token_sf_delta(message):
 
 
 @bot.message_handler(commands=['ma'])
+@restricted
 def add_monitor(message):
     try:
         param = message.text.split()[1:][0]
@@ -224,6 +249,7 @@ def add_monitor(message):
 
 
 @bot.message_handler(commands=['md'])
+@restricted
 def delete_monitor(message):
     try:
         param = message.text.split()[1:][0]
@@ -237,6 +263,7 @@ def delete_monitor(message):
 
 
 @bot.message_handler(commands=['mc'])
+@restricted
 def check_monitor(message):
     try:
         s = ""
@@ -251,6 +278,7 @@ def check_monitor(message):
 
 
 @bot.message_handler(commands=['g'])
+@restricted
 def gain_lose_rank(message):
     try:
         # 将参数分割成两部分
@@ -266,6 +294,7 @@ def gain_lose_rank(message):
 
 
 @bot.message_handler(commands=['f'])
+@restricted
 def funding_rate(message):
     try:
         st = get_funding_info_str()
@@ -276,6 +305,7 @@ def funding_rate(message):
 
 
 @bot.message_handler(commands=['om'])
+@restricted
 def oi_mc_ratio(message):
     try:
         st = get_oi_mc_str()
@@ -286,6 +316,7 @@ def oi_mc_ratio(message):
 
 
 @bot.message_handler(commands=['stat'])
+@restricted
 def stat_coin_time(message):
     try:
         param = message.text.split()[1:][0]
