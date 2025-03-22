@@ -17,9 +17,11 @@ from binance_future import format_number, format_price
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
     get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str, get_oi_mc_str
+from bithumb import bithumb_alert, to_list_on_bithumb
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time
+from upbit import to_list_on_upbit, get_upbit_volume
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 AUTHORIZED_USERS = [546797136]  # 替换为实际用户 ID
@@ -333,6 +335,76 @@ def stat_coin_time(message):
     except Exception as e:
         print(e)
         bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/stat btc")
+
+
+@bot.message_handler(commands=['ul'])
+@restricted
+def upbit_to_list(message):
+    try:
+        up = to_list_on_upbit()
+        res = f"`还没上upbit的潜力币`：{str(up)}\n"
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, "请输入正确的参数格式。示例：/ul")
+
+
+@bot.message_handler(commands=['up'])
+@restricted
+def up_volume(message):
+    try:
+        unit = message.text.split()[1:][0]
+        res = get_upbit_volume(unit)
+        safe_send_message(chat_id, res)
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, "请输入正确的参数格式。示例：/up 60")
+
+
+@bot.message_handler(commands=['ba'])
+@restricted
+def thumb_alert(message):
+    try:
+        res = bithumb_alert()
+        safe_send_message(chat_id, res)
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, "请输入正确的参数格式。示例：/ba")
+
+
+@bot.message_handler(commands=['bl'])
+@restricted
+def bithumb_to_list(message):
+    try:
+        bit = to_list_on_bithumb()
+        res = f"`还没上bithumb的潜力币`：{str(bit)}\n"
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, "请输入正确的参数格式。示例：/bl")
+
+
+@bot.message_handler(commands=['kl'])
+@restricted
+def korea_to_list(message):
+    try:
+        up = to_list_on_upbit()
+        bit = to_list_on_bithumb()
+        set1 = set(up)
+        set2 = set(bit)
+        # 计算交集
+        intersection = set1 & set2  # 或 set1.intersection(set2)
+        # 计算 list1 独有的部分
+        only_in_up = set1 - set2  # 或 set1.difference(set2)
+        # 计算 list2 独有的部分
+        only_in_bit = set2 - set1  # 或 set2.difference(set1)
+        res = f"`两个所都没有上的潜力币`：{str(intersection)}\n"
+        res += f"`没上upbit但上了bithumb的潜力币`：{str(only_in_up)}\n"
+        res += f"`没上bithumb但上了upbit的潜力币`：{str(only_in_bit)}\n"
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, "请输入正确的参数格式。示例：/bl")
 
 
 @atexit.register
