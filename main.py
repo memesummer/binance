@@ -1195,6 +1195,25 @@ def binance_spot_list(endpoint="api/v3/ticker/24hr"):
         print("无数据或数据格式不正确")
 
 
+def binance_future_list():
+    params = {}
+    future = um_futures_client.ticker_24hr_price_change(**params)
+
+    if isinstance(future, list) and future:
+        # 获取前一天的时间戳
+        now_utc = datetime.datetime.now(timezone.utc)
+        yesterday_utc = now_utc - timedelta(days=1)
+        yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+        symbols_future = set(
+            [token['symbol'][4:-4] if token['symbol'].startswith('1000') else token['symbol'][:-4] for token in future
+             if
+             token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token['symbol'] and
+             token['count'] != 0 and token['closeTime'] > yesterday_timestamp_utc])
+        return symbols_future
+    else:
+        print("无数据或数据格式不正确")
+
+
 def fetch_gain_lose_spot(symbol, interval, limit):
     try:
         if symbol in ['SATSUSDT']:
