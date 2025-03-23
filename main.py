@@ -10,6 +10,8 @@ from binance.um_futures import UMFutures
 from dateutil.relativedelta import relativedelta
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from upbit import get_24h_volume, get_15m_upbit_volume, get_15m_upbit_volume_increase, get_upbit_token_list
+from bithumb import is_on_alert, get_bithumb_token_list
 
 um_futures_client = UMFutures()
 
@@ -64,8 +66,6 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
     result_future = um_futures_client.ticker_24hr_price_change(**params)
     res1 = result_future
 
-    # 假设 res 是一个列表，每个元素是一个字典，包含 'symbol' 和 'priceChangePercent' 字段
-
     # 检查 res 是否是列表，确保不是空列表
     if isinstance(res, list) and res and isinstance(res1, list) and res1:
         result_dict = {item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']: item for item in
@@ -102,6 +102,10 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
         # 转换成列表
         usdt_symbols_rise = list(unique_usdt_symbols_rise)
 
+        up24 = get_24h_volume(rank=20)
+        up15 = get_15m_upbit_volume(rank=20)
+        up_token = get_upbit_token_list()
+        bithumb_token = get_bithumb_token_list()
         for symbol in usdt_symbols_rise:
             new_symbol = symbol[4:-4].lower() if symbol.startswith("1000") else symbol[:-4].lower()
             new_symbol = map_cmc_symbol(new_symbol)
@@ -112,6 +116,14 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
                 continue
             flag = []
             try:
+                v15_list = get_volume_increase_15(symbol)
+                if v15_list[0] == 1:
+                    flag.append([4, v15_list[1]])
+            except Exception as e:
+                print(f'{symbol}:15m volume_increase error: {e}')
+
+            try:
+
                 p_len4, v_len4, vc_ratio, taker_ratio4, t_len4 = get_price_volume_increase(symbol, '4h', 5,
                                                                                            circle_supply)
                 if p_len4 >= 3 and v_len4 >= 2:
@@ -124,28 +136,13 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
                     flag.append([11, t_len4])
             except Exception as e:
                 print(f'{symbol}:4h error: {e}')
-            try:
-                # p_len1, v_len1, vc_ratio, taker_ratio1, t_len1 = get_price_volume_increase(symbol, '1h', 7,
-                #                                                                            circle_supply)
-                # if p_len1 >= 4 and v_len1 >= 3:
-                #     flag.append([2, p_len1, v_len1])
-                # if taker_ratio1 > 0.6:
-                #     flag.append([10, taker_ratio1])
-                # if t_len1 >= 3:
-                #     flag.append([12, t_len1])
 
-                v15_list = get_volume_increase_15(symbol)
-                if v15_list[0] == 1:
-                    flag.append([4, v15_list[1]])
-            except Exception as e:
-                print(f'{symbol}:1h error: {e}')
-
-            # buy_spot = search_more_big_buy_spot(symbol)
-            # buy_future = search_more_big_buy_future(symbol)
-            # for i in range(3):
-            #     if buy_spot[i] == 1 or buy_future == 1:
-            #         flag.append([5, buy_spot, buy_future])
-            #         break
+            buy_spot = search_more_big_buy_spot(symbol)
+            buy_future = search_more_big_buy_future(symbol)
+            for i in range(4):
+                if buy_spot[i] == 1 or buy_future == 1:
+                    flag.append([5, buy_spot, buy_future])
+                    break
 
             om_list = get_oi_mc_ratio(symbol, circle_supply)
             if om_list:
@@ -165,6 +162,40 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             # agg_future = get_aggTrades_future(symbol)
             # if len(agg_spot) > 0 or len(agg_future) > 0:
             #     flag.append([6, agg_spot, agg_future])
+
+            oil = fetch_openInterest_diff(symbol, 0, 3)
+            if oil:
+                if oil[2] >= 3:
+                    flag.append([14, oil[1], oil[2]])
+                if oil[5] >= 3:
+                    flag.append([15, oil[4], oil[5]])
+            else:
+                print(f"{symbol}获取持仓数据错误")
+
+            if up24:
+                for i, item in enumerate(up24):
+                    if symbol[:-4] == item[0]:
+                        flag.append([16, 20 - i])
+            else:
+                print(f"{symbol}获取up24h交易量数据错误")
+
+            if up15:
+                for i, item in enumerate(up15):
+                    if symbol[:-4] == item[0]:
+                        flag.append([17, 20 - i])
+            else:
+                print(f"{symbol}获取up15m交易量数据错误")
+
+            if up_token and symbol[:-4] in up_token:
+                up15_list = get_15m_upbit_volume_increase(symbol[:-4])
+                if up15_list and up15_list[0] == 1:
+                    flag.append([18, up15_list[1]])
+
+            if bithumb_token and symbol[:-4] in bithumb_token:
+                bithumb_alert = is_on_alert(symbol[:-4])
+                if bithumb_alert and bithumb_alert[0] == 1:
+                    flag.append([19, bithumb_alert[1]])
+
             if len(flag) == 0:
                 continue
             else:
@@ -438,7 +469,7 @@ def get_future_volume(symbol, period, endpoint='futures/data/openInterestHist'):
 def search_more_big_buy_spot(symbol, order_value=None, limit=5000, endpoint='api/v3/depth',
                              bpr=0.1, spr=0.1):
     if order_value is None:
-        order_value = [100000, 500000, 1000000]
+        order_value = [10000, 100000, 500000, 1000000]
     try:
         para = {
             'symbol': symbol,
@@ -447,21 +478,29 @@ def search_more_big_buy_spot(symbol, order_value=None, limit=5000, endpoint='api
         data = binance_api_get(endpoint, para)
         sp = float(get_latest_price(symbol))
 
-        buy = [0, 0, 0]
+        buy = [0, 0, 0, 0]
         for l in data['bids']:
             p = float(l[0])
             v = int(p * float(l[1]))
             for i, ov in enumerate(order_value):
-                if sp * (1 - bpr) <= p and v >= ov:
-                    buy[i] += v
+                if i == len(order_value) - 1:
+                    if sp * (1 - bpr) <= p and v >= ov:
+                        buy[i] += v
+                else:
+                    if sp * (1 - bpr) <= p and order_value[i + 1] > v >= ov:
+                        buy[i] += v
 
-        sell = [0, 0, 0]
+        sell = [0, 0, 0, 0]
         for l in data['asks']:
             p = float(l[0])
             v = int(p * float(l[1]))
             for i, ov in enumerate(order_value):
-                if p <= sp * (1 + spr) and v >= ov:
-                    sell[i] += v
+                if i == len(order_value) - 1:
+                    if p <= sp * (1 + spr) and v >= ov:
+                        sell[i] += v
+                else:
+                    if p <= sp * (1 + spr) and order_value[i + 1] > v >= ov:
+                        sell[i] += v
 
         res = []
         for i in range(len(order_value)):
@@ -471,7 +510,7 @@ def search_more_big_buy_spot(symbol, order_value=None, limit=5000, endpoint='api
                 res.append(0)
         return res
     except Exception as e:
-        return [0, 0, 0]
+        return [0, 0, 0, 0]
 
 
 def search_more_big_buy_future(symbol, order_value=None, limit=1000, bpr=0.1, spr=0.1):
@@ -479,7 +518,7 @@ def search_more_big_buy_future(symbol, order_value=None, limit=1000, bpr=0.1, sp
         symbol = '1000' + symbol
 
     if order_value is None:
-        order_value = [100000, 500000, 1000000]
+        order_value = [10000, 100000, 500000, 1000000]
     try:
         para = {
             'symbol': symbol,
@@ -491,21 +530,29 @@ def search_more_big_buy_future(symbol, order_value=None, limit=1000, bpr=0.1, sp
         }
         fp = float(um_futures_client.ticker_price(**ppara)['price'])
 
-        buy = [0, 0, 0]
+        buy = [0, 0, 0, 0]
         for l in data['bids']:
             p = float(l[0])
             v = int(p * float(l[1]))
             for i, ov in enumerate(order_value):
-                if fp * (1 - bpr) <= p and v >= ov:
-                    buy[i] += v
+                if i == len(order_value) - 1:
+                    if fp * (1 - bpr) <= p and v >= ov:
+                        buy[i] += v
+                else:
+                    if fp * (1 - bpr) <= p and order_value[i + 1] > v >= ov:
+                        buy[i] += v
 
-        sell = [0, 0, 0]
+        sell = [0, 0, 0, 0]
         for l in data['asks']:
             p = float(l[0])
             v = int(p * float(l[1]))
             for i, ov in enumerate(order_value):
-                if p <= fp * (1 + spr) and v >= ov:
-                    sell[i] += v
+                if i == len(order_value) - 1:
+                    if p <= fp * (1 + spr) and v >= ov:
+                        sell[i] += v
+                else:
+                    if p <= fp * (1 + spr) and order_value[i + 1] > v >= ov:
+                        sell[i] += v
 
         res = []
         for i in range(len(order_value)):
@@ -515,7 +562,7 @@ def search_more_big_buy_future(symbol, order_value=None, limit=1000, bpr=0.1, sp
                 res.append(0)
         return res
     except Exception as e:
-        return [0, 0, 0]
+        return [0, 0, 0, 0]
 
 
 def get_oi_mc_ratio(symbol, supply):
@@ -1732,3 +1779,28 @@ def get_speicial_supply(symbol):
         "avaai": 999994070
     }
     return supply.get(symbol, None)
+
+
+def get_upbit_volume_increase_15(symbol):
+    try:
+        data15 = get_k_lines(symbol, '15m', 2)
+        # 再看15min内是否有交易量激增
+        v_now = float(data15[1][7])
+        v_past = float(data15[0][7])
+        v_ratio = round(float(v_now / v_past), 2)
+        if v_ratio >= 3:
+            v15_list = [1, v_ratio]
+        else:
+            v15_list = [0, v_ratio]
+        return v15_list
+    except Exception as e:
+        data15 = get_k_lines_future(symbol, '15m', 2)
+        # 再看15min内是否有交易量激增
+        v_now = float(data15[1][7])
+        v_past = float(data15[0][7])
+        v_ratio = round(float(v_now / v_past), 2)
+        if v_ratio >= 3:
+            v15_list = [1, v_ratio]
+        else:
+            v15_list = [0, v_ratio]
+        return v15_list

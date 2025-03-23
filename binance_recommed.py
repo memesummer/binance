@@ -65,26 +65,26 @@ while True:
                     if value[0] == 1:
                         p_len4 = value[1]
                         v_len4 = value[2]
-                        st += f"🟢｜💹4小时价格连续增长：{p_len4}\n"
-                        st += f"🟢｜📊4小时交易量连续增长：{v_len4}\n"
+                        st += f"🟢💹趋势引擎：{p_len4}\n"
+                        st += f"🟢📊趋势动能：{v_len4}\n"
                     if value[0] == 2:
                         p_len1 = value[1]
                         v_len1 = value[2]
                         st += f"🔵｜💡1小时价格连续增长：{p_len1}\n"
                         st += f"🔵｜ℹ️1小时交易量连续增长：{v_len1}\n"
                     if value[0] == 3:
-                        st += f"🎯4小时交易量占流通市值比例达到：{round(value[1] * 100, 0)}%\n"
+                        st += f"🎯🌊资金潮汐率：{int(value[1] * 100)}%\n"
                     if value[0] == 4:
-                        st += f"🚀近15分钟交易量增长：{round(value[1] * 100, 0)}%\n"
+                        st += f"🚀🔥脉冲指数：{int(value[1] * 100)}%\n"
                     if value[0] == 5:
                         buy_spot = value[1]
                         buy_future = value[2]
-                        index = {0: 10, 1: 50, 2: 100}
-                        for i in range(3):
+                        index = {0: "小单", 1: "中单", 2: "大单", 3: "超大单"}
+                        for i in range(4):
                             if buy_spot[i] == 1:
-                                st += f"🔔*[{index[i]}万]*以上的*[现货]*挂单购买力更强\n"
+                                st += f"🔔[{index[i]}][现货]潜在购买力突出，存在托盘\n"
                             if buy_future[i] == 1:
-                                st += f"🔔*[{index[i]}万]*以上的*[期货]*挂单购买力更强\n"
+                                st += f"🔔[{index[i]}][期货]潜在购买力突出，存在托盘\n"
                     if value[0] == 6:
                         agg_spot = value[1]
                         agg_future = value[2]
@@ -102,13 +102,13 @@ while True:
                         st += f"⬆️近*30min合约*主动买卖比显著增加🔺{longshortRatio_rate1}%\n"
                     if value[0] == 9:
                         taker_ratio4 = round(value[1] * 100, 0)
-                        st += f"💪近*4小时现货*主动买入量占比较高🥧：{taker_ratio4}%\n"
+                        st += f"🧿️主动狩猎比：{taker_ratio4}%\n"
                     if value[0] == 10:
                         taker_ratio1 = round(value[1] * 100, 0)
                         st += f"💪近*1小时现货*主动买入量占比较高🥧：{taker_ratio1}%\n"
                     if value[0] == 11:
                         t_len4 = value[1]
-                        st += f"💪📈近*4小时现货*主动买入占比连续增长：{t_len4}\n"
+                        st += f"⚔️主动狩猎指数：{t_len4}\n"
                     if value[0] == 12:
                         t_len1 = value[1]
                         st += f"💪📈近*1小时现货*主动买入占比连续增长：{t_len1}\n"
@@ -117,7 +117,20 @@ while True:
                         oi = om_list[0]
                         mc = om_list[1]
                         om_ratio = om_list[2]
-                        st += f"🏦持仓{format_number(oi)}占市值{format_number(mc)}比例达到{int(oi / mc * 100)}%\n"
+                        st += f"🏦🕹️控盘强度：{int(oi / mc * 100)}%\n"
+                    if value[0] == 14:
+                        st += f"🐂🌋主力多头扩张{format_number(float(value[1]))}｜{str(value[2])}%\n"
+                    if value[0] == 15:
+                        st += f"🧲🔼市场增量{format_number(float(value[1]))}｜{str(value[2])}%\n"
+                    if value[0] == 16:
+                        st += f"🧩🧬多维健康度：{value[1]}/20\n"
+                    if value[0] == 17:
+                        st += f"🧩🧑‍🤝‍🧑多维活跃度：{value[1]}/20\n"
+                    if value[0] == 18:
+                        st += f"🧩🚀多维脉冲指数：{int(value[1] * 100)}\n"
+                    if value[0] == 19:
+                        for i in value[1]:
+                            st += f"🧩🚨多维警报：{i}\n"
                 if not st:
                     continue
                 price = vl[0]

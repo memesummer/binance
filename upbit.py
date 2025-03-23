@@ -12,8 +12,16 @@ import aiohttp
 import requests
 from aiolimiter import AsyncLimiter
 
-from binance_future import format_number
-from main import binance_spot_list, binance_future_list
+
+def format_number(num):
+    if abs(num) >= 1000000000:  # 10亿
+        return f"{num / 1000000000:.2f}B"
+    elif abs(num) >= 1000000:
+        return f"{num / 1000000:.2f}M"
+    elif abs(num) >= 1000:
+        return f"{num / 1000:.2f}K"
+    else:
+        return str(num)
 
 
 def get_upbit_token_list(url="https://api.upbit.com/v1/market/all"):
@@ -35,6 +43,7 @@ def get_upbit_token_list(url="https://api.upbit.com/v1/market/all"):
 
 
 def to_list_on_upbit():
+    from main import binance_spot_list, binance_future_list
     binance = list(set(list(binance_future_list()) + list(binance_spot_list())))
     upbit = get_upbit_token_list()
     difference = [item[:-4] for item in binance if item[:-4] not in upbit]
@@ -42,7 +51,7 @@ def to_list_on_upbit():
     return cleaned_difference
 
 
-def get_24h_volume(server_url="https://api.upbit.com"):
+def get_24h_volume(server_url="https://api.upbit.com", rank=10):
     params = {"quote_currencies": "KRW"}
 
     res = requests.get(server_url + "/v1/ticker/all", params=params)
@@ -55,7 +64,7 @@ def get_24h_volume(server_url="https://api.upbit.com"):
     )
 
     # 取前十
-    top_10 = sorted_data[:10]
+    top_10 = sorted_data[:rank]
 
     result = [[item['market'].split('-')[1], round(item['acc_trade_volume_24h'] * item['trade_price'] / 1450, 2),
                round(item['change_rate'] * 100, 2)] for
@@ -157,3 +166,33 @@ def get_upbit_volume(unit, reverse=True, rank=10, ticker_url="https://api.upbit.
         line += '`\n'
         res += line
     return res
+
+
+def get_15m_upbit_volume(rank=20):
+    res_unit = asyncio.run(
+        get_upbit_volume_async(15, reverse=True, rank=rank, ticker_url="https://api.upbit.com/v1/market/all"))
+    return res_unit
+
+
+def get_15m_upbit_volume_increase(symbol, unit=15):
+    market = 'KRW-' + symbol
+    params = {
+        'market': market,
+        'count': 2
+    }
+    headers = {"accept": "application/json"}
+    candle_url = f"https://api.upbit.com/v1/candles/minutes/{unit}"
+    response = requests.get(candle_url, params=params, headers=headers)
+    if response.status_code == 200:
+        data15 = response.json()
+        v_now = float(data15[0]['candle_acc_trade_volume'])
+        v_past = float(data15[1]['candle_acc_trade_volume'])
+        v_ratio = round(float(v_now / v_past), 2)
+        if v_ratio >= 3:
+            v15_list = [1, v_ratio]
+        else:
+            v15_list = [0, v_ratio]
+        return v15_list
+    else:
+        print(f"{market} get_15m_upbit_volume_increase请求失败: {response.status_code}")
+        return None

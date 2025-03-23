@@ -6,14 +6,7 @@
 #    @Description   : 
 #
 # ===============================================================
-import asyncio
-
-import aiohttp
 import requests
-from aiolimiter import AsyncLimiter
-
-from binance_future import format_number
-from main import binance_spot_list, binance_future_list
 
 
 def bithumb_alert():
@@ -54,12 +47,42 @@ def get_bithumb_token_list(url="https://api.bithumb.com/v1/market/all?isDetails=
         token = list(set(token))
         return token
     else:
-        print(f"请求失败，状态码: {response.status_code}")
+        print(f"get_bithumb_token_list请求失败，状态码: {response.status_code}")
+        return None
 
 
 def to_list_on_bithumb():
+    from main import binance_spot_list, binance_future_list
     binance = list(set(list(binance_future_list()) + list(binance_spot_list())))
     upbit = get_bithumb_token_list()
     difference = [item[:-4] for item in binance if item[:-4] not in upbit]
     cleaned_difference = list(filter(bool, difference))
     return cleaned_difference
+
+
+def is_on_alert(symbol):
+    url = "https://api.bithumb.com/v1/market/virtual_asset_warning"
+    alert_dict = {
+        'PRICE_SUDDEN_FLUCTUATION': '价格突然波动',
+        'TRADING_VOLUME_SUDDEN_FLUCTUATION': '交易量激增',
+        'DEPOSIT_AMOUNT_SUDDEN_FLUCTUATION': 'CEX存款激增',
+        'PRICE_DIFFERENCE_HIGH': '价格差异大',
+        'SPECIFIC_ACCOUNT_HIGH_TRANSACTION': '特定账户高频交易',
+        'EXCHANGE_TRADING_CONCENTRATION': 'CEX交易集中'
+    }
+    headers = {"accept": "application/json"}
+
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        res = response.json()
+        r = []
+        for item in res:
+            if item['market'].split('-')[1] == symbol:
+                r.append(alert_dict.get(item['warning_type']))
+        if len(r) == 0:
+            return [0, 0]
+        else:
+            return [1, r]
+    else:
+        print(f"is_on_alert请求失败，状态码: {response.status_code}")
+        return None
