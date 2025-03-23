@@ -7,10 +7,53 @@
 #
 # ===============================================================
 import asyncio
+import re
+from datetime import datetime, timedelta
 
 import aiohttp
 import requests
+import telebot
 from aiolimiter import AsyncLimiter
+from requests.adapters import HTTPAdapter
+from requests.exceptions import Timeout
+from requests.packages.urllib3.util.retry import Retry
+
+# 配置连接池和重试策略
+retries = Retry(
+    total=3,  # 最大重试次数
+    backoff_factor=1,  # 重试间隔基数，指数退避
+    status_forcelist=[500, 502, 503, 504],  # 遇到这些状态码时重试
+)
+
+adapter = HTTPAdapter(
+    pool_connections=20,  # 连接池中的连接数量
+    pool_maxsize=20,  # 最大连接池大小
+    max_retries=retries,  # 重试策略
+)
+
+# 创建 Session 并配置连接池
+session = requests.Session()
+session.mount('https://', adapter)
+session.mount('http://', adapter)
+
+bot = telebot.TeleBot("7483560900:AAHtBOXZLOOS1yXp32r3DtoWKV9zFwnYv5M", parse_mode='Markdown')
+chat_id = "-4679507687"
+bot.send_message(chat_id, "开始扫描upbit大单......")
+
+
+def remove_symbols(text):
+    # 使用正则表达式，保留字母、数字和空格
+    cleaned_text = re.sub(r'[^\w\s]', '', text)
+    return cleaned_text
+
+
+def safe_send_message(chat_id, message):
+    try:
+        bot.send_message(chat_id, message, timeout=10)  # 设置超时时间为10秒
+    except Timeout:
+        bot.send_message(chat_id, "发送消息超时，正在重试...")
+    except Exception as e:
+        bot.send_message(chat_id, f"scan 消息发送失败: {remove_symbols(message)}")
 
 
 def format_number(num):
@@ -196,3 +239,179 @@ def get_15m_upbit_volume_increase(symbol, unit=15):
     else:
         print(f"{market} get_15m_upbit_volume_increase请求失败: {response.status_code}")
         return None
+
+
+def fetch_large_trades_spot(market, threshold, limit=500):
+    url = "https://api.upbit.com/v1/trades/ticks"
+    params = {
+        'market': market,
+        'count': limit
+    }
+    headers = {"accept": "application/json"}
+
+    response = requests.get(url, params=params, headers=headers)
+    if response.status_code == 200:
+        st = ""
+        trades = response.json()
+        for trade in trades:
+            if str(trade) not in upbit_his:
+                volume = trade['trade_price'] * trade['trade_volume'] / 1450
+                if volume > threshold:
+                    utc_time = datetime.strptime(f"{trade['trade_date_utc']} {trade['trade_time_utc']}",
+                                                 '%Y-%m-%d %H:%M:%S')
+                    utc_plus_8_time = utc_time + timedelta(hours=8)
+                    trade_time = utc_plus_8_time.strftime('%H:%M:%S')
+                    if trade['ask_bid'] == 'ASK':
+                        st += f"🟥现货在`{trade_time}`卖出了`{format_number(volume)}`\n"
+                    else:
+                        st += f"🟩现货在`{trade_time}`买入了`{format_number(volume)}`\n"
+                    upbit_his.add(str(trade))
+        if not st:
+            return ""
+        else:
+            message = f"""
+*🚧symbol：*`{market.split('-')[1]}` 🚧 
+{st}
+{"-" * 32}
+                                                                                    """
+            return message
+    else:
+        print(f"{market} fetch_large_trades_spot请求失败: {response.status_code}")
+        return None
+
+
+def fetch_upbit_tickers(rank, server_url="https://api.upbit.com"):
+    params = {"quote_currencies": "KRW"}
+
+    res = requests.get(server_url + "/v1/ticker/all", params=params)
+    res = res.json()
+    # 使用 sorted 函数排序
+    sorted_data = sorted(
+        [x for x in res if x['market'] != 'KRW-USDT'],
+        key=lambda x: x['change_rate'],
+        reverse=True
+    )
+
+    # 取前十
+    top = sorted_data[:rank]
+
+    result = [item['market'] for
+              item in top]
+    return result
+
+
+def get_15m_upbit_volume_increase_str(market, unit=15):
+    params = {
+        'market': market,
+        'count': 3
+    }
+    headers = {"accept": "application/json"}
+    candle_url = f"https://api.upbit.com/v1/candles/minutes/{unit}"
+    response = requests.get(candle_url, params=params, headers=headers)
+    if response.status_code == 200:
+        data15 = response.json()
+        v_now = float(data15[0]['candle_acc_trade_volume'])
+        v_past = float(data15[1]['candle_acc_trade_volume'])
+        v_old = float(data15[2]['candle_acc_trade_volume'])
+        if v_past == 0 or v_past < v_old:
+            return None
+        v_ratio = round(float(v_now / v_past), 2)
+        if v_ratio >= 3:
+            p = data15[0]['trade_price']
+            res = f"""
+*💎symbol：*`{market.split('-')[1]}`
+💰价格：{p}
+🚀近15分钟交易量增长：`{round(v_ratio * 100, 0)}%`
+{"-" * 32}
+                        """
+            return res
+        else:
+            return None
+    else:
+        print(f"{market} get_15m_upbit_volume_increase_str请求失败: {response.status_code}")
+        return None
+
+
+def map_mc_to_threshold(mc):
+    if mc < 1:
+        return 10000
+    elif 1 <= mc < 2:
+        return 20000
+    elif 2 <= mc < 5:
+        return 50000
+    elif 5 <= mc < 10:
+        return 80000
+    else:
+        return 100000
+
+
+if __name__ == "__main__":
+    # 设置间隔时间（以秒为单位）
+    interval = 300
+    last_run = datetime.now()
+    flag = True
+
+    upbit_his = set()
+    tickers_num = 40
+    thresholds = {}
+
+    # 请求间隔（每秒最多 10 次，0.1 秒一个请求）
+    REQUEST_DELAY = 0.1
+
+    while True:
+        tickers_spot = fetch_upbit_tickers(tickers_num)
+
+        if not tickers_spot:
+            time.sleep(10)
+            continue
+
+        # 第一部分：处理大单交易
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:  # 减少线程数
+            futures = []
+            for symbol in tickers_spot:
+                if symbol.split("-")[1] in thresholds.keys():
+                    threshold = thresholds[symbol.split("-")[1]]
+                else:
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    token_info_file_path = os.path.join(current_dir, "token_data.json")
+                    with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
+                        data = json.load(json_file)
+                        market_cap = 0
+                        for token in data['data']:
+                            if token['symbol'].lower() == symbol.split("-")[1].lower():
+                                market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
+                                break
+                    threshold = map_mc_to_threshold(market_cap)
+                    thresholds[symbol.split("-")[1]] = threshold
+
+                futures.append(executor.submit(fetch_large_trades_spot, symbol, threshold))
+                time.sleep(REQUEST_DELAY)  # 每次提交任务前等待
+
+            for future in concurrent.futures.as_completed(futures):
+                message_part = future.result()
+                if message_part:
+                    safe_send_message(chat_id, message_part)
+                    time.sleep(1)
+
+        # 定期清理历史记录
+        if len(upbit_his) > 10000:
+            upbit_his.clear()
+
+        # 第二部分：15分钟交易量增加检查
+        current_time = datetime.now()
+        if flag or (current_time - last_run).total_seconds() >= interval:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:  # 减少线程数
+                futures = []
+                for symbol in tickers_spot:
+                    futures.append(executor.submit(get_15m_upbit_volume_increase_str, symbol))
+                    time.sleep(REQUEST_DELAY)  # 每次提交任务前等待
+
+                for future in concurrent.futures.as_completed(futures):
+                    message_part = future.result()
+                    if message_part:
+                        safe_send_message(chat_id, message_part)
+                        time.sleep(1)
+            last_run = current_time
+            flag = False
+
+        time.sleep(60)

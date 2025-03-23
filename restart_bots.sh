@@ -17,7 +17,7 @@ source /opt/anaconda3/bin/activate bot
 
 
 # 获取进程 ID 并杀掉相应的程序
-pids=$(ps aux | grep -E 'binance_bot.py|binance_recommed.py|binance_oid.py|bitget.py|lbank.py|solana.py' | grep -v grep | awk '{print $2}')
+pids=$(ps aux | grep -E 'binance_bot.py|binance_recommed.py|binance_oid.py|bitget.py|lbank.py|solana.py|upbit.py' | grep -v grep | awk '{print $2}')
 
 
 if [ -n "$pids" ]; then
@@ -42,6 +42,7 @@ echo "正在重新启动程序..."
 /usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/bitget.py >> bitget.log 2>&1 &
 #/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/lbank.py >> lbank.log 2>&1 &
 #/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/solana.py >> solana.log 2>&1 &
+/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/upbit.py >> upbit.log 2>&1 &
 
 
 echo "程序已重新启动"

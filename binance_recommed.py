@@ -75,7 +75,7 @@ while True:
                     if value[0] == 3:
                         st += f"🎯🌊资金潮汐率：{int(value[1] * 100)}%\n"
                     if value[0] == 4:
-                        st += f"🚀🔥脉冲指数：{int(value[1] * 100)}%\n"
+                        st += f"🚀🔥脉冲指数：`{int(value[1] * 100)}%`\n"
                     if value[0] == 5:
                         buy_spot = value[1]
                         buy_future = value[2]
@@ -127,7 +127,7 @@ while True:
                     if value[0] == 17:
                         st += f"🧩🧑‍🤝‍🧑多维活跃度：{value[1]}/20\n"
                     if value[0] == 18:
-                        st += f"🧩🚀多维脉冲指数：{int(value[1] * 100)}\n"
+                        st += f"🧩🚀多维脉冲指数：`{int(value[1] * 100)}%`\n"
                     if value[0] == 19:
                         for i in value[1]:
                             st += f"🧩🚨多维警报：{i}\n"
@@ -138,7 +138,7 @@ while True:
                 star = len(v) * "🌟"
                 message += f"""
 *💎symbol：*`{symbol}`｜{star}
-*💰价格：*`{price}`
+💰价格：{price}
 {st}
 {"-" * 32}
                                                             """
