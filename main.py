@@ -172,26 +172,26 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             else:
                 print(f"{symbol}获取持仓数据错误")
 
-            if up24 and symbol not in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']:
+            if up24 and (symbol not in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']):
                 for i, item in enumerate(up24):
                     if symbol[:-4] == item[0]:
                         flag.append([16, 20 - i])
             else:
                 print(f"{symbol}获取up24h交易量数据错误")
 
-            if up15 and symbol not in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']:
+            if up15 and (symbol not in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']):
                 for i, item in enumerate(up15):
                     if symbol[:-4] == item[0]:
                         flag.append([17, 20 - i])
             else:
                 print(f"{symbol}获取up15m交易量数据错误")
 
-            if up_token and symbol[:-4] in up_token:
+            if up_token and (symbol[:-4] in up_token):
                 up15_list = get_15m_upbit_volume_increase(symbol[:-4])
                 if up15_list and up15_list[0] == 1:
                     flag.append([18, up15_list[1]])
 
-            if bithumb_token and symbol[:-4] in bithumb_token:
+            if bithumb_token and (symbol[:-4] in bithumb_token):
                 bithumb_alert = is_on_alert(symbol[:-4])
                 if bithumb_alert and bithumb_alert[0] == 1:
                     flag.append([19, bithumb_alert[1]])
