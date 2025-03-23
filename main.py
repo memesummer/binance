@@ -137,12 +137,12 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             except Exception as e:
                 print(f'{symbol}:4h error: {e}')
 
-            buy_spot = search_more_big_buy_spot(symbol)
-            buy_future = search_more_big_buy_future(symbol)
-            for i in range(4):
-                if buy_spot[i] == 1 or buy_future == 1:
-                    flag.append([5, buy_spot, buy_future])
-                    break
+            # buy_spot = search_more_big_buy_spot(symbol)
+            # buy_future = search_more_big_buy_future(symbol)
+            # for i in range(4):
+            #     if buy_spot[i] == 1 or buy_future == 1:
+            #         flag.append([5, buy_spot, buy_future])
+            #         break
 
             om_list = get_oi_mc_ratio(symbol, circle_supply)
             if om_list:
@@ -165,21 +165,21 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
 
             oil = fetch_openInterest_diff(symbol, 0, 3)
             if oil:
-                if oil[2] >= 3:
+                if oil[2] >= 10:
                     flag.append([14, oil[1], oil[2]])
-                if oil[5] >= 3:
+                if oil[5] >= 10:
                     flag.append([15, oil[4], oil[5]])
             else:
                 print(f"{symbol}获取持仓数据错误")
 
-            if up24:
+            if up24 and symbol not in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']:
                 for i, item in enumerate(up24):
                     if symbol[:-4] == item[0]:
                         flag.append([16, 20 - i])
             else:
                 print(f"{symbol}获取up24h交易量数据错误")
 
-            if up15:
+            if up15 and symbol not in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']:
                 for i, item in enumerate(up15):
                     if symbol[:-4] == item[0]:
                         flag.append([17, 20 - i])
