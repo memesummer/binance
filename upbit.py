@@ -7,7 +7,11 @@
 #
 # ===============================================================
 import asyncio
+import concurrent.futures
+import json
+import os
 import re
+import time
 from datetime import datetime, timedelta
 
 import aiohttp
@@ -17,28 +21,6 @@ from aiolimiter import AsyncLimiter
 from requests.adapters import HTTPAdapter
 from requests.exceptions import Timeout
 from requests.packages.urllib3.util.retry import Retry
-
-# 配置连接池和重试策略
-retries = Retry(
-    total=3,  # 最大重试次数
-    backoff_factor=1,  # 重试间隔基数，指数退避
-    status_forcelist=[500, 502, 503, 504],  # 遇到这些状态码时重试
-)
-
-adapter = HTTPAdapter(
-    pool_connections=20,  # 连接池中的连接数量
-    pool_maxsize=20,  # 最大连接池大小
-    max_retries=retries,  # 重试策略
-)
-
-# 创建 Session 并配置连接池
-session = requests.Session()
-session.mount('https://', adapter)
-session.mount('http://', adapter)
-
-bot = telebot.TeleBot("7483560900:AAHtBOXZLOOS1yXp32r3DtoWKV9zFwnYv5M", parse_mode='Markdown')
-chat_id = "-4679507687"
-bot.send_message(chat_id, "开始扫描upbit大单......")
 
 
 def remove_symbols(text):
@@ -346,6 +328,28 @@ def map_mc_to_threshold(mc):
 
 
 if __name__ == "__main__":
+    # 配置连接池和重试策略
+    retries = Retry(
+        total=3,  # 最大重试次数
+        backoff_factor=1,  # 重试间隔基数，指数退避
+        status_forcelist=[500, 502, 503, 504],  # 遇到这些状态码时重试
+    )
+
+    adapter = HTTPAdapter(
+        pool_connections=20,  # 连接池中的连接数量
+        pool_maxsize=20,  # 最大连接池大小
+        max_retries=retries,  # 重试策略
+    )
+
+    # 创建 Session 并配置连接池
+    session = requests.Session()
+    session.mount('https://', adapter)
+    session.mount('http://', adapter)
+
+    bot = telebot.TeleBot("7483560900:AAHtBOXZLOOS1yXp32r3DtoWKV9zFwnYv5M", parse_mode='Markdown')
+    chat_id = "-4679507687"
+
+    bot.send_message(chat_id, "开始扫描upbit大单......")
     # 设置间隔时间（以秒为单位）
     interval = 300
     last_run = datetime.now()
