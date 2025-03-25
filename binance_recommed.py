@@ -77,7 +77,10 @@ while True:
                     if value[0] == 3:
                         st += f"🎯🌊资金潮汐率：{int(value[1] * 100)}%\n"
                     if value[0] == 4:
-                        st += f"🚀🔥脉冲指数：`{int(value[1] * 100)}%`\n"
+                        if value[1] == 1:
+                            st += f"🚀🔥脉冲指数：`{int(value[2] * 100)}%`\n"
+                        else:
+                            st += f"🚀❄️脉冲指数：`{int(value[2] * 100)}%`\n"
                     if value[0] == 5:
                         buy_spot = value[1]
                         buy_future = value[2]

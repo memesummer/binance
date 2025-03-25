@@ -314,9 +314,12 @@ def get_volume_increase_15(symbol):
         v_past = float(data15[0][7])
         v_ratio = round(float(v_now / v_past), 2)
         if v_ratio >= 3:
-            v15_list = [1, v_ratio]
+            if data15[1][4] > data15[0][4]:
+                v15_list = [1, 1, v_ratio]
+            else:
+                v15_list = [1, 0, v_ratio]
         else:
-            v15_list = [0, v_ratio]
+            v15_list = [0, 0, v_ratio]
         return v15_list
     except Exception as e:
         data15 = get_k_lines_future(symbol, '15m', 2)
@@ -325,9 +328,12 @@ def get_volume_increase_15(symbol):
         v_past = float(data15[0][7])
         v_ratio = round(float(v_now / v_past), 2)
         if v_ratio >= 3:
-            v15_list = [1, v_ratio]
+            if data15[1][4] > data15[0][4]:
+                v15_list = [1, 1, v_ratio]
+            else:
+                v15_list = [1, 0, v_ratio]
         else:
-            v15_list = [0, v_ratio]
+            v15_list = [0, 0, v_ratio]
         return v15_list
 
 
