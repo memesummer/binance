@@ -163,6 +163,13 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             # if len(agg_spot) > 0 or len(agg_future) > 0:
             #     flag.append([6, agg_spot, agg_future])
 
+            oi_increase = get_oi_increase(symbol)
+            if oi_increase:
+                if oi_increase >= 3:
+                    flag.append([20, oi_increase])
+            else:
+                print(f"{symbol}获取持仓递增数据错误")
+
             oil = fetch_openInterest_diff(symbol, 0, 3)
             if oil:
                 if oil[2] >= 10:
@@ -1804,3 +1811,23 @@ def get_upbit_volume_increase_15(symbol):
         else:
             v15_list = [0, v_ratio]
         return v15_list
+
+
+def get_oi_increase(symbol, limit=100):
+    para = {
+        'symbol': symbol,
+        'period': '15m',
+        'limit': limit
+    }
+    openInterest = um_futures_client.open_interest_hist(**para)
+    if not openInterest:
+        return None
+    else:
+        increase_num = 0
+        for i in range(len(openInterest) - 1, -1, -1):
+            if float(openInterest[i]['sumOpenInterestValue']) > float(openInterest[i - 1]['sumOpenInterestValue']):
+                print(float(openInterest[i]['sumOpenInterestValue']))
+                increase_num += 1
+            else:
+                break
+        return increase_num
