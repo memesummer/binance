@@ -160,6 +160,6 @@ while True:
 
         time.sleep(90)
     except Exception as e:
-        error_message = f"Error occurred: {str(e)}"
+        error_message = f"recommend Error occurred: {str(e)}"
         safe_send_message(chat_id, error_message)  # 报错时通知管理员
         time.sleep(10)  # 等待一段时间后再继续，避免频繁重启

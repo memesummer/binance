@@ -118,7 +118,7 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             try:
                 v15_list = get_volume_increase_15(symbol)
                 if v15_list[0] == 1:
-                    flag.append([4, v15_list[1]])
+                    flag.append([4, v15_list[1], v15_list[2]])
             except Exception as e:
                 print(f'{symbol}:15m volume_increase error: {e}')
 
@@ -164,11 +164,11 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             #     flag.append([6, agg_spot, agg_future])
 
             oi_increase = get_oi_increase(symbol)
-            if oi_increase:
-                if oi_increase >= 3:
-                    flag.append([20, oi_increase])
-            else:
+            if oi_increase is None:
                 print(f"{symbol}获取持仓递增数据错误")
+            else:
+                if oi_increase >= 1:
+                    flag.append([20, oi_increase])
 
             oil = fetch_openInterest_diff(symbol, 0, 3)
             if oil:
@@ -1015,6 +1015,8 @@ def get_openInterest_rank(interval, rank=10, reverse=True):
 
 
 def fetch_openInterest_diff(symbol, p_chg, limit):
+    if symbol in symbol1000:
+        symbol = "1000" + symbol
     para = {
         'symbol': symbol,
         'period': '5m',
@@ -1820,6 +1822,8 @@ def get_upbit_volume_increase_15(symbol):
 
 
 def get_oi_increase(symbol, limit=100):
+    if symbol in symbol1000:
+        symbol = "1000" + symbol
     para = {
         'symbol': symbol,
         'period': '15m',
@@ -1832,7 +1836,6 @@ def get_oi_increase(symbol, limit=100):
         increase_num = 0
         for i in range(len(openInterest) - 1, -1, -1):
             if float(openInterest[i]['sumOpenInterestValue']) > float(openInterest[i - 1]['sumOpenInterestValue']):
-                print(float(openInterest[i]['sumOpenInterestValue']))
                 increase_num += 1
             else:
                 break
