@@ -727,6 +727,7 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
             if token['symbol'].endswith("USDT")
                and all(f not in token['symbol'] for f in fil_str_list)
                and token['count'] != 0
+               and token['symbol'] != "BNXUSDT"
         ]
 
         # 按照 priceChangePercent 进行排序
