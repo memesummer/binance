@@ -41,7 +41,8 @@ def bithumb_alert():
         result = ""
         for item in sorted_list:
             # 验证 item 是字典且包含必要字段
-            if not isinstance(item, dict) or "market" not in item or "warning_type" not in item or "end_date" not in item:
+            if not isinstance(item,
+                              dict) or "market" not in item or "warning_type" not in item or "end_date" not in item:
                 print(f"跳过无效项: {item}")
                 continue
 
@@ -81,18 +82,17 @@ def get_bithumb_token_list(url="https://api.bithumb.com/v1/market/all?isDetails=
         data = response.json()  # 解析 JSON 数据
 
         # 检查 'status' 是否为 '0000'（Bithumb API 的成功标志）
-        if data.get("status") != "0000":
-            print(f"API 返回错误，状态: {data.get('status')}")
-            return None
-
-        # 检查 'data' 是否存在且是列表
-        token_data = data.get("data")
-        if not isinstance(token_data, list):
-            print(f"API 返回的 'data' 不是列表: {token_data}")
+        if isinstance(data, dict) and "status" in data:
+            if data["status"] != "0000":
+                print(f"API 返回错误，状态: {data['status']}")
+                return None
+        # 检查返回数据是否为列表
+        if not isinstance(data, list):
+            print(f"API 返回的不是列表: {data}")
             return None
 
         token = []
-        for item in token_data:
+        for item in data:
             # 确保 item 是字典且包含 'market' 键
             if not isinstance(item, dict) or "market" not in item:
                 print(f"跳过无效项: {item}")
