@@ -22,6 +22,7 @@ from main import get_latest_price, get_net_volume_rank_future, get_net_volume_ra
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time
 from upbit import to_list_on_upbit, get_upbit_volume
+from rootdata import root_data_meta_data
 
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 AUTHORIZED_USERS = [546797136]  # 替换为实际用户 ID
@@ -221,6 +222,18 @@ def get_token_info(message):
     except Exception as e:
         print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/t btc")
+
+
+@bot.message_handler(commands=['tf'])
+@restricted
+def get_token_full_info(message):
+    try:
+        symbol = message.text.split()[1:][0]
+        res = root_data_meta_data(symbol)
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
+        bot.reply_to(message, "请输入正确的参数格式。示例：/tf btc")
 
 
 @bot.message_handler(commands=['d'])
