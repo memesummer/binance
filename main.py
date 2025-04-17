@@ -910,9 +910,13 @@ def get_net_volume_rank_spot(interval, rank=10, reverse=True):
     endpoint = "api/v3/ticker/24hr"
     params = {}
     data = binance_api_get(endpoint, params)
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=1)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
     symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
                v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
-                   'count'] != 0 and float(v['bidPrice']) != 0 and float(v['askPrice']) != 0]
+                   'count'] != 0 and float(v['bidPrice']) != 0 and float(v['askPrice']) != 0 and v[
+                   'closeTime'] > yesterday_timestamp_utc]
 
     net_list = []
 
@@ -1252,12 +1256,16 @@ def binance_spot_list(endpoint="api/v3/ticker/24hr"):
     spot = binance_api_get(endpoint, params)
 
     if isinstance(spot, list) and spot:
+        now_utc = datetime.datetime.now(timezone.utc)
+        yesterday_utc = now_utc - timedelta(days=1)
+        yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
         # 过滤出包含 "USDT" 的币种
         symbols_spot = set(
             [token['symbol'] for token in spot
              if
              token['symbol'].endswith('USDT') and 'USDC' not in token['symbol'] and 'FDUSD' not in token['symbol'] and
-             token['count'] != 0 and float(token['bidPrice']) != 0 and float(token['askPrice']) != 0])
+             token['count'] != 0 and float(token['bidPrice']) != 0 and float(token['askPrice']) != 0 and token[
+                 'closeTime'] > yesterday_timestamp_utc])
 
         return symbols_spot
 
@@ -1717,6 +1725,9 @@ def statistic_time(endpoint='api/v3/ticker/24hr'):
         result_future = um_futures_client.ticker_24hr_price_change(**params)
         res = result
         res1 = result_future
+        now_utc = datetime.datetime.now(timezone.utc)
+        yesterday_utc = now_utc - timedelta(days=1)
+        yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
 
         if isinstance(res, list) and res and isinstance(res1, list) and res1:
             result_dict = {item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']: item for item in
@@ -1733,6 +1744,7 @@ def statistic_time(endpoint='api/v3/ticker/24hr'):
                 if token['symbol'].endswith("USDT")
                    and all(f not in token['symbol'] for f in fil_str_list)
                    and token['count'] != 0
+                   and token['closeTime'] > yesterday_timestamp_utc
             ]
 
             stat = []
