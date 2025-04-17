@@ -160,8 +160,7 @@ def root_data_meta_data(query):
     project_id = search_investments(query)
 
     if not project_id:
-        print(f"未找到与 '{query}' 相关且 type=1 的项目")
-        return
+        return f"*未找到与 '{query}' 相关项目的详细信息*"
 
     # 第二步：获取项目详细信息
     project_details = get_project_details(project_id)
