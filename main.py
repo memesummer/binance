@@ -65,6 +65,9 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
     res = result
     result_future = um_futures_client.ticker_24hr_price_change(**params)
     res1 = result_future
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=0.5)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
 
     # 检查 res 是否是列表，确保不是空列表
     if isinstance(res, list) and res and isinstance(res1, list) and res1:
@@ -84,6 +87,7 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             if token['symbol'].endswith("USDT")
                and all(f not in token['symbol'] for f in fil_str_list)
                and token['count'] != 0
+               and token['closeTime'] > yesterday_timestamp_utc
         ]
 
         # 按照 priceChangePercent 进行排序
@@ -707,6 +711,9 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
     result_future = um_futures_client.ticker_24hr_price_change(**params)
     res = result
     res1 = result_future
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=0.5)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
 
     # 假设 res 是一个列表，每个元素是一个字典，包含 'symbol' 和 'priceChangePercent' 字段
 
@@ -727,7 +734,7 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
             if token['symbol'].endswith("USDT")
                and all(f not in token['symbol'] for f in fil_str_list)
                and token['count'] != 0
-               and token['symbol'] != "BNXUSDT"
+               and token['closeTime'] > yesterday_timestamp_utc
         ]
 
         # 按照 priceChangePercent 进行排序
