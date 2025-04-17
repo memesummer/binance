@@ -24,14 +24,17 @@ headers = {
 
 
 def format_number(num):
-    if abs(num) >= 1000000000:  # 10亿
-        return f"{num / 1000000000:.2f}B"
-    elif abs(num) >= 1000000:
-        return f"{num / 1000000:.2f}M"
-    elif abs(num) >= 1000:
-        return f"{num / 1000:.2f}K"
+    if num:
+        if abs(num) >= 1000000000:  # 10亿
+            return f"{num / 1000000000:.2f}B"
+        elif abs(num) >= 1000000:
+            return f"{num / 1000000:.2f}M"
+        elif abs(num) >= 1000:
+            return f"{num / 1000:.2f}K"
+        else:
+            return str(num)
     else:
-        return str(num)
+        return "N/A"
 
 
 # 第一步：搜索投资信息，获取 type=1 的项目 ID
@@ -121,7 +124,7 @@ def display_project_details(project):
         res += f"📝*简介*: {project.get('one_liner', 'N/A')}\n"
         res += f"🔍*详细介绍*: {project.get('description', 'N/A')}\n"
         res += f"📆*成立时间*: {project.get('establishment_date', 'N/A')}\n"
-        res += f"💰*融资总额*: {format_number(project.get('total_funding', 'N/A'))}\n"
+        res += f"💰*融资总额*: {format_number(project.get('total_funding', None))}\n"
         res += f"⛓*项目标签*: {project.get('tags', 'N/A')}\n"
 
         # 显示投资机构信息
