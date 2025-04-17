@@ -218,22 +218,12 @@ def get_token_info(message):
         with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
             data = json.load(json_file)
         res = get_symbol_info(symbol, data)
+        res += "\n"
+        res += root_data_meta_data(symbol)
         bot.reply_to(message, res, parse_mode='Markdown')
     except Exception as e:
         print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/t btc")
-
-
-@bot.message_handler(commands=['tf'])
-@restricted
-def get_token_full_info(message):
-    try:
-        symbol = message.text.split()[1:][0]
-        res = root_data_meta_data(symbol)
-        bot.reply_to(message, res, parse_mode='Markdown')
-    except Exception as e:
-        print(e)
-        bot.reply_to(message, "请输入正确的参数格式。示例：/tf btc")
 
 
 @bot.message_handler(commands=['d'])
