@@ -75,7 +75,7 @@ def run_task():
             continue
         diff_ratio = l[2]
         if diff_ratio >= 100:
-            res += f"🐂🌋symbol：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n主力多头扩张`{format_number(float(l[1]))}`｜`{str(l[2])}%`｜`{str(l[3])}%`\n"
+            res += f"🐂🌋*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n主力多头扩张`{format_number(float(l[1]))}`｜`{str(l[2])}%`｜`{str(l[3])}%`\n"
             binance_his.add(''.join(map(str, l)))
         else:
             continue
@@ -85,7 +85,7 @@ def run_task():
             continue
         diff_ratio = l[5]
         if diff_ratio >= 3:
-            res += f"🧲🔼symbol：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n市场增量`{format_number(float(l[4]))}`｜`{str(l[5])}%`｜`{str(l[3])}%`\n"
+            res += f"🧲🔼*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n市场增量`{format_number(float(l[4]))}`｜`{str(l[5])}%`｜`{str(l[3])}%`\n"
             binance_his.add(''.join(map(str, l)))
         else:
             continue
