@@ -148,10 +148,10 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             #         flag.append([5, buy_spot, buy_future])
             #         break
 
-            om_list = get_oi_mc_ratio(symbol, circle_supply)
-            if om_list:
-                if om_list[2] > 0.5:
-                    flag.append([13, om_list])
+            om_ratio = get_oi_mc_ratio(symbol, circle_supply)
+            if om_ratio:
+                if om_ratio > 0.5:
+                    flag.append([13, om_ratio])
 
             # longshortRatio_rate1 = get_future_takerlongshortRatio(symbol, '30m')
             # longshortRatio_rate4 = get_future_takerlongshortRatio(symbol, '1h')
@@ -586,25 +586,14 @@ def search_more_big_buy_future(symbol, order_value=None, limit=1000, bpr=0.1, sp
 
 def get_oi_mc_ratio(symbol, supply):
     try:
-        para = {
-            'symbol': symbol,
-            'period': '5m',
-            'limit': 1
-        }
-        openInterest = um_futures_client.open_interest_hist(**para)
+        openInterest = um_futures_client.open_interest(symbol)
         if not openInterest:
             return None
         else:
-            openInterest = openInterest[0]
-            oi_value = float(openInterest['sumOpenInterestValue'])
-            para = {
-                'symbol': symbol
-            }
-            price = float(um_futures_client.ticker_price(**para)['price'])
-            mc = price * supply
-            return [oi_value, mc, oi_value / mc]
+            oi_value = float(openInterest['openInterest'])
+            return oi_value / supply
     except Exception as e:
-        print(e)
+        print(f"{symbol} get_oi_mc_ratio error:{e}")
         return None
 
 
@@ -1085,14 +1074,20 @@ def get_openInterest_diff_rank(interval, rank=10, reverse=True):
                 delta_list.append(result)
 
     # 按净持仓量进行排序
-    sorted_list_net = sorted(delta_list, key=lambda x: x[1], reverse=reverse)[:rank]
-    sorted_list_all = sorted(delta_list, key=lambda x: x[4], reverse=reverse)[:rank]
+    sorted_list_net = sorted(delta_list, key=lambda x: x[2], reverse=reverse)[:rank]
+    sorted_list_all = sorted(delta_list, key=lambda x: x[5], reverse=reverse)[:rank]
     return sorted_list_net, sorted_list_all
 
 
 def get_symbol_open_interest(symbol):
     interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "16h", "20h", "1d", "1.5d"]
     res = []
+    oi_newest = um_futures_client.open_interest(symbol)
+    if not oi_newest:
+        return None
+    else:
+        oi0 = float(oi_newest['openInterest'])
+        res.append(["0m", "-", round(oi0, 2)])
     for interval in interval_list:
         limit = parse_interval_to_5minutes(interval)
         para = {
@@ -1853,7 +1848,7 @@ def get_oi_increase(symbol, limit=100):
     }
     openInterest = um_futures_client.open_interest_hist(**para)
     if not openInterest:
-        return None
+        return None, None
     else:
         increase_num = 0
         decrease_num = 0

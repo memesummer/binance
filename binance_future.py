@@ -294,6 +294,8 @@ def get_delta_diff_rank_table(delta_list, all_list, interval, m=14, r=26, b=34):
 def get_symbol_oi_table(symbol_oi, m=10, r=24):
     res = f"`周期      净持仓量      持仓变化`\n"
     for i, l in enumerate(symbol_oi):
+        if i == 0:
+            continue
         line = f"`{l[0]}:"
         n1 = len(line)
         line += ' ' * (m - n1)
@@ -368,7 +370,7 @@ def binance_future_list():
         print("无数据或数据格式不正确")
 
 
-def get_funding_rate(symbol, BASE_URL="https://fapi.binance.com", ENDPOINT="/fapi/v1/premiumIndex"):
+def get_funding_rate(symbol, decimal=2, BASE_URL="https://fapi.binance.com", ENDPOINT="/fapi/v1/premiumIndex"):
     try:
         # 构建URL
         url = BASE_URL + ENDPOINT
@@ -389,7 +391,7 @@ def get_funding_rate(symbol, BASE_URL="https://fapi.binance.com", ENDPOINT="/fap
         if response.status_code == 200:
             # 解析JSON响应
             data = response.json()
-            fr = round(float(data['lastFundingRate']) * 100, 2)
+            fr = round(float(data['lastFundingRate']) * 100, decimal)
             return [symbol, fr]
     except Exception as e:
         print(e)

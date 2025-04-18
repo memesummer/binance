@@ -16,7 +16,7 @@ from urllib3.util.retry import Retry
 from binance_future import format_number, format_price
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
-    get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str, get_oi_mc_str
+    get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str, get_oi_mc_str, get_funding_rate
 from bithumb import bithumb_alert, to_list_on_bithumb
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
@@ -184,11 +184,12 @@ def get_symbol_oi(message):
     try:
         param = message.text.split()[1:][0]
         symbol = param.upper() + 'USDT'
+        fr = get_funding_rate(symbol, decimal=4)[1]
+        res = f"`费率：{fr}%`\n\n"
         symbol_oi = get_symbol_open_interest(symbol)
-        res = get_symbol_oi_table(symbol_oi)
+        res += get_symbol_oi_table(symbol_oi)
         bot.reply_to(message, res, parse_mode='Markdown')
     except Exception as e:
-        # print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/i btc")
 
 

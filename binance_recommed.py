@@ -121,11 +121,8 @@ while True:
                         t_len1 = value[1]
                         st += f"💪📈近*1小时现货*主动买入占比连续增长：{t_len1}\n"
                     if value[0] == 13:
-                        om_list = value[1]
-                        oi = om_list[0]
-                        mc = om_list[1]
-                        om_ratio = om_list[2]
-                        st += f"🏦🕹️控盘强度：{int(oi / mc * 100)}%\n"
+                        om_ratio = value[1]
+                        st += f"🏦🕹️控盘强度：{int(om_ratio * 100)}%\n"
                     if value[0] == 14:
                         st += f"🐂🌋主力多头扩张{format_number(float(value[1]))}｜{str(value[2])}%\n"
                     if value[0] == 15:
