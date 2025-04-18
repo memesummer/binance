@@ -8,6 +8,7 @@
 # ===============================================================
 import re
 import time
+from collections import Counter
 from datetime import datetime
 
 import schedule
@@ -15,9 +16,10 @@ import telebot
 from requests.exceptions import Timeout
 
 from binance_future import format_number
-from main import get_openInterest_diff_rank
+from main import get_openInterest_diff_rank, get_long_short_switch_point
 
 binance_his = set()
+switch_his = set()
 bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 
 chat_id = "-1002213443358"
@@ -38,6 +40,30 @@ def safe_send_message(chat_id, message):
         bot.send_message(chat_id, "发送消息超时，正在重试...")
     except Exception as e:
         bot.send_message(chat_id, f"recommend 消息发送失败: {remove_symbols(message)}")
+
+
+def find_repeated_sublists_by_first(array):
+    # 收集所有子列表及其全局索引
+    sublists = [(sublist[0], sublist, (i, j))
+                for i, arr in enumerate(array)
+                for j, sublist in enumerate(arr)
+                if isinstance(sublist, list) and len(sublist) > 0]
+
+    # 统计子列表第一个元素的出现次数
+    first_counts = Counter(first for first, _, _ in sublists)
+
+    # 筛选出现次数 >= 2 的第一个元素
+    repeated_firsts = [(first, count) for first, count in first_counts.items() if count >= 2]
+
+    # 构建结果列表
+    result = []
+    for first, count in repeated_firsts:
+        # 找到第一个元素为 first 的子列表及其索引
+        matching = [[sublist, idx[0]] for f, sublist, idx in sublists if f == first]
+        # 构造输出格式: [First value, Count, [Sublist1, index1], ...]
+        result.append([first, count] + matching)
+
+    return result
 
 
 def run_task():
@@ -69,11 +95,53 @@ def run_task():
     if res:
         safe_send_message(chat_id, res)
 
+    interval_list = ["15m", "30m", "1h", "2h", "4h"]
+    array0 = []
+    array1 = []
+    for i, interval in enumerate(interval_list):
+        switch0, switch1 = get_long_short_switch_point(interval)
+        array0.append(switch0)
+        array1.append(switch1)
+        time.sleep(5)
+
+    switch0_str = ""
+    result0 = find_repeated_sublists_by_first(array0)
+    for res0 in result0:
+        frozen = ''.join(map(str, res0))
+        if frozen in switch_his:
+            continue
+        symbol = res0[0]
+        for i in range(2, len(res0)):
+            inter = interval_list[res0[i][1]]
+            switch0_str += f"🔴🐻*{symbol}*近*{inter}*多转空机会：`{int(res0[i][0][1][1])}%` | `{res0[i][0][2][1]}` | `{res0[i][0][3]}%`\n"
+        switch0_str += "\n"
+        switch_his.add(frozen)
+    if switch0_str:
+        safe_send_message(chat_id, switch0_str)
+
+    switch1_str = ""
+    result1 = find_repeated_sublists_by_first(array1)
+    for res1 in result1:
+        frozen = ''.join(map(str, res1))
+        if frozen in switch_his:
+            continue
+        symbol = res1[0]
+        for i in range(2, len(res1)):
+            inter = interval_list[res1[i][1]]
+            switch1_str += f"🟢🐂*{symbol}*近*{inter}*空转多机会：`{int(res1[i][0][1][1])}%` | `{res1[i][0][2][1]}` | `{res1[i][0][3]}%`\n"
+        switch1_str += "\n"
+        switch_his.add(frozen)
+    if switch1_str:
+        safe_send_message(chat_id, switch1_str)
+
+    if len(switch_his) > 10000:
+        switch_his.clear()
+
 
 print(f"Task executed at {datetime.now()}")
 
-# 每小时第3分钟启动，并每隔5分钟运行
-for minute in range(3, 60, 5):
+# 每小时第2分钟启动，并每隔5分钟运行
+for minute in range(2, 60, 5):
     schedule.every().hour.at(f":{minute:02d}").do(run_task)
 
 while True:

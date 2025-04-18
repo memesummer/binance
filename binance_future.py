@@ -291,6 +291,40 @@ def get_delta_diff_rank_table(delta_list, all_list, interval, m=14, r=26, b=34):
     return res
 
 
+def get_switch_table(switch0, switch1, interval, m=14, r=26, b=34):
+    res = f"*近{interval}空转多机会:*\n"
+    res += f"`符号         转变度   转变指数   价格变化`\n"
+    for i, l in enumerate(switch1):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += f"{str(int(l[1][1]))}%"
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += f"{str(l[2][1])}"
+        n3 = len(line)
+        line += ' ' * (b - n3)
+        line += f"{str(l[3])}%"
+        line += '`\n'
+        res += line
+    res += f"\n*近{interval}多转空机会:*\n"
+    res += f"`符号          转变度   转变指数   价格变化`\n"
+    for i, l in enumerate(switch0):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += f"{str(int(l[1][1]))}%"
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += f"{str(l[2][1])}"
+        n3 = len(line)
+        line += ' ' * (b - n3)
+        line += f"{str(l[3])}%"
+        line += '`\n'
+        res += line
+    return res
+
+
 def get_symbol_oi_table(symbol_oi, m=10, r=24):
     res = f"`周期      净持仓量      持仓变化`\n"
     for i, l in enumerate(symbol_oi):

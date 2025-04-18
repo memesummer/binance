@@ -1078,6 +1078,97 @@ def get_openInterest_diff_rank(interval, rank=10, reverse=True):
     return sorted_list_net, sorted_list_all
 
 
+def fetch_long_short_switch(symbol, pchg, limit):
+    if symbol in symbol1000:
+        symbol = "1000" + symbol
+    para = {
+        'symbol': symbol,
+        'period': '5m',
+        'limit': limit
+    }
+    openInterest = um_futures_client.open_interest_hist(**para)
+    if not openInterest:
+        print(f"{symbol} fetch_long_short_switch error")
+        return None
+    else:
+        oi_before = openInterest[0]
+        oi_now = openInterest[-1]
+        oi_value_before = float(oi_before['sumOpenInterestValue'])
+        oi_value_now = float(oi_now['sumOpenInterestValue'])
+        oi_before = float(oi_before['sumOpenInterest'])
+        oi_now = float(oi_now['sumOpenInterest'])
+        oi_value_switch_ratio = (oi_value_now - oi_value_before) / oi_value_before
+        oi_switch_ratio = (oi_now - oi_before) / oi_before
+        if oi_switch_ratio == 0 and oi_value_switch_ratio == 0:
+            switch_index = [-1, 0]
+        elif oi_switch_ratio <= 0 and oi_value_switch_ratio >= 0:
+            # 持仓量减少，但是持仓价值增加(多转空)
+            oi_switch_ratio = 1e-10 if oi_switch_ratio == 0 else oi_switch_ratio
+            switch_index = [0, 100 * round(abs(oi_value_switch_ratio / oi_switch_ratio), 2)]
+        elif oi_switch_ratio >= 0 and oi_value_switch_ratio <= 0:
+            # 持仓量增加，但是持仓量减少(空转多)
+            oi_value_switch_ratio = 1e-10 if oi_value_switch_ratio == 0 else oi_value_switch_ratio
+            switch_index = [1, 100 * round(abs(oi_switch_ratio / oi_value_switch_ratio), 2)]
+        else:
+            switch_index = [-1, 0]
+
+        switch_num_0 = 0
+        switch_num_1 = 0
+        for i in range(len(openInterest) - 1, -1, -1):
+            if float(openInterest[i]['sumOpenInterest']) < float(openInterest[i - 1]['sumOpenInterest']) and float(
+                    openInterest[i]['sumOpenInterestValue']) > float(openInterest[i - 1]['sumOpenInterestValue']):
+                # 持仓量连续降低并且持仓价值连续增高
+                switch_num_0 += 1
+            else:
+                break
+        for i in range(len(openInterest) - 1, -1, -1):
+            if float(openInterest[i]['sumOpenInterest']) > float(openInterest[i - 1]['sumOpenInterest']) and float(
+                    openInterest[i]['sumOpenInterestValue']) < float(openInterest[i - 1]['sumOpenInterestValue']):
+                # 持仓量连续降低并且持仓价值连续增高
+                switch_num_1 += 1
+            else:
+                break
+        if switch_num_0 > 0:
+            switch_num = [0, switch_num_0]
+        elif switch_num_1 > 0:
+            switch_num = [1, switch_num_1]
+        else:
+            switch_num = [-1, -1]
+        return [symbol[:-4], switch_index, switch_num, pchg]
+
+
+def get_long_short_switch_point(interval, rank=10, reverse=True):
+    data = um_futures_client.ticker_24hr_price_change()
+    # 获取前一天的时间戳
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=1)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+    symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+                   'count'] != 0 and v['closeTime'] > yesterday_timestamp_utc]
+
+    delta_list = []
+
+    limit = parse_interval_to_5minutes(interval)
+
+    # 使用 ThreadPoolExecutor 进行并行 API 请求
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(fetch_long_short_switch, symbol[0], symbol[1], limit) for symbol in symbols]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                delta_list.append(result)
+
+    filtered_list_0 = [x for x in delta_list if x[1][0] == 0 and x[2][0] == 0]
+    sorted_list_0 = sorted(filtered_list_0, key=lambda x: (x[2][1], x[1][1]), reverse=reverse)[:rank]
+    filtered_list_1 = [x for x in delta_list if x[1][0] == 1 and x[2][0] == 1]
+    sorted_list_1 = sorted(filtered_list_1, key=lambda x: (x[2][1], x[1][1]), reverse=reverse)[:rank]
+    return sorted_list_0, sorted_list_1
+
+
 def get_symbol_open_interest(symbol):
     interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "16h", "20h", "1d", "1.5d"]
     res = []

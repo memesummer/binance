@@ -16,11 +16,12 @@ from urllib3.util.retry import Retry
 from binance_future import format_number, format_price
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
-    get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str, get_oi_mc_str, get_funding_rate
+    get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str, get_oi_mc_str, get_funding_rate, \
+    get_switch_table
 from bithumb import bithumb_alert, to_list_on_bithumb
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
-    get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time
+    get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point
 from upbit import to_list_on_upbit, get_upbit_volume
 from rootdata import root_data_meta_data
 
@@ -191,6 +192,18 @@ def get_symbol_oi(message):
         bot.reply_to(message, res, parse_mode='Markdown')
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/i btc")
+
+
+@bot.message_handler(commands=['s'])
+@restricted
+def get_switch(message):
+    try:
+        interval = message.text.split()[1:][0]
+        switch0, switch1 = get_long_short_switch_point(interval)
+        res = get_switch_table(switch0, switch1, interval)
+        bot.reply_to(message, res, parse_mode='Markdown')
+    except Exception as e:
+        bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/s 1h")
 
 
 @bot.message_handler(commands=['n'])
