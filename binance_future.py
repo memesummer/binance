@@ -260,7 +260,7 @@ def get_delta_rank_table(delta_list, all_list, interval, m=15, r=30):
 
 
 def get_delta_diff_rank_table(delta_list, all_list, interval, m=14, r=26, b=34):
-    res = f"`符号      近{interval}净持仓变化   变化比   价格变化`\n"
+    res = f"`符号      近{interval}净持仓量变化   变化比   价格变化`\n"
     for i, l in enumerate(delta_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
@@ -274,7 +274,7 @@ def get_delta_diff_rank_table(delta_list, all_list, interval, m=14, r=26, b=34):
         line += f"{str(l[3])}%"
         line += '`\n'
         res += line
-    res += f"\n`符号      近{interval}持仓变化    变化比   价格变化`\n"
+    res += f"\n`符号      近{interval}持仓量变化    变化比   价格变化`\n"
     for i, l in enumerate(all_list):
         line = f"`{i + 1}.{l[0]}"
         n1 = len(line)
@@ -292,7 +292,7 @@ def get_delta_diff_rank_table(delta_list, all_list, interval, m=14, r=26, b=34):
 
 
 def get_symbol_oi_table(symbol_oi, m=10, r=24):
-    res = f"`周期      净持仓值      持仓变化`\n"
+    res = f"`周期      净持仓量      持仓变化`\n"
     for i, l in enumerate(symbol_oi):
         line = f"`{l[0]}:"
         n1 = len(line)
@@ -309,7 +309,7 @@ def get_symbol_oi_table(symbol_oi, m=10, r=24):
         line += '`\n'
         res += line
 
-    res += f"\n`周期      持仓值       持仓变化`\n"
+    res += f"\n`周期      持仓量       持仓变化`\n"
     for i, l in enumerate(symbol_oi):
         line = f"`{l[0]}:"
         n1 = len(line)

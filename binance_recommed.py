@@ -68,7 +68,10 @@ while True:
                         st += f"🟢💹趋势引擎：{p_len4}\n"
                         st += f"🟢📊趋势动能：{v_len4}\n"
                     if value[0] == 20:
-                        st += f"🟢🔮趋势增量：{value[1]}\n"
+                        if value[2] == 1:
+                            st += f"🟢🔮趋势增量：{value[1]}\n"
+                        elif value[2] == 0:
+                            st += f"🔴🔮趋势缩量：{value[1]}\n"
                     if value[0] == 2:
                         p_len1 = value[1]
                         v_len1 = value[2]

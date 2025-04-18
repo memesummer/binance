@@ -167,12 +167,14 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             # if len(agg_spot) > 0 or len(agg_future) > 0:
             #     flag.append([6, agg_spot, agg_future])
 
-            oi_increase = get_oi_increase(symbol)
-            if oi_increase is None:
+            oi_increase, oi_decrease = get_oi_increase(symbol)
+            if oi_increase is None or oi_decrease is None:
                 print(f"{symbol}获取持仓递增数据错误")
             else:
                 if oi_increase >= 3:
-                    flag.append([20, oi_increase])
+                    flag.append([20, oi_increase, 1])
+                elif oi_decrease >= 3:
+                    flag.append([20, oi_decrease, 0])
 
             oil = fetch_openInterest_diff(symbol, 0, 3)
             if oil:
@@ -1040,8 +1042,8 @@ def fetch_openInterest_diff(symbol, p_chg, limit):
     else:
         oi_before = openInterest[0]
         oi_now = openInterest[-1]
-        sumOpenInterestValue_before = float(oi_before['sumOpenInterestValue'])
-        sumOpenInterestValue_now = float(oi_now['sumOpenInterestValue'])
+        sumOpenInterestValue_before = float(oi_before['sumOpenInterest'])
+        sumOpenInterestValue_now = float(oi_now['sumOpenInterest'])
         ls_ratio_before = um_futures_client.top_long_short_position_ratio(**para)[0]
         ls_ratio_now = um_futures_client.top_long_short_position_ratio(**para)[-1]
         delta_openInterest_before = (float(ls_ratio_before['longAccount']) - float(
@@ -1103,7 +1105,7 @@ def get_symbol_open_interest(symbol):
             return None
         else:
             openInterest = openInterest[0]
-            sumOpenInterestValue = float(openInterest['sumOpenInterestValue'])
+            sumOpenInterestValue = float(openInterest['sumOpenInterest'])
             ls_ratio = um_futures_client.top_long_short_position_ratio(**para)[0]
             delta_openInterest = (float(ls_ratio['longAccount']) - float(
                 ls_ratio['shortAccount'])) * sumOpenInterestValue
@@ -1854,9 +1856,16 @@ def get_oi_increase(symbol, limit=100):
         return None
     else:
         increase_num = 0
+        decrease_num = 0
         for i in range(len(openInterest) - 1, -1, -1):
-            if float(openInterest[i]['sumOpenInterestValue']) > float(openInterest[i - 1]['sumOpenInterestValue']):
+            if float(openInterest[i]['sumOpenInterest']) > float(openInterest[i - 1]['sumOpenInterest']):
                 increase_num += 1
             else:
                 break
-        return increase_num
+        if increase_num == 0:
+            for i in range(len(openInterest) - 1, -1, -1):
+                if float(openInterest[i]['sumOpenInterest']) < float(openInterest[i - 1]['sumOpenInterest']):
+                    decrease_num += 1
+                else:
+                    break
+        return increase_num, decrease_num
