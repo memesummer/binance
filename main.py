@@ -128,16 +128,15 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
 
             try:
 
-                p_len4, v_len4, vc_ratio, taker_ratio4, t_len4 = get_price_volume_increase(symbol, '4h', 5,
-                                                                                           circle_supply)
+                p_len4, v_len4, vc_ratio = get_price_volume_increase(symbol, '4h', 5, circle_supply)
                 if p_len4 >= 3 and v_len4 >= 2:
                     flag.append([1, p_len4, v_len4])
                 if vc_ratio > 0.05:
                     flag.append([3, vc_ratio])
-                if taker_ratio4 > 0.6:
-                    flag.append([9, taker_ratio4])
-                if t_len4 >= 3:
-                    flag.append([11, t_len4])
+                # if taker_ratio4 > 0.6:
+                #     flag.append([9, taker_ratio4])
+                # if t_len4 >= 3:
+                #     flag.append([11, t_len4])
             except Exception as e:
                 print(f'{symbol}:4h error: {e}')
 
@@ -176,14 +175,14 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
                 elif oi_decrease >= 3:
                     flag.append([20, oi_decrease, 0])
 
-            oil = fetch_openInterest_diff(symbol, 0, 3)
-            if oil:
-                if oil[2] >= 10:
-                    flag.append([14, oil[1], oil[2]])
-                if oil[5] >= 10:
-                    flag.append([15, oil[4], oil[5]])
-            else:
-                print(f"{symbol}获取持仓数据错误")
+            # oil = fetch_openInterest_diff(symbol, 0, 3)
+            # if oil:
+            #     if oil[2] >= 10:
+            #         flag.append([14, oil[1], oil[2]])
+            #     if oil[5] >= 10:
+            #         flag.append([15, oil[4], oil[5]])
+            # else:
+            #     print(f"{symbol}获取持仓数据错误")
 
             if up24 and (symbol not in ['BTCUSDT', 'ETHUSDT', 'SOLUSDT']):
                 for i, item in enumerate(up24):
@@ -257,7 +256,7 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
 
         p_len = max_increasing_length(endprice_list)
         v_len = max_increasing_length(volume_list, is_volume=1)
-        t_len = max_increasing_length(taker_list)
+        # t_len = max_increasing_length(taker_list)
 
         # 再看交易量占比
         flag = -2 if volume_list[-2] > volume_list[-1] else -1
@@ -266,12 +265,12 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
         cmc = circle_supply * price
         vc_ratio = round(float(volume / cmc), 2)
 
-        # 看主动成交额占比
-        taker_vol0 = float(data[0][10])
-        vol0 = float(data[0][7])
-        taker_ratio = round(taker_vol0 / vol0, 2)
+        # # 看主动成交额占比
+        # taker_vol0 = float(data[0][10])
+        # vol0 = float(data[0][7])
+        # taker_ratio = round(taker_vol0 / vol0, 2)
 
-        return p_len, v_len, vc_ratio, taker_ratio, t_len
+        return p_len, v_len, vc_ratio
     except Exception as e:
         data = get_k_lines_future(symbol, interval, limit)
 
@@ -295,7 +294,7 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
 
         p_len = max_increasing_length(endprice_list)
         v_len = max_increasing_length(volume_list, is_volume=1)
-        t_len = max_increasing_length(taker_list)
+        # t_len = max_increasing_length(taker_list)
 
         # 再看交易量占比
         flag = -2 if volume_list[-2] > volume_list[-1] else -1
@@ -304,12 +303,12 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
         cmc = circle_supply * price
         vc_ratio = round(float(volume / cmc), 2)
 
-        # 看主动成交额占比
-        taker_vol0 = float(data[0][10])
-        vol0 = float(data[0][7])
-        taker_ratio = round(taker_vol0 / vol0, 2)
+        # # 看主动成交额占比
+        # taker_vol0 = float(data[0][10])
+        # vol0 = float(data[0][7])
+        # taker_ratio = round(taker_vol0 / vol0, 2)
 
-        return p_len, v_len, vc_ratio, taker_ratio, t_len
+        return p_len, v_len, vc_ratio
 
 
 def get_volume_increase_15(symbol):
