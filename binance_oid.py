@@ -114,7 +114,7 @@ def run_task():
         switch0_str += f"🔴🐻*symbol*：`{symbol[4:] if str(symbol).startswith('1000') else symbol}`\n"
         for i in range(2, len(res0)):
             inter = interval_list[res0[i][1]]
-            switch0_str += f"近{inter}多转空机会：`{int(res0[i][0][1][1])}%` | `{res0[i][0][2][1]}` | `{res0[i][0][3]}%`\n"
+            switch0_str += f"近{inter}多转空机会：{int(res0[i][0][1][1])}% | {res0[i][0][2][1]} | {res0[i][0][3]}%\n"
         switch0_str += "\n"
         switch_his.add(frozen)
     if switch0_str:
@@ -130,7 +130,7 @@ def run_task():
         switch1_str += f"🟢🐂*symbol*：`{symbol[4:] if str(symbol).startswith('1000') else symbol}`\n"
         for i in range(2, len(res1)):
             inter = interval_list[res1[i][1]]
-            switch1_str += f"近{inter}空转多机会：`{int(res1[i][0][1][1])}%` | `{res1[i][0][2][1]}` | `{res1[i][0][3]}%`\n"
+            switch1_str += f"近{inter}空转多机会：{int(res1[i][0][1][1])}% | {res1[i][0][2][1]} | {res1[i][0][3]}%\n"
         switch1_str += "\n"
         switch_his.add(frozen)
     if switch1_str:
