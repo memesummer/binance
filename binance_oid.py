@@ -16,7 +16,7 @@ import telebot
 from requests.exceptions import Timeout
 
 from binance_future import format_number
-from main import get_openInterest_diff_rank, get_long_short_switch_point
+from main import get_bi_openInterest_diff_rank, get_long_short_switch_point
 
 binance_his = set()
 switch_his = set()
@@ -53,7 +53,7 @@ def find_repeated_sublists_by_first(array):
     first_counts = Counter(first for first, _, _ in sublists)
 
     # 筛选出现次数 >= 2 的第一个元素
-    repeated_firsts = [(first, count) for first, count in first_counts.items() if count >= 2]
+    repeated_firsts = [(first, count) for first, count in first_counts.items() if count >= 3]
 
     # 构建结果列表
     result = []
@@ -68,25 +68,45 @@ def find_repeated_sublists_by_first(array):
 
 def run_task():
     try:
-        net_list, all_list = get_openInterest_diff_rank("15m")
+        net_list_d, all_list_d, net_list_a, all_list_a = get_bi_openInterest_diff_rank("15m")
         res = ""
-        for l in net_list:
+        for l in net_list_d:
             frozen = ''.join(map(str, l))
             if frozen in binance_his:
                 continue
             diff_ratio = l[2]
-            if diff_ratio >= 100:
+            if diff_ratio >= 200:
                 res += f"🐂🌋*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n主力多头扩张{format_number(float(l[1]))}｜{str(l[2])}%｜{str(l[3])}%\n"
                 binance_his.add(''.join(map(str, l)))
             else:
                 continue
-        for l in all_list:
+        for l in all_list_d:
             frozen = ''.join(map(str, l))
             if frozen in binance_his:
                 continue
             diff_ratio = l[5]
             if diff_ratio >= 3:
                 res += f"🧲🔼*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n市场增量{format_number(float(l[4]))}｜{str(l[5])}%｜{str(l[3])}%\n"
+                binance_his.add(''.join(map(str, l)))
+            else:
+                continue
+        for l in net_list_a:
+            frozen = ''.join(map(str, l))
+            if frozen in binance_his:
+                continue
+            diff_ratio = l[2]
+            if diff_ratio <= -200:
+                res += f"🏃‍💨*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n主力多头缩减{format_number(float(l[1]))}｜{str(l[2])}%｜{str(l[3])}%\n"
+                binance_his.add(''.join(map(str, l)))
+            else:
+                continue
+        for l in all_list_a:
+            frozen = ''.join(map(str, l))
+            if frozen in binance_his:
+                continue
+            diff_ratio = l[5]
+            if diff_ratio <= -3:
+                res += f"🧯⬇️*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n市场缩量{format_number(float(l[4]))}｜{str(l[5])}%｜{str(l[3])}%\n"
                 binance_his.add(''.join(map(str, l)))
             else:
                 continue
