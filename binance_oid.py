@@ -67,77 +67,83 @@ def find_repeated_sublists_by_first(array):
 
 
 def run_task():
-    net_list, all_list = get_openInterest_diff_rank("15m")
-    res = ""
-    for l in net_list:
-        frozen = ''.join(map(str, l))
-        if frozen in binance_his:
-            continue
-        diff_ratio = l[2]
-        if diff_ratio >= 100:
-            res += f"🐂🌋*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n主力多头扩张{format_number(float(l[1]))}｜{str(l[2])}%｜{str(l[3])}%\n"
-            binance_his.add(''.join(map(str, l)))
-        else:
-            continue
-    for l in all_list:
-        frozen = ''.join(map(str, l))
-        if frozen in binance_his:
-            continue
-        diff_ratio = l[5]
-        if diff_ratio >= 3:
-            res += f"🧲🔼*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n市场增量{format_number(float(l[4]))}｜{str(l[5])}%｜{str(l[3])}%\n"
-            binance_his.add(''.join(map(str, l)))
-        else:
-            continue
-    # 定期清理历史记录，避免内存泄漏
-    if len(binance_his) > 10000:
-        binance_his.clear()
-    if res:
-        safe_send_message(chat_id, res)
+    try:
+        net_list, all_list = get_openInterest_diff_rank("15m")
+        res = ""
+        for l in net_list:
+            frozen = ''.join(map(str, l))
+            if frozen in binance_his:
+                continue
+            diff_ratio = l[2]
+            if diff_ratio >= 100:
+                res += f"🐂🌋*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n主力多头扩张{format_number(float(l[1]))}｜{str(l[2])}%｜{str(l[3])}%\n"
+                binance_his.add(''.join(map(str, l)))
+            else:
+                continue
+        for l in all_list:
+            frozen = ''.join(map(str, l))
+            if frozen in binance_his:
+                continue
+            diff_ratio = l[5]
+            if diff_ratio >= 3:
+                res += f"🧲🔼*symbol*：`{l[0][4:] if l[0].startswith('1000') else l[0]}`\n市场增量{format_number(float(l[4]))}｜{str(l[5])}%｜{str(l[3])}%\n"
+                binance_his.add(''.join(map(str, l)))
+            else:
+                continue
+        # 定期清理历史记录，避免内存泄漏
+        if len(binance_his) > 10000:
+            binance_his.clear()
+        if res:
+            safe_send_message(chat_id, res)
+    except Exception as e:
+        safe_send_message(chat_id, f"市场增量获取失败：{e}")
 
-    interval_list = ["15m", "30m", "1h", "2h", "4h"]
-    array0 = []
-    array1 = []
-    for i, interval in enumerate(interval_list):
-        switch0, switch1 = get_long_short_switch_point(interval)
-        array0.append(switch0)
-        array1.append(switch1)
-        time.sleep(5)
+    try:
+        interval_list = ["15m", "30m", "1h", "2h", "4h"]
+        array0 = []
+        array1 = []
+        for i, interval in enumerate(interval_list):
+            switch0, switch1 = get_long_short_switch_point(interval)
+            array0.append(switch0)
+            array1.append(switch1)
+            time.sleep(6)
 
-    switch0_str = ""
-    result0 = find_repeated_sublists_by_first(array0)
-    for res0 in result0:
-        frozen = ''.join(map(str, res0))
-        if frozen in switch_his:
-            continue
-        symbol = res0[0]
-        switch0_str += f"🔴🐻*symbol*：`{symbol[4:] if str(symbol).startswith('1000') else symbol}`\n"
-        for i in range(2, len(res0)):
-            inter = interval_list[res0[i][1]]
-            switch0_str += f"近{inter}多转空机会：{int(res0[i][0][1][1])}% | {res0[i][0][2][1]} | {res0[i][0][3]}%\n"
-        switch0_str += "\n"
-        switch_his.add(frozen)
-    if switch0_str:
-        safe_send_message(chat_id, switch0_str)
+        switch0_str = ""
+        result0 = find_repeated_sublists_by_first(array0)
+        for res0 in result0:
+            frozen = ''.join(map(str, res0))
+            if frozen in switch_his:
+                continue
+            symbol = res0[0]
+            switch0_str += f"🔴🐻*symbol*：`{symbol[4:] if str(symbol).startswith('1000') else symbol}`\n"
+            for i in range(2, len(res0)):
+                inter = interval_list[res0[i][1]]
+                switch0_str += f"近{inter}多转空机会：{int(res0[i][0][1][1])}% | {res0[i][0][2][1]} | {res0[i][0][3]}%\n"
+            switch0_str += "\n"
+            switch_his.add(frozen)
+        if switch0_str:
+            safe_send_message(chat_id, switch0_str)
 
-    switch1_str = ""
-    result1 = find_repeated_sublists_by_first(array1)
-    for res1 in result1:
-        frozen = ''.join(map(str, res1))
-        if frozen in switch_his:
-            continue
-        symbol = res1[0]
-        switch1_str += f"🟢🐂*symbol*：`{symbol[4:] if str(symbol).startswith('1000') else symbol}`\n"
-        for i in range(2, len(res1)):
-            inter = interval_list[res1[i][1]]
-            switch1_str += f"近{inter}空转多机会：{int(res1[i][0][1][1])}% | {res1[i][0][2][1]} | {res1[i][0][3]}%\n"
-        switch1_str += "\n"
-        switch_his.add(frozen)
-    if switch1_str:
-        safe_send_message(chat_id, switch1_str)
+        switch1_str = ""
+        result1 = find_repeated_sublists_by_first(array1)
+        for res1 in result1:
+            frozen = ''.join(map(str, res1))
+            if frozen in switch_his:
+                continue
+            symbol = res1[0]
+            switch1_str += f"🟢🐂*symbol*：`{symbol[4:] if str(symbol).startswith('1000') else symbol}`\n"
+            for i in range(2, len(res1)):
+                inter = interval_list[res1[i][1]]
+                switch1_str += f"近{inter}空转多机会：{int(res1[i][0][1][1])}% | {res1[i][0][2][1]} | {res1[i][0][3]}%\n"
+            switch1_str += "\n"
+            switch_his.add(frozen)
+        if switch1_str:
+            safe_send_message(chat_id, switch1_str)
 
-    if len(switch_his) > 10000:
-        switch_his.clear()
+        if len(switch_his) > 10000:
+            switch_his.clear()
+    except Exception as e:
+        safe_send_message(chat_id, f"拐点机会获取失败：{e}")
 
 
 print(f"Task executed at {datetime.now()}")
