@@ -29,7 +29,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 file_path = os.path.join(current_dir, "circulating.txt")
 cir_df = pd.read_csv(file_path, sep='\t', header=None, names=['symbol', 'circle_supply'], encoding='utf-8')
 
-bot.send_message(chat_id, "开始推荐新币......")
+bot.send_message(chat_id, "开始进行binance代币推荐......")
 
 
 def remove_symbols(text):
@@ -44,7 +44,7 @@ def safe_send_message(chat_id, message):
     except Timeout:
         bot.send_message(chat_id, "发送消息超时，正在重试...")
     except Exception as e:
-        bot.send_message(chat_id, f"recommend 消息发送失败: {remove_symbols(message)}")
+        bot.send_message(chat_id, f"recommend 消息发送失败: {remove_symbols(message)} 错误：{e}")
 
 
 while True:

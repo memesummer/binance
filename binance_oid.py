@@ -24,7 +24,7 @@ bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mo
 
 chat_id = "-1002213443358"
 
-bot.send_message(chat_id, "开始推荐净持仓好币......")
+bot.send_message(chat_id, "开始推荐市场增量好币......")
 
 
 def remove_symbols(text):
@@ -39,7 +39,7 @@ def safe_send_message(chat_id, message):
     except Timeout:
         bot.send_message(chat_id, "发送消息超时，正在重试...")
     except Exception as e:
-        bot.send_message(chat_id, f"recommend 消息发送失败: {remove_symbols(message)}")
+        bot.send_message(chat_id, f"市场增量 消息发送失败: {remove_symbols(message)} 错误：{e}")
 
 
 def find_repeated_sublists_by_first(array):
