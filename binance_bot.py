@@ -34,7 +34,7 @@ monitor_list = []
 
 chat_id = "-1002213443358"
 
-bot.send_message(chat_id, "开始扫描新币......")
+bot.send_message(chat_id, "开始扫描binance大单......")
 
 
 def remove_symbols(text):

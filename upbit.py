@@ -300,10 +300,14 @@ def get_15m_upbit_volume_increase_str(market, unit=15):
         v_ratio = round(float(v_now / v_past), 2)
         if v_ratio >= 3:
             p = data15[0]['trade_price']
+            if data15[0]['trade_price'] > data15[0]['opening_price']:
+                emoji = "🔥"
+            else:
+                emoji = "❄️"
             res = f"""
 *💎symbol：*`{market.split('-')[1]}`
 💰价格：{p}
-🚀近15分钟交易量增长：`{round(v_ratio * 100, 0)}%`
+🚀{emoji}脉冲指数：`{round(v_ratio * 100, 0)}%`
 {"-" * 32}
                         """
             return res
@@ -349,7 +353,7 @@ if __name__ == "__main__":
     bot = telebot.TeleBot("7483560900:AAHtBOXZLOOS1yXp32r3DtoWKV9zFwnYv5M", parse_mode='Markdown')
     chat_id = "-4679507687"
 
-    bot.send_message(chat_id, "开始扫描upbit大单......")
+    bot.send_message(chat_id, "开始进行upbit代币推荐......")
     # 设置间隔时间（以秒为单位）
     interval = 300
     last_run = datetime.now()

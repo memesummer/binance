@@ -34,7 +34,7 @@ session.mount('http://', adapter)
 
 bot = telebot.TeleBot("7755266537:AAEO5L3L8CVqpi-_3z7BxkCXk4PG0pJ2FM0", parse_mode='Markdown')
 chat_id = "-4704065228"
-bot.send_message(chat_id, "开始扫描bitget大单......")
+bot.send_message(chat_id, "开始进行bitget代币推荐......")
 
 
 def format_price(symbol, price):
@@ -270,11 +270,15 @@ def get_volume_increase_15_bitget(symbol):
             if v_past == 0 or v_past < v_old:
                 return None
             v_ratio = round(float(v_now / v_past), 2)
-            if v_ratio >= 10:
+            if v_ratio >= 100:
+                if float(k[2][4]) > float(k[2][1]):
+                    emoji = "🔥"
+                else:
+                    emoji = "❄️"
                 res = f"""
 *💎symbol：*`{symbol[:-4]}`
 💰价格：{k[1][4]}
-🚀近15分钟交易量增长：`{round(v_ratio * 100, 0)}%`
+🚀{emoji}脉冲指数：`{round(v_ratio * 100, 0)}%`
 {"-" * 32}
                 """
                 return res
