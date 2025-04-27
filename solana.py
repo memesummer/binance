@@ -273,44 +273,92 @@ def new_pair_parse(res_list, min_liquidity=8000):
     return token_list
 
 
-def get_top_token(limit, is_volume_based=False, network_id=sol_id):
+def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
     try:
+        exclude_tokens = [f"So11111111111111111111111111111111111111112:{network_id}",
+                          f"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:{network_id}"]
+        exclude_tokens_str = json.dumps(exclude_tokens)
+        attribute = f"trendingScore{interval}" if not is_volume_based else f"volume{interval}"
         getTopToken = f"""query {{
-          listTopTokens (limit:{1000 if is_volume_based else limit},networkFilter:{network_id},resolution:"60") {{
-            name
-            symbol
-            address
-            volume
-            liquidity
-            txnCount1
-            priceChange1
-            uniqueBuys1
-            uniqueSells1
+          filterTokens(
+            filters: {{ network: {network_id} }},
+            rankings: {{ attribute: {attribute}, direction: DESC }},
+            limit: {limit}
+            excludeTokens: {exclude_tokens_str}
+          ) {{
+            results {{
+                token{{
+                    address
+                    symbol
+                    name
+                }}
+                volume{interval}
+                liquidity
+                txnCount{interval}
+                change{interval}
+                uniqueBuys{interval}
+                uniqueSells{interval}
             }}
+          }}
         }}"""
         response = requests.post(url, headers=headers2, json={"query": getTopToken})
         res = json.loads(response.text)
-        res_list = res['data']['listTopTokens']
-        if is_volume_based:
-            res_list = sorted(res_list, key=lambda x: float(x['volume']), reverse=True)[:limit]
+        res_list = res['data']['filterTokens']['results']
         return res_list
     except BaseException as e:
         print(e)
 
 
-def return_top_token(top_token_list, is_volume_based):
-    res = "🔥*1h trending tokens：*\n" if not is_volume_based else "🚀*1h high volume tokens：*\n"
+def get_newest_token(limit, interval='5m', network_id=sol_id):
+    try:
+        exclude_tokens = [f"So11111111111111111111111111111111111111112:{network_id}",
+                          f"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:{network_id}"]
+        exclude_tokens_str = json.dumps(exclude_tokens)
+        attribute = f"createdAt"
+        getNewToken = f"""query {{
+          filterTokens(
+            filters: {{ network: {network_id} }},
+            rankings: {{ attribute: {attribute}, direction: DESC }},
+            limit: {limit}
+            excludeTokens: {exclude_tokens_str}
+          ) {{
+            results {{
+                token{{
+                    address
+                    symbol
+                    name
+                }}
+                volume{interval}
+                liquidity
+                txnCount{interval}
+                change{interval}
+                uniqueBuys{interval}
+                uniqueSells{interval}
+            }}
+          }}
+        }}"""
+        response = requests.post(url, headers=headers2, json={"query": getNewToken})
+        res = json.loads(response.text)
+        res_list = res['data']['filterTokens']['results']
+        return res_list
+    except BaseException as e:
+        print(e)
+
+
+def return_top_token(interval, top_token_list, is_volume_based):
+    inter = interval if interval == '5m' else interval + "h"
+    res = f"🔥*{inter} trending tokens：*\n" if not is_volume_based else f"🚀*{inter} high volume tokens：*\n"
     res += f"| Token | 池子 | 交易量(B/S) | 交易额 | 价格变化 |\n"
 
     for index, token in enumerate(top_token_list):
-        ca = token['address']
-        n = token['symbol'][:5]
+        ca = token['token']['address']
+        n = token['token']['symbol'][:5]
         liq = format_number(int(token['liquidity']))
-        txn = token['txnCount1']
-        b = token['uniqueBuys1']
-        s = token['uniqueSells1']
-        v = format_number(int(token['volume']))
-        p = round(token['priceChange1'] * 100)
+        txn = token[f'txnCount{interval}']
+        b = token[f'uniqueBuys{interval}']
+        s = token[f'uniqueSells{interval}']
+        v = format_number(int(token[f'volume{interval}']))
+        p = round(float(token[f'change{interval}']) * 100)
 
         # 创建每行的数据
         res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{txn}*({b}/{s}) | *{v}* | *{p}%* |\n"
@@ -356,8 +404,15 @@ def get_new_token_recommend():
         res = []
         new_token = get_new_token()
         if not new_token:
+            safe_send_message(chat_id, "dex没有获取到新币")
+            return None
+        top_new_list = get_newest_token(30)
+        if not top_new_list:
             safe_send_message(chat_id, "没有获取到新币")
             return None
+        merge_list = list(set([token['tokenAddress'] for token in new_token] + [token['token']['address'] for token in
+                                                                                top_new_list]))
+
         # latest_boosted_token = get_latest_boosted_token()
         # if not latest_boosted_token:
         #     safe_send_message(chat_id, "没有获取到boost币")
@@ -372,8 +427,7 @@ def get_new_token_recommend():
         # for item in latest_boosted_token:
         #     merge[item['tokenAddress']] = [item['amount'], item['totalAmount']]
 
-        for token in new_token:
-            ca = token['tokenAddress']
+        for ca in merge_list:
             if ca not in new_his:
                 response = requests.get(
                     f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
@@ -406,6 +460,7 @@ def get_new_token_recommend():
                         res.append(sym)
                         new_his.add(ca)
                     break
+            time.sleep(0.5)
         return res
     except Exception as e:
         safe_send_message(chat_id, f"get_latest_token error:{e},ca:{ca}")
@@ -467,15 +522,23 @@ def get_boosted_token():
     return data
 
 
+def flatten_dict(d):
+    # 获取 token 字典（如果不存在则返回空字典）
+    token_dict = d.get('token', {})
+    # 创建新字典，合并 token 字典和其他顶层键值对（排除 token）
+    result = {**token_dict, **{k: v for k, v in d.items() if k != 'token'}}
+    return result
+
+
 def token_recommend():
     res = []
-    top_list = get_top_token(30)
+    top_list = get_top_token(30, 1)
     boost_list = get_boosted_token()
     merge = {}
 
     # 先处理集合 a
     for item in top_list:
-        merge[item['address']] = 0
+        merge[item['token']['address']] = 0
 
     # 然后用集合 b 来更新或添加
     for item in boost_list:
@@ -590,11 +653,12 @@ def return_ca_info(ca):
 def get_top(message):
     """
     :param message: 用户输入/top12 v 则会按照交易量排前12，如果不写，就默认按照热门排序前10
+                    时间节点输入为 5m 1 4 12 24 分别代表 5m, 1h, 4h, 12h, 24h
     :return:
     """
     try:
         if not message.text:
-            bot.reply_to(message, "命令不能为空，请输入正确的格式！示例：/top10 v")
+            bot.reply_to(message, "命令不能为空，请输入正确的格式！示例：/top10 5m v")
             return
 
         limit = 10
@@ -606,18 +670,20 @@ def get_top(message):
         if parts[0].startswith('/top') and parts[0][4:].isdigit():
             limit = int(parts[0][4:])  # 提取 /top 后的数字部分
 
+        interval = parts[1]
+
         # 检查是否有 'v' 参数
-        if len(parts) > 1:
+        if len(parts) > 2:
             is_volume_based = True
 
         # 获取代币信息
-        t = get_top_token(limit=limit, is_volume_based=is_volume_based)
+        t = get_top_token(limit=limit, interval=interval, is_volume_based=is_volume_based)
         if t is None:
             bot.reply_to(message, "无法获取代币数据，请稍后再试！")
             return
 
         # 返回代币结果
-        data = return_top_token(t, is_volume_based)
+        data = return_top_token(interval, t, is_volume_based)
         if data is None:
             bot.reply_to(message, "获取结果为空，请检查参数后重试！")
             return
@@ -627,7 +693,7 @@ def get_top(message):
 
     except Exception as e:
         print(f"Error occurred: {e}")
-        bot.reply_to(message, "请输入正确的参数格式。示例：/top10 v")
+        bot.reply_to(message, "请输入正确的参数格式。示例：/top10 5m v")
 
 
 @bot.message_handler(func=lambda msg: not msg.text.startswith('/'))
@@ -640,6 +706,7 @@ def start_bot():
     while True:
         try:
             bot.session = session
+            bot.delete_webhook()
             bot.polling(none_stop=True, interval=1, timeout=60)
         except Exception as e:
             print(f"Bot Error occurred: {e}")
