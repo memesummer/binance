@@ -740,6 +740,7 @@ def scan_new():
         except Exception as e:
             safe_send_message(chat_id, f"AI扫链获取出错：{e}")
             time.sleep(3)
+            continue
 
 
 def get_boosted_token():
@@ -875,6 +876,7 @@ def recommend_scan():
         except Exception as e:
             safe_send_message(chat_id, f"金狗挖掘获取出错：{e}")
             time.sleep(3)
+            continue
 
 
 def return_ca_info(ca):
@@ -1060,6 +1062,7 @@ def get_vc_increase(limit=10):
         except Exception as e:
             safe_send_message(chat_id, f"AI脉冲警报获取出错：{e}")
             time.sleep(3)
+            continue
 
 
 if __name__ == "__main__":
