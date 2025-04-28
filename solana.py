@@ -714,8 +714,8 @@ def get_token_age(pair_created_at):
 
 
 def scan_new():
-    try:
-        while True:
+    while True:
+        try:
             message = ""
             new_list = get_new_token_recommend()
             if new_list is None:
@@ -737,8 +737,9 @@ def scan_new():
                 safe_send_message(chat_id, message)
                 time.sleep(1)
             time.sleep(60)
-    except Exception as e:
-        safe_send_message(chat_id, f"扫描新币出问题：{e}")
+        except Exception as e:
+            safe_send_message(chat_id, f"AI扫链获取出错：{e}")
+            time.sleep(3)
 
 
 def get_boosted_token():
@@ -833,43 +834,47 @@ def token_recommend():
 
 def recommend_scan():
     while True:
-        rec_list = token_recommend()
-        for token in rec_list:
-            #             buy5 = token.get('txns', {}).get('m5', {}).get('buys', 0)
-            #             sell5 = token.get('txns', {}).get('m5', {}).get('sells', 0)
-            #             pchg5 = format_number(token.get('priceChange', {}).get('m5', 0), True)
-            #             buy1 = token.get('txns', {}).get('h1', {}).get('buys', 0)
-            #             sell1 = token.get('txns', {}).get('h1', {}).get('sells', 0)
-            #             pchg1 = format_number(token.get('priceChange', {}).get('h1', 0), True)
-            #             buy6 = token.get('txns', {}).get('h6', {}).get('buys', 0)
-            #             sell6 = token.get('txns', {}).get('h6', {}).get('sells', 0)
-            #             pchg6 = format_number(token.get('priceChange', {}).get('h6', 0), True)
-            #             buy24 = token.get('txns', {}).get('h24', {}).get('buys', 0)
-            #             sell24 = token.get('txns', {}).get('h24', {}).get('sells', 0)
-            #             pchg24 = format_number(token.get('priceChange', {}).get('h24', 0), True)
-            #             v5 = format_number(token.get('volume', {}).get('m5', 0), True)
-            #             v1 = format_number(token.get('volume', {}).get('h1', 0), True)
-            #             v6 = format_number(token.get('volume', {}).get('h6', 0), True)
-            #             v24 = format_number(token.get('volume', {}).get('h24', 0), True)
-            #             table = f"""
-            #    |  P%  Vol    B/S
-            # -----------------------
-            # 5m |  {pchg5}   {v5}   {format_number(buy5)}/{format_number(sell5)}
-            # 1h |  {pchg1}  {v1}  {format_number(buy1)}/{format_number(sell1)}
-            # 6h |  {pchg6}  {v6}  {format_number(buy6)}/{format_number(sell6)}
-            # 24h|  {pchg24}  {v24}  {format_number(buy24)}/{format_number(sell24)}
-            # """
-            message = f"""
+        try:
+            rec_list = token_recommend()
+            for token in rec_list:
+                #             buy5 = token.get('txns', {}).get('m5', {}).get('buys', 0)
+                #             sell5 = token.get('txns', {}).get('m5', {}).get('sells', 0)
+                #             pchg5 = format_number(token.get('priceChange', {}).get('m5', 0), True)
+                #             buy1 = token.get('txns', {}).get('h1', {}).get('buys', 0)
+                #             sell1 = token.get('txns', {}).get('h1', {}).get('sells', 0)
+                #             pchg1 = format_number(token.get('priceChange', {}).get('h1', 0), True)
+                #             buy6 = token.get('txns', {}).get('h6', {}).get('buys', 0)
+                #             sell6 = token.get('txns', {}).get('h6', {}).get('sells', 0)
+                #             pchg6 = format_number(token.get('priceChange', {}).get('h6', 0), True)
+                #             buy24 = token.get('txns', {}).get('h24', {}).get('buys', 0)
+                #             sell24 = token.get('txns', {}).get('h24', {}).get('sells', 0)
+                #             pchg24 = format_number(token.get('priceChange', {}).get('h24', 0), True)
+                #             v5 = format_number(token.get('volume', {}).get('m5', 0), True)
+                #             v1 = format_number(token.get('volume', {}).get('h1', 0), True)
+                #             v6 = format_number(token.get('volume', {}).get('h6', 0), True)
+                #             v24 = format_number(token.get('volume', {}).get('h24', 0), True)
+                #             table = f"""
+                #    |  P%  Vol    B/S
+                # -----------------------
+                # 5m |  {pchg5}   {v5}   {format_number(buy5)}/{format_number(sell5)}
+                # 1h |  {pchg1}  {v1}  {format_number(buy1)}/{format_number(sell1)}
+                # 6h |  {pchg6}  {v6}  {format_number(buy6)}/{format_number(sell6)}
+                # 24h|  {pchg24}  {v24}  {format_number(buy24)}/{format_number(sell24)}
+                # """
+                message = f"""
 🥇*AI严选-金狗挖掘*🚜
 🐕*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) | ⚡️{token['boost_amount']}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
 {"-" * 32}
-            """
-            safe_send_message(chat_id, message)
-            time.sleep(1)
-        time.sleep(60)
+                """
+                safe_send_message(chat_id, message)
+                time.sleep(1)
+            time.sleep(60)
+        except Exception as e:
+            safe_send_message(chat_id, f"金狗挖掘获取出错：{e}")
+            time.sleep(3)
 
 
 def return_ca_info(ca):
@@ -1024,33 +1029,37 @@ def start_bot():
 
 def get_vc_increase(limit=10):
     while True:
-        a = get_rank_vc(limit, '1')
-        b = get_rank_vc(limit, '5m')
-        m = []
-        res = []
-        for token in a:
-            m.append(token['token']['address'])
-        for token in b:
-            if token['token']['address'] in m:
-                res.append(token)
-        for token in res:
-            if str(token) in vc_increase_his:
-                continue
-            ca = token['token']['address']
-            symbol = token['token']['symbol']
-            name = token['token']['name']
-            message = f"""
+        try:
+            a = get_rank_vc(limit, '1')
+            b = get_rank_vc(limit, '5m')
+            m = []
+            res = []
+            for token in a:
+                m.append(token['token']['address'])
+            for token in b:
+                if token['token']['address'] in m:
+                    res.append(token)
+            for token in res:
+                if str(token) in vc_increase_his:
+                    continue
+                ca = token['token']['address']
+                symbol = token['token']['symbol']
+                name = token['token']['name']
+                message = f"""
 🚀*AI脉冲警报*🔥
 🎈*{symbol}*：[{name}](https://gmgn.ai/sol/token/{ca}) | 💥{round(float(token['volumeChange5m']) * 100)}%
 💧池子：{format_number(int(token['liquidity']))} ｜ 💸市值：{format_number(int(token['marketCap']))}
 💰价格：{format_from_first_nonzero(token['priceUSD'])}
-⌛{get_token_age(token['createdAt']*1000)}
+⌛{get_token_age(token['createdAt'] * 1000)}
 {"-" * 32}
-    """
-            safe_send_message(chat_id, message)
-            vc_increase_his.add(str(token))
-            time.sleep(1)
-        time.sleep(150)
+        """
+                safe_send_message(chat_id, message)
+                vc_increase_his.add(str(token))
+                time.sleep(1)
+            time.sleep(150)
+        except Exception as e:
+            safe_send_message(chat_id, f"AI脉冲警报获取出错：{e}")
+            time.sleep(3)
 
 
 if __name__ == "__main__":
