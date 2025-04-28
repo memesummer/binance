@@ -25,14 +25,21 @@ from main import get_latest_price, get_net_volume_rank_future, get_net_volume_ra
 from upbit import to_list_on_upbit, get_upbit_volume
 from rootdata import root_data_meta_data
 
-bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
+# 机器人1
+# bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
+# 机器人2
+# bot = telebot.TeleBot("8077013417:AAFg0uzWmO3zXyvRJNfJORhK9BJTltFUJa0", parse_mode='Markdown')
+# 机器人3
+bot = telebot.TeleBot("7727377009:AAGxwVbs65PxqMfwP6ugCcMHxMBDrM2jc2o", parse_mode='Markdown')
+
 AUTHORIZED_USERS = [546797136]  # 替换为实际用户 ID
 
 binance_his = set()
 record = set()
 monitor_list = []
 
-chat_id = "-1002213443358"
+# chat_id = "-1002213443358"
+chat_id = "-4654295504"
 
 bot.send_message(chat_id, "开始扫描binance大单......")
 
@@ -522,11 +529,11 @@ def scan():
                 binance_his.clear()
             if len(record) > 50000:
                 record.clear()
-            time.sleep(2)
+            time.sleep(4)
         except Exception as e:
             error_message = f"Error occurred: {str(e)}"
             print(f"Error in scan thread: {e}")
-            safe_send_message(chat_id, error_message)  # 报错时通知管理员
+            safe_send_message(chat_id, f"Error in scan thread: {e}")  # 报错时通知管理员
             time.sleep(30)  # 等待一段时间后再继续，避免频繁重启
 
 

@@ -18,10 +18,12 @@ from main import recommend
 from binance_future import format_number
 
 binance_his = set()
-bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
+# bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
+# bot = telebot.TeleBot("8077013417:AAFg0uzWmO3zXyvRJNfJORhK9BJTltFUJa0", parse_mode='Markdown')
+bot = telebot.TeleBot("7727377009:AAGxwVbs65PxqMfwP6ugCcMHxMBDrM2jc2o", parse_mode='Markdown')
 
-chat_id = "-1002213443358"
-
+# chat_id = "-1002213443358"
+chat_id = "-4654295504"
 # 获取当前脚本所在的目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -52,7 +54,6 @@ while True:
         res = recommend(cir_df)
         # 按照 flag 列表长度降序排序
         sorted_res = sorted(res, key=lambda item: len(list(item.values())[0][1]), reverse=True)
-
         message = ""
         for item in sorted_res:
             frozen_dict = '；'.join(f"{key}:{','.join(map(str, values[1]))}" for key, values in item.items())
