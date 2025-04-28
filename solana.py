@@ -20,6 +20,11 @@ sol_sniffer_api_key_list = ['i2e0pwyjlztqemeok2sa6uc2vrk798', 'zkm1hkgigkrwgpvfd
                             "ouwnjyt0ckpornm1ojj4tkl9rhiry6"]
 probabilities = [0.2, 0.2, 0.2, 0.2, 0.2]
 
+exclude_tokens = [f"So11111111111111111111111111111111111111112:{sol_id}",
+                  f"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:{sol_id}",
+                  f"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB:{sol_id}"]
+exclude_tokens_str = json.dumps(exclude_tokens)
+
 url = "https://graph.defined.fi/graphql"
 
 headers1 = {
@@ -275,13 +280,14 @@ def new_pair_parse(res_list, min_liquidity=8000):
 
 def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
     try:
-        exclude_tokens = [f"So11111111111111111111111111111111111111112:{network_id}",
-                          f"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:{network_id}"]
-        exclude_tokens_str = json.dumps(exclude_tokens)
         attribute = f"trendingScore{interval}" if not is_volume_based else f"volume{interval}"
         getTopToken = f"""query {{
           filterTokens(
-            filters: {{ network: {network_id} }},
+            filters: {{ 
+              network: {network_id},
+              potentialScam: false,
+              liquidity: {{ gt: 10000 }}
+            }},
             rankings: {{ attribute: {attribute}, direction: DESC }},
             limit: {limit}
             excludeTokens: {exclude_tokens_str}
@@ -294,6 +300,7 @@ def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
                 }}
                 volume{interval}
                 liquidity
+                marketCap
                 txnCount{interval}
                 change{interval}
                 uniqueBuys{interval}
@@ -309,11 +316,161 @@ def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
         print(e)
 
 
+def get_rank_buyCount(limit, interval, network_id=sol_id):
+    try:
+        attribute = f"[{{attribute: txnCount{interval}, direction: DESC}},{{attribute: buyCount{interval}, direction: DESC}}]"
+        getTopToken = f"""query {{
+          filterTokens(
+            filters: {{ 
+              network: {network_id},
+              potentialScam: false,
+              liquidity: {{ gt: 10000 }}
+            }},
+            rankings: {attribute},
+            limit: {limit}
+            excludeTokens: {exclude_tokens_str}
+          ) {{
+            results {{
+                token{{
+                    address
+                    symbol
+                    name
+                }}
+                volume{interval}
+                liquidity
+                marketCap
+                txnCount{interval}
+                buyCount{interval}
+                sellCount{interval}
+                change{interval}
+            }}
+          }}
+        }}"""
+        response = requests.post(url, headers=headers2, json={"query": getTopToken})
+        res = json.loads(response.text)
+        res_list = res['data']['filterTokens']['results']
+        return res_list
+    except BaseException as e:
+        print(e)
+
+
+def get_rank_pc(limit, interval, network_id=sol_id):
+    try:
+        attribute = f"{{attribute: change{interval}, direction: DESC}}"
+        getTopToken = f"""query {{
+          filterTokens(
+            filters: {{ 
+              network: {network_id},
+              potentialScam: false,
+              liquidity: {{ gt: 10000 }}
+            }},
+            rankings: {attribute},
+            limit: {limit}
+            excludeTokens: {exclude_tokens_str}
+          ) {{
+            results {{
+                token{{
+                    address
+                    symbol
+                    name
+                }}
+                volume{interval}
+                liquidity
+                marketCap
+                change{interval}
+            }}
+          }}
+        }}"""
+        response = requests.post(url, headers=headers2, json={"query": getTopToken})
+        res = json.loads(response.text)
+        res_list = res['data']['filterTokens']['results']
+        return res_list
+    except BaseException as e:
+        print(e)
+
+
+def get_rank_vc(limit, interval, network_id=sol_id):
+    try:
+        attribute = f"{{attribute: volumeChange{interval}, direction: DESC}}"
+        getTopToken = f"""query {{
+          filterTokens(
+            filters: {{ 
+              network: {network_id},
+              potentialScam: false,
+              liquidity: {{ gt: 10000 }}
+              change5m: {{ gt: 0.01 }}
+              change1: {{ gt: 0.01 }}
+              change4: {{ gt: 0.01 }}
+              change12: {{ gt: 0.01 }}
+              change24: {{ gt: 0.01 }}
+            }},
+            rankings: {attribute},
+            limit: {limit}
+            excludeTokens: {exclude_tokens_str}
+          ) {{
+            results {{
+                token{{
+                    address
+                    symbol
+                    name
+                }}
+                volume{interval}
+                liquidity
+                marketCap
+                volumeChange{interval}
+                change{interval}
+                createdAt
+                priceUSD
+            }}
+          }}
+        }}"""
+        response = requests.post(url, headers=headers2, json={"query": getTopToken})
+        res = json.loads(response.text)
+        res_list = res['data']['filterTokens']['results']
+        return res_list
+    except BaseException as e:
+        print(e)
+
+
+def get_rank_holder(limit, interval, network_id=sol_id):
+    try:
+        attribute = f"[{{attribute: holders, direction: DESC}},{{attribute: notableHolderCount, direction: DESC}}]"
+        getTopToken = f"""query {{
+          filterTokens(
+            filters: {{ 
+              network: {network_id},
+              potentialScam: false,
+              liquidity: {{ gt: 10000 }}
+            }},
+            rankings: {attribute},
+            limit: {limit}
+            excludeTokens: {exclude_tokens_str}
+          ) {{
+            results {{
+                token{{
+                    address
+                    symbol
+                    name
+                }}
+                volume{interval}
+                liquidity
+                marketCap
+                txnCount{interval}
+                holders
+                change{interval}
+            }}
+          }}
+        }}"""
+        response = requests.post(url, headers=headers2, json={"query": getTopToken})
+        res = json.loads(response.text)
+        res_list = res['data']['filterTokens']['results']
+        return res_list
+    except BaseException as e:
+        print(e)
+
+
 def get_newest_token(limit, interval='5m', network_id=sol_id):
     try:
-        exclude_tokens = [f"So11111111111111111111111111111111111111112:{network_id}",
-                          f"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:{network_id}"]
-        exclude_tokens_str = json.dumps(exclude_tokens)
         attribute = f"createdAt"
         getNewToken = f"""query {{
           filterTokens(
@@ -348,20 +505,91 @@ def get_newest_token(limit, interval='5m', network_id=sol_id):
 def return_top_token(interval, top_token_list, is_volume_based):
     inter = interval if interval == '5m' else interval + "h"
     res = f"🔥*{inter} trending tokens：*\n" if not is_volume_based else f"🚀*{inter} high volume tokens：*\n"
-    res += f"| Token | 池子 | 交易量(B/S) | 交易额 | 价格变化 |\n"
+    res += f"| Token | 池子 | 市值 | 交易额 | 价格变化 |\n"
 
     for index, token in enumerate(top_token_list):
         ca = token['token']['address']
         n = token['token']['symbol'][:5]
         liq = format_number(int(token['liquidity']))
-        txn = token[f'txnCount{interval}']
-        b = token[f'uniqueBuys{interval}']
-        s = token[f'uniqueSells{interval}']
+        mc = format_number(int(token['marketCap']))
         v = format_number(int(token[f'volume{interval}']))
         p = round(float(token[f'change{interval}']) * 100)
 
         # 创建每行的数据
-        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{txn}*({b}/{s}) | *{v}* | *{p}%* |\n"
+        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}* | *{v}* | *{p}%* |\n"
+    return res
+
+
+def return_buyCount_token(interval, top_token_list):
+    inter = interval if interval == '5m' else interval + "h"
+    res = f"🦾*{inter} 买单排行榜：*\n"
+    res += f"| Token | 池子 | 市值 | 交易量 | 交易额 | 价格变化 |\n"
+
+    for index, token in enumerate(top_token_list):
+        ca = token['token']['address']
+        n = token['token']['symbol'][:5]
+        liq = format_number(int(token['liquidity']))
+        mc = format_number(int(token['marketCap']))
+        txn = token[f'txnCount{interval}']
+        v = format_number(int(token[f'volume{interval}']))
+        p = round(float(token[f'change{interval}']) * 100)
+
+        # 创建每行的数据
+        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}* | *{txn}* | *{v}* | *{p}%* |\n"
+    return res
+
+
+def return_pc_token(interval, top_token_list):
+    inter = interval if interval == '5m' else interval + "h"
+    res = f"📈*{inter} 价格变化排行榜：*\n"
+    res += f"| Token | 池子 | 市值 | 交易量 | 价格变化 |\n"
+
+    for index, token in enumerate(top_token_list):
+        ca = token['token']['address']
+        n = token['token']['symbol'][:5]
+        liq = format_number(int(token['liquidity']))
+        mc = format_number(int(token['marketCap']))
+        v = format_number(int(token[f'volume{interval}']))
+        p = round(float(token[f'change{interval}']) * 100)
+
+        # 创建每行的数据
+        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}*| *{v}* | *{p}%* |\n"
+    return res
+
+
+def return_vc_token(interval, top_token_list):
+    inter = interval if interval == '5m' else interval + "h"
+    res = f"💥*{inter} 交易量变化排行榜：*\n"
+    res += f"| Token | 池子 | 市值 | 交易量变化 | 价格变化 |\n"
+
+    for index, token in enumerate(top_token_list):
+        ca = token['token']['address']
+        n = token['token']['symbol'][:5]
+        liq = format_number(int(token['liquidity']))
+        mc = format_number(int(token['marketCap']))
+        vc = round(float(token[f'volumeChange{interval}']) * 100)
+        p = round(float(token[f'change{interval}']) * 100)
+
+        # 创建每行的数据
+        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}*| *{vc}%* | *{p}%* |\n"
+    return res
+
+
+def return_holders_token(interval, top_token_list):
+    inter = interval if interval == '5m' else interval + "h"
+    res = f"🐋*{inter} holder排行榜：*\n"
+    res += f"| Token | 池子 | 市值 | holder | 价格变化 |\n"
+
+    for index, token in enumerate(top_token_list):
+        ca = token['token']['address']
+        n = token['token']['symbol'][:5]
+        liq = format_number(int(token['liquidity']))
+        mc = format_number(int(token['marketCap']))
+        holder = format_number(int(token['holders']))
+        p = round(float(token[f'change{interval}']) * 100)
+
+        # 创建每行的数据
+        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}*| *{holder}* | *{p}%* |\n"
     return res
 
 
@@ -530,6 +758,32 @@ def flatten_dict(d):
     return result
 
 
+def format_from_first_nonzero(number, digits=4):
+    # 转换为字符串并保留小数部分
+    num_str = f"{float(number):.20f}".rstrip('0')
+    integer_part, _, decimal_part = num_str.partition('.')
+
+    if not decimal_part:
+        return f"{integer_part}.{'0' * digits}"
+
+    # 找到第一个非零数字的索引
+    first_nonzero_idx = -1
+    for i, digit in enumerate(decimal_part):
+        if digit != '0':
+            first_nonzero_idx = i
+            break
+
+    if first_nonzero_idx == -1:
+        return f"{integer_part}.{'0' * digits}"
+
+    # 从第一个非零数字开始，取 digits 位
+    result = decimal_part[first_nonzero_idx:first_nonzero_idx + digits]
+    # 如果不足 digits 位，补零
+    result = result.ljust(digits, '0')
+    # 保留原始前导零
+    return f"{integer_part}.{decimal_part[:first_nonzero_idx]}{result}"
+
+
 def token_recommend():
     res = []
     top_list = get_top_token(30, 1)
@@ -674,22 +928,75 @@ def get_top(message):
 
         # 检查是否有 'v' 参数
         if len(parts) > 2:
-            is_volume_based = True
+            if parts[2] == 'v':
+                is_volume_based = True
+                t = get_top_token(limit=limit, interval=interval, is_volume_based=is_volume_based)
+                if t is None:
+                    bot.reply_to(message, "无法获取代币数据，请稍后再试！")
+                    return
 
-        # 获取代币信息
-        t = get_top_token(limit=limit, interval=interval, is_volume_based=is_volume_based)
-        if t is None:
-            bot.reply_to(message, "无法获取代币数据，请稍后再试！")
-            return
+                # 返回代币结果
+                data = return_top_token(interval, t, is_volume_based)
+                if data is None:
+                    bot.reply_to(message, "获取结果为空，请检查参数后重试！")
+                    return
 
-        # 返回代币结果
-        data = return_top_token(interval, t, is_volume_based)
-        if data is None:
-            bot.reply_to(message, "获取结果为空，请检查参数后重试！")
-            return
+                # 发送信息
+                safe_send_message(chat_id, data)
+            elif parts[2] == 'b':
+                t = get_rank_buyCount(limit, interval)
+                if t is None:
+                    bot.reply_to(message, "无法获取代币数据，请稍后再试！")
+                    return
+                data = return_buyCount_token(interval, t)
+                if data is None:
+                    bot.reply_to(message, "获取结果为空，请检查参数后重试！")
+                    return
+                safe_send_message(chat_id, data)
+            elif parts[2] == 'h':
+                t = get_rank_holder(limit, interval)
+                if t is None:
+                    bot.reply_to(message, "无法获取代币数据，请稍后再试！")
+                    return
+                data = return_holders_token(interval, t)
+                if data is None:
+                    bot.reply_to(message, "获取结果为空，请检查参数后重试！")
+                    return
+                safe_send_message(chat_id, data)
+            elif parts[2] == 'vc':
+                t = get_rank_vc(limit, interval)
+                if t is None:
+                    bot.reply_to(message, "无法获取代币数据，请稍后再试！")
+                    return
+                data = return_vc_token(interval, t)
+                if data is None:
+                    bot.reply_to(message, "获取结果为空，请检查参数后重试！")
+                    return
+                safe_send_message(chat_id, data)
+            elif parts[2] == 'pc':
+                t = get_rank_pc(limit, interval)
+                if t is None:
+                    bot.reply_to(message, "无法获取代币数据，请稍后再试！")
+                    return
+                data = return_pc_token(interval, t)
+                if data is None:
+                    bot.reply_to(message, "获取结果为空，请检查参数后重试！")
+                    return
+                safe_send_message(chat_id, data)
+        else:
+            t = get_top_token(limit=limit, interval=interval, is_volume_based=is_volume_based)
+            if t is None:
+                bot.reply_to(message, "无法获取代币数据，请稍后再试！")
+                return
 
-        # 发送信息
-        safe_send_message(chat_id, data)
+            # 返回代币结果
+            data = return_top_token(interval, t, is_volume_based)
+            if data is None:
+                bot.reply_to(message, "获取结果为空，请检查参数后重试！")
+                return
+
+            # 发送信息
+            safe_send_message(chat_id, data)
 
     except Exception as e:
         print(f"Error occurred: {e}")
@@ -715,9 +1022,41 @@ def start_bot():
             continue
 
 
+def get_vc_increase(limit=10):
+    while True:
+        a = get_rank_vc(limit, '1')
+        b = get_rank_vc(limit, '5m')
+        m = []
+        res = []
+        for token in a:
+            m.append(token['token']['address'])
+        for token in b:
+            if token['token']['address'] in m:
+                res.append(token)
+        for token in res:
+            if str(token) in vc_increase_his:
+                continue
+            ca = token['token']['address']
+            symbol = token['token']['symbol']
+            name = token['token']['name']
+            message = f"""
+🚀*AI脉冲警报*🔥
+🎈*{symbol}*：[{name}](https://gmgn.ai/sol/token/{ca}) | 💥{round(float(token['volumeChange5m']) * 100)}%
+💧池子：{format_number(int(token['liquidity']))} ｜ 💸市值：{format_number(int(token['marketCap']))}
+💰价格：{format_from_first_nonzero(token['priceUSD'])}
+⌛{get_token_age(token['createdAt']*1000)}
+{"-" * 32}
+    """
+            safe_send_message(chat_id, message)
+            vc_increase_his.add(str(token))
+            time.sleep(1)
+        time.sleep(150)
+
+
 if __name__ == "__main__":
     new_his = set()
     recommend_his = set()
+    vc_increase_his = set()
     # 创建自定义的 session
     session = requests.Session()
 
@@ -736,13 +1075,16 @@ if __name__ == "__main__":
     bot_thread = threading.Thread(target=start_bot)
     new_thread = threading.Thread(target=scan_new)
     rec_thread = threading.Thread(target=recommend_scan)
+    inc_thread = threading.Thread(target=get_vc_increase)
 
     # 启动两个线程
     bot_thread.start()
     new_thread.start()
     rec_thread.start()
+    inc_thread.start()
 
     # 等待两个线程完成
     bot_thread.join()
     new_thread.join()
     rec_thread.join()
+    inc_thread.join()
