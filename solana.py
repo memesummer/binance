@@ -812,8 +812,8 @@ def token_recommend():
                 if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
                     continue
                 elif data['fdv'] < 100000000 and data.get('liquidity', {'usd': 0})['usd'] > 100000 and \
-                        data['priceChange'].get('m5', 0) > 0 and data['priceChange']['h1'] > 0 and \
-                        data['priceChange']['h6'] > 0 and data['priceChange']['h24'] > 0:
+                        data['priceChange'].get('m5', 0) > 0 and data['priceChange'].get('h1', 0) > 0 and \
+                        data['priceChange'].get('h6', 0) > 0 and data['priceChange'].get('h24', 0) > 0:
                     sym = {
                         'ca': ca,
                         'symbol': data['baseToken']['symbol'],

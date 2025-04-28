@@ -64,7 +64,6 @@ def restricted(func):
 
 
 @bot.message_handler(commands=['o'])
-@restricted
 def get_order(message):
     try:
         # 将参数分割成两部分
@@ -187,7 +186,6 @@ def get_open_interest_diff_rank(message):
 
 
 @bot.message_handler(commands=['i'])
-@restricted
 def get_symbol_oi(message):
     try:
         param = message.text.split()[1:][0]
@@ -214,7 +212,6 @@ def get_switch(message):
 
 
 @bot.message_handler(commands=['n'])
-@restricted
 def get_symbol_net(message):
     try:
         param = message.text.split()[1:][0]
@@ -228,7 +225,6 @@ def get_symbol_net(message):
 
 
 @bot.message_handler(commands=['t'])
-@restricted
 def get_token_info(message):
     try:
         symbol = message.text.split()[1:][0]
@@ -248,7 +244,6 @@ def get_token_info(message):
 
 
 @bot.message_handler(commands=['d'])
-@restricted
 def get_token_sf_delta(message):
     try:
         spot, future = token_spot_future_delta()
@@ -320,7 +315,6 @@ def gain_lose_rank(message):
 
 
 @bot.message_handler(commands=['f'])
-@restricted
 def funding_rate(message):
     try:
         st = get_funding_info_str()
@@ -331,7 +325,6 @@ def funding_rate(message):
 
 
 @bot.message_handler(commands=['om'])
-@restricted
 def oi_mc_ratio(message):
     try:
         st = get_oi_mc_str()
@@ -342,7 +335,6 @@ def oi_mc_ratio(message):
 
 
 @bot.message_handler(commands=['stat'])
-@restricted
 def stat_coin_time(message):
     try:
         param = message.text.split()[1:][0]
@@ -362,7 +354,6 @@ def stat_coin_time(message):
 
 
 @bot.message_handler(commands=['ul'])
-@restricted
 def upbit_to_list(message):
     try:
         up = to_list_on_upbit()
@@ -397,7 +388,6 @@ def thumb_alert(message):
 
 
 @bot.message_handler(commands=['bl'])
-@restricted
 def bithumb_to_list(message):
     try:
         bit = to_list_on_bithumb()
@@ -409,7 +399,6 @@ def bithumb_to_list(message):
 
 
 @bot.message_handler(commands=['kl'])
-@restricted
 def korea_to_list(message):
     try:
         up = to_list_on_upbit()
