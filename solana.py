@@ -301,6 +301,7 @@ def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
             filters: {{ 
               network: {network_id},
               potentialScam: false,
+              launchpadCompleted: true,
               liquidity: {{ gt: 10000 }}
             }},
             rankings: {{ attribute: {attribute}, direction: DESC }},
@@ -339,6 +340,7 @@ def get_rank_buyCount(limit, interval, network_id=sol_id):
             filters: {{ 
               network: {network_id},
               potentialScam: false,
+              launchpadCompleted: true,
               liquidity: {{ gt: 10000 }}
             }},
             rankings: {attribute},
@@ -377,6 +379,7 @@ def get_rank_pc(limit, interval, network_id=sol_id):
             filters: {{ 
               network: {network_id},
               potentialScam: false,
+              launchpadCompleted: true,
               liquidity: {{ gt: 10000 }}
             }},
             rankings: {attribute},
@@ -412,6 +415,7 @@ def get_rank_vc(limit, interval, network_id=sol_id):
             filters: {{ 
               network: {network_id},
               potentialScam: false,
+              launchpadCompleted: true,
               liquidity: {{ gt: 10000 }}
               change5m: {{ gt: 0.01 }}
               change1: {{ gt: 0.01 }}
@@ -455,6 +459,7 @@ def get_rank_holder(limit, interval, network_id=sol_id):
             filters: {{ 
               network: {network_id},
               potentialScam: false,
+              launchpadCompleted: true,
               liquidity: {{ gt: 10000 }}
             }},
             rankings: {attribute},
@@ -489,7 +494,10 @@ def get_newest_token(limit, interval='5m', network_id=sol_id):
         attribute = f"createdAt"
         getNewToken = f"""query {{
           filterTokens(
-            filters: {{ network: {network_id} }},
+            filters: {{ network: {network_id},
+                        potentialScam: false,
+                        launchpadCompleted: true
+                        }},
             rankings: {{ attribute: {attribute}, direction: DESC }},
             limit: {limit}
             excludeTokens: {exclude_tokens_str}
@@ -531,7 +539,7 @@ def return_top_token(interval, top_token_list, is_volume_based):
         p = round(float(token[f'change{interval}']) * 100)
 
         # 创建每行的数据
-        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}* | *{v}* | *{p}%* |\n"
+        res += f"| *{index + 1}.*[{n}](https://debot.ai/token/solana/{ca}) | *{liq}* | *{mc}* | *{v}* | *{p}%* |\n"
     return res
 
 
@@ -550,7 +558,7 @@ def return_buyCount_token(interval, top_token_list):
         p = round(float(token[f'change{interval}']) * 100)
 
         # 创建每行的数据
-        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}* | *{txn}* | *{v}* | *{p}%* |\n"
+        res += f"| *{index + 1}.*[{n}](https://debot.ai/token/solana/{ca}) | *{liq}* | *{mc}* | *{txn}* | *{v}* | *{p}%* |\n"
     return res
 
 
@@ -568,7 +576,7 @@ def return_pc_token(interval, top_token_list):
         p = round(float(token[f'change{interval}']) * 100)
 
         # 创建每行的数据
-        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}*| *{v}* | *{p}%* |\n"
+        res += f"| *{index + 1}.*[{n}](https://debot.ai/token/solana/{ca}) | *{liq}* | *{mc}*| *{v}* | *{p}%* |\n"
     return res
 
 
@@ -586,7 +594,7 @@ def return_vc_token(interval, top_token_list):
         p = round(float(token[f'change{interval}']) * 100)
 
         # 创建每行的数据
-        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}*| *{vc}%* | *{p}%* |\n"
+        res += f"| *{index + 1}.*[{n}](https://debot.ai/token/solana/{ca}) | *{liq}* | *{mc}*| *{vc}%* | *{p}%* |\n"
     return res
 
 
@@ -604,7 +612,7 @@ def return_holders_token(interval, top_token_list):
         p = round(float(token[f'change{interval}']) * 100)
 
         # 创建每行的数据
-        res += f"| *{index + 1}.*[{n}](https://gmgn.ai/sol/token/{ca}) | *{liq}* | *{mc}*| *{holder}* | *{p}%* |\n"
+        res += f"| *{index + 1}.*[{n}](https://debot.ai/token/solana/{ca}) | *{liq}* | *{mc}*| *{holder}* | *{p}%* |\n"
     return res
 
 
@@ -742,12 +750,15 @@ def scan_new():
             for token in new_list:
                 message += f"""
 🤖*AI扫链-潜力新币推荐*🧠
-🌱*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) ｜ {token['star'] * "⭐"}
+🌱*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) ｜ {token['star'] * "⭐"}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
 {sol_sniffer.get(token['ca']) if sol_sniffer else ""}
-{"-" * 32}
+💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://debot.ai/?inviteCode=222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
+)
+📱机器人问题请联系👉：@EttoroSummer
+{"-" * 48}
     """
                 safe_send_message(chat_id, message)
                 time.sleep(1)
@@ -879,11 +890,14 @@ def recommend_scan():
                 # """
                 message = f"""
 🥇*AI严选-金狗挖掘*🚜
-🐕*{token['symbol']}*：[{token['name']}](https://gmgn.ai/sol/token/{token['ca']}) | ⚡️{token['boost_amount']}
+🐕*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) | ⚡️{token['boost_amount']}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
-{"-" * 32}
+💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://debot.ai/?inviteCode=222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
+)
+📱机器人问题请联系👉：@EttoroSummer
+{"-" * 48}
                 """
                 safe_send_message(chat_id, message)
                 time.sleep(1)
@@ -912,12 +926,15 @@ def return_ca_info(ca):
                 fdv = data['fdv'],
                 pair_created_at = data['pairCreatedAt'],
                 message = f"""
-🪙*{symbol}*：[{name[0]}](https://gmgn.ai/sol/token/{ca})
+🪙*{symbol}*：[{name[0]}](https://debot.ai/token/solana/{ca})
 💧池子：{format_number(liquidity[0])} ｜ 💸市值：{format_number(fdv[0])}
 💰价格：{price[0]}
 ⌛{get_token_age(pair_created_at[0])}
 {get_sol_sniffer_data(ca)}
-{"-" * 32}
+💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://debot.ai/?inviteCode=222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
+)
+📱机器人问题请联系👉：@EttoroSummer
+{"-" * 48}
                             """
                 return message
     except Exception as e:
@@ -1065,11 +1082,14 @@ def get_vc_increase(limit=10):
                 name = token['token']['name']
                 message = f"""
 🚀*AI脉冲警报*🔥
-🎈*{symbol}*：[{name}](https://gmgn.ai/sol/token/{ca}) | 💥{round(float(token['volumeChange5m']) * 100)}%
+🎈*{symbol}*：[{name}](https://debot.ai/token/solana/{ca}) | 💥{round(float(token['volumeChange5m']) * 100)}%
 💧池子：{format_number(int(token['liquidity']))} ｜ 💸市值：{format_number(int(token['marketCap']))}
 💰价格：{format_from_first_nonzero(token['priceUSD'])}
 ⌛{get_token_age(token['createdAt'] * 1000)}
-{"-" * 32}
+💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://debot.ai/?inviteCode=222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
+)
+📱机器人问题请联系👉：@EttoroSummer
+{"-" * 48}
         """
                 safe_send_message(chat_id, message)
                 vc_increase_his.add(str(token))
