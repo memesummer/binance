@@ -422,6 +422,8 @@ def get_rank_vc(limit, interval, network_id=sol_id):
               change4: {{ gt: 0.01 }}
               change12: {{ gt: 0.01 }}
               change24: {{ gt: 0.01 }}
+              volumeChange5m: {{ gt: 100 }}
+              volumeChange1: {{ gt: 0 }}
             }},
             rankings: {attribute},
             limit: {limit}
@@ -755,7 +757,7 @@ def scan_new():
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
 {sol_sniffer.get(token['ca']) if sol_sniffer else ""}
-💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://debot.ai/?inviteCode=222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
+💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
 📱机器人问题请联系👉：@EttoroSummer
 {"-" * 48}
@@ -894,7 +896,7 @@ def recommend_scan():
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{get_token_age(token['pairCreatedAt'])}
-💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://debot.ai/?inviteCode=222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
+💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
 📱机器人问题请联系👉：@EttoroSummer
 {"-" * 48}
@@ -931,7 +933,7 @@ def return_ca_info(ca):
 💰价格：{price[0]}
 ⌛{get_token_age(pair_created_at[0])}
 {get_sol_sniffer_data(ca)}
-💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://debot.ai/?inviteCode=222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
+💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
 📱机器人问题请联系👉：@EttoroSummer
 {"-" * 48}
@@ -1086,7 +1088,7 @@ def get_vc_increase(limit=10):
 💧池子：{format_number(int(token['liquidity']))} ｜ 💸市值：{format_number(int(token['marketCap']))}
 💰价格：{format_from_first_nonzero(token['priceUSD'])}
 ⌛{get_token_age(token['createdAt'] * 1000)}
-💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://debot.ai/?inviteCode=222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
+💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
 📱机器人问题请联系👉：@EttoroSummer
 {"-" * 48}
