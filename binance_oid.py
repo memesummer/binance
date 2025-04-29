@@ -90,7 +90,7 @@ def run_task():
                 binance_his.add(''.join(map(str, l)))
             else:
                 continue
-        res += "\n"
+        res += "\n" if res else ""
         for l in net_list_a:
             frozen = ''.join(map(str, l))
             if frozen in binance_his:
