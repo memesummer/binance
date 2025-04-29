@@ -759,7 +759,6 @@ def scan_new():
 {sol_sniffer.get(token['ca']) if sol_sniffer else ""}
 💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
-📱机器人问题请联系👉：@EttoroSummer
 {"-" * 48}
     """
                 safe_send_message(chat_id, message)
@@ -898,7 +897,6 @@ def recommend_scan():
 ⌛{get_token_age(token['pairCreatedAt'])}
 💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
-📱机器人问题请联系👉：@EttoroSummer
 {"-" * 48}
                 """
                 safe_send_message(chat_id, message)
@@ -935,7 +933,6 @@ def return_ca_info(ca):
 {get_sol_sniffer_data(ca)}
 💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
-📱机器人问题请联系👉：@EttoroSummer
 {"-" * 48}
                             """
                 return message
@@ -1090,7 +1087,6 @@ def get_vc_increase(limit=10):
 ⌛{get_token_age(token['createdAt'] * 1000)}
 💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
-📱机器人问题请联系👉：@EttoroSummer
 {"-" * 48}
         """
                 safe_send_message(chat_id, message)
