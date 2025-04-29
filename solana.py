@@ -963,7 +963,7 @@ def get_top(message):
         if parts[0].startswith('/top') and parts[0][4:].isdigit():
             limit = int(parts[0][4:])  # 提取 /top 后的数字部分
 
-        interval = parts[1]
+        interval = parts[1] if len(parts) > 1 else "1"
 
         # 检查是否有 'v' 参数
         if len(parts) > 2:
