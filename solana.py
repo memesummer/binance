@@ -4,6 +4,7 @@ import re
 import threading
 import time
 from datetime import datetime, timezone
+from functools import wraps
 
 import requests
 import telebot
@@ -35,10 +36,24 @@ headers2 = {
     "content_type": "application/json",
     "Authorization": define2
 }
+AUTHORIZED_USERS = [546797136]  # 替换为实际用户 ID
 
 bot = telebot.TeleBot("8112245267:AAFedRwTwOz06mVqQ6lqRrnwzuvCLRuLFCg", parse_mode='Markdown')
 chat_id = "-4629100773"
 bot.send_message(chat_id, "开始推荐sol链MEME币......")
+
+
+# 授权检查装饰器
+def restricted(func):
+    @wraps(func)
+    def wrapper(message):
+        user_id = message.from_user.id
+        if user_id not in AUTHORIZED_USERS:
+            bot.reply_to(message, "抱歉，你没有权限使用此机器人！")
+            return
+        return func(message)
+
+    return wrapper
 
 
 def get_if_str(flag):
@@ -663,7 +678,7 @@ def get_new_token_recommend():
                 )
                 d = response.json()['pairs']
                 if not d:
-                    print(f"dexscreener api未获取到代币信息,ca:{ca}")
+                    safe_send_message(chat_id, f"dex未获取到代币信息,ca:{ca}")
                     continue
                 for i, data in enumerate(d):
                     if 'liquidity' not in data.keys() or 'fdv' not in data.keys() or 'h24' not in data[
@@ -911,6 +926,7 @@ def return_ca_info(ca):
 
 
 @bot.message_handler(func=lambda message: message.text and message.text.startswith('/top'))
+@restricted
 def get_top(message):
     """
     :param message: 用户输入/top12 v 则会按照交易量排前12，如果不写，就默认按照热门排序前10
@@ -1010,10 +1026,10 @@ def get_top(message):
         bot.reply_to(message, "请输入正确的参数格式。示例：/top10 5m v")
 
 
-@bot.message_handler(func=lambda msg: not msg.text.startswith('/'))
-def echo_all(message):
-    res = return_ca_info(message.text)
-    safe_send_message(chat_id, res) if len(res) else safe_send_message(chat_id, "未查询到合约信息")
+# @bot.message_handler(func=lambda msg: not msg.text.startswith('/'))
+# def echo_all(message):
+#     res = return_ca_info(message.text)
+#     safe_send_message(chat_id, res) if len(res) else safe_send_message(chat_id, "未查询到合约信息")
 
 
 def start_bot():
