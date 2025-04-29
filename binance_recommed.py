@@ -22,7 +22,7 @@ binance_his = set()
 # bot = telebot.TeleBot("8077013417:AAFg0uzWmO3zXyvRJNfJORhK9BJTltFUJa0", parse_mode='Markdown')
 bot = telebot.TeleBot("7727377009:AAGxwVbs65PxqMfwP6ugCcMHxMBDrM2jc2o", parse_mode='Markdown')
 
-# chat_id = "-1002213443358"
+chat_id_inner = "-1002213443358"
 chat_id = "-4654295504"
 # 获取当前脚本所在的目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -162,5 +162,5 @@ while True:
         time.sleep(90)
     except Exception as e:
         error_message = f"recommend Error occurred: {str(e)}"
-        safe_send_message(chat_id, error_message)  # 报错时通知管理员
+        safe_send_message(chat_id_inner, error_message)  # 报错时通知管理员
         time.sleep(10)  # 等待一段时间后再继续，避免频繁重启

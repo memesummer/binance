@@ -38,7 +38,7 @@ binance_his = set()
 record = set()
 monitor_list = []
 
-# chat_id = "-1002213443358"
+chat_id_inner = "-1002213443358"
 chat_id = "-4654295504"
 
 bot.send_message(chat_id, "开始扫描binance大单......")
@@ -520,9 +520,7 @@ def scan():
                 record.clear()
             time.sleep(4)
         except Exception as e:
-            error_message = f"Error occurred: {str(e)}"
-            print(f"Error in scan thread: {e}")
-            safe_send_message(chat_id, f"Error in scan thread: {e}")  # 报错时通知管理员
+            safe_send_message(chat_id_inner, f"Error in scan thread: {e}")  # 报错时通知管理员
             time.sleep(30)  # 等待一段时间后再继续，避免频繁重启
 
 
