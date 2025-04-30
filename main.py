@@ -1799,17 +1799,14 @@ def create_token_time_plot(symbol):
         # 设置柱子颜色：涨幅>0用绿色，<0用红色
         colors = ['green' if gain > 0 else 'red' if gain < 0 else 'skyblue' for gain in average_gains]
 
-        plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']  # 优先使用 SimHei，支持中文
-        plt.rcParams['axes.unicode_minus'] = False
-
         # 创建柱状图
         plt.figure(figsize=(16, 8))  # 设置图形大小
         bars = plt.bar(hours, average_gains, color=colors, edgecolor='black', width=0.4)
 
         # 设置图表标题和标签
-        plt.title('一天中每小时平均涨幅', fontsize=14)
-        plt.xlabel('小时点', fontsize=12)
-        plt.ylabel('平均涨幅 (%)', fontsize=12)
+        plt.title('avg gain per hour in one day', fontsize=14)
+        plt.xlabel('hour', fontsize=12)
+        plt.ylabel('avg gain (%)', fontsize=12)
 
         # 设置x轴为整点
         plt.xticks(hours, [f'{h}:00' for h in hours], rotation=45)
@@ -1949,14 +1946,11 @@ def create_all_tokens_time_plot():
 
     colors = ['green' if gain > 0 else 'red' if gain < 0 else 'skyblue' for gain in average_gains]
 
-    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']  # 优先使用 SimHei，支持中文
-    plt.rcParams['axes.unicode_minus'] = False
-
     plt.figure(figsize=(16, 8))
     plt.bar(hours, average_gains, color=colors, edgecolor='black', width=0.4)
-    plt.title('所有币种24小时平均涨跌幅', fontsize=14)  # 中文标题
-    plt.xlabel('时间 (小时)', fontsize=12)
-    plt.ylabel('平均涨跌幅 (%)', fontsize=12)
+    plt.title('avg gain per hour', fontsize=14)  # 中文标题
+    plt.xlabel('hour', fontsize=12)
+    plt.ylabel('avg gain (%)', fontsize=12)
     plt.xticks(hours, [f'{h}:00' for h in hours], rotation=45)
     plt.grid(True, axis='y', linestyle='--', alpha=0.7)
     plt.axhline(y=0, color='black', linewidth=1)
@@ -1972,22 +1966,24 @@ def create_all_tokens_time_plot():
     return buf
 
 
-# 新增：获取当前时间点的涨幅/跌幅排行榜
+# 修改：计算每个币种在目标时间点的平均涨幅
 def get_top_gains_for_time(data, target_time):
-    symbol_gains = []
+    symbol_gains = {}
     for item in data:
         for symbol, results in item.items():
-            for hour, gain in results.get('gains', []):
-                if hour == target_time:
-                    symbol_gains.append((symbol, gain))
+            gains = results.get('gains', [])
+            target_gains = [gain for hour, gain in gains if hour == target_time]
+            if target_gains:  # 仅处理有数据的币种
+                avg_gain = sum(target_gains) / len(target_gains)
+                symbol_gains[symbol] = avg_gain
 
     # 分离涨幅和跌幅
-    gains = [(s, g) for s, g in symbol_gains if g > 0]
-    losses = [(s, g) for s, g in symbol_gains if g < 0]
+    gains = [(s, g) for s, g in symbol_gains.items() if g > 0]
+    losses = [(s, g) for s, g in symbol_gains.items() if g < 0]
 
-    # 按涨幅/跌幅排序
-    top_gains = sorted(gains, key=lambda x: x[1], reverse=True)[:10]
-    top_losses = sorted(losses, key=lambda x: x[1])[:10]  # 跌幅最负（最小）
+    # 按平均涨幅/跌幅排序
+    top_gains = sorted(gains, key=lambda x: x[1], reverse=True)[:5]
+    top_losses = sorted(losses, key=lambda x: x[1])[:5]  # 跌幅最负（最小）
 
     return top_gains, top_losses
 

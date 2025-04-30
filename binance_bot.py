@@ -22,7 +22,7 @@ from bithumb import bithumb_alert, to_list_on_bithumb
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point, \
-    create_token_time_plot,create_all_tokens_time_plot
+    create_token_time_plot, create_all_tokens_time_plot
 from upbit import to_list_on_upbit, get_upbit_volume
 from rootdata import root_data_meta_data
 
@@ -352,7 +352,7 @@ def stat_coin_time(message):
                     photo=buf
                 )
                 buf.close()
-        else:
+        elif param == 'all':
             res = statistic_time()
             buf = create_all_tokens_time_plot()
             if not res:
