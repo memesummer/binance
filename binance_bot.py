@@ -21,7 +21,8 @@ from binance_future import get_future_pending_order_rank, get_spot_pending_order
 from bithumb import bithumb_alert, to_list_on_bithumb
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
-    get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point
+    get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point, \
+    create_token_time_plot,create_all_tokens_time_plot
 from upbit import to_list_on_upbit, get_upbit_volume
 from rootdata import root_data_meta_data
 
@@ -341,13 +342,29 @@ def stat_coin_time(message):
         if param != 'all':
             symbol = param.upper() + 'USDT'
             res = statistic_coin_time(symbol)
-            if not res:
+            buf = create_token_time_plot(symbol)
+            if not res or not buf:
                 bot.reply_to(message, "请输入正确的参数格式。示例：/stat btc", parse_mode='Markdown')
             else:
                 bot.reply_to(message, res, parse_mode='Markdown')
+                bot.send_photo(
+                    chat_id=chat_id,
+                    photo=buf
+                )
+                buf.close()
         else:
             res = statistic_time()
-            bot.reply_to(message, res, parse_mode='Markdown')
+            buf = create_all_tokens_time_plot()
+            if not res:
+                bot.reply_to(message, "无法获取统计数据", parse_mode='Markdown')
+            else:
+                bot.reply_to(message, res, parse_mode='Markdown')
+                if buf:
+                    bot.send_photo(
+                        chat_id=chat_id,
+                        photo=buf
+                    )
+                    buf.close()
     except Exception as e:
         print(e)
         bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/stat btc")

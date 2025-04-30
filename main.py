@@ -1,17 +1,20 @@
 import concurrent.futures
 import datetime
+import io
 import json
 import os
 import random
 from datetime import timedelta, timezone
 
+import matplotlib.pyplot as plt
 import requests
 from binance.um_futures import UMFutures
 from dateutil.relativedelta import relativedelta
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from upbit import get_24h_volume, get_15m_upbit_volume, get_15m_upbit_volume_increase, get_upbit_token_list
+
 from bithumb import is_on_alert, get_bithumb_token_list
+from upbit import get_24h_volume, get_15m_upbit_volume, get_15m_upbit_volume_increase, get_upbit_token_list
 
 um_futures_client = UMFutures()
 
@@ -1759,6 +1762,83 @@ def statistic_coin_time(symbol):
         return None
 
 
+def create_token_time_plot(symbol):
+    try:
+        k = get_k_lines(symbol, '1h', 1000)
+        if not k:
+            k = get_k_lines_future(symbol, '1h', 1000)
+            if not k:
+                return None
+
+        data = []
+
+        for i in k:
+            timestamp_ms = i[0]
+            # 将毫秒转换为秒，并创建 UTC 时间
+            utc_time = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000)
+            # 转换为 UTC+8 时间（加 8 小时）
+            utc8_time = utc_time + timedelta(hours=8)
+            # 提取小时数（24小时制）
+            hour = utc8_time.hour
+
+            data.append((hour, (float(i[4]) - float(i[1])) * 100 / float(i[1]))) if float(i[1]) != 0 else 0
+        # 初始化24小时的涨幅数组
+        hours = list(range(24))  # 0到23小时
+        gains_sum = [0] * 24  # 每个小时的涨幅总和
+        counts = [0] * 24  # 每个小时的数据点计数
+
+        # 聚合数据：按小时累加涨幅并计数
+        for hour, gain in data:
+            if 0 <= hour <= 23:  # 确保小时数有效
+                gains_sum[hour] += gain
+                counts[hour] += 1
+
+        # 计算每个小时的平均涨幅（如果没有数据，设为0）
+        average_gains = [gains_sum[i] / counts[i] if counts[i] > 0 else 0 for i in range(24)]
+
+        # 设置柱子颜色：涨幅>0用绿色，<0用红色
+        colors = ['green' if gain > 0 else 'red' if gain < 0 else 'skyblue' for gain in average_gains]
+
+        plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']  # 优先使用 SimHei，支持中文
+        plt.rcParams['axes.unicode_minus'] = False
+
+        # 创建柱状图
+        plt.figure(figsize=(16, 8))  # 设置图形大小
+        bars = plt.bar(hours, average_gains, color=colors, edgecolor='black', width=0.4)
+
+        # 设置图表标题和标签
+        plt.title('一天中每小时平均涨幅', fontsize=14)
+        plt.xlabel('小时点', fontsize=12)
+        plt.ylabel('平均涨幅 (%)', fontsize=12)
+
+        # 设置x轴为整点
+        plt.xticks(hours, [f'{h}:00' for h in hours], rotation=45)
+
+        # 添加网格线
+        plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+
+        # 设置y轴以0为中心，自动调整范围
+        plt.axhline(y=0, color='black', linewidth=1)  # 添加y=0的水平线
+        plt.margins(y=0.1)  # 增加y轴上下边距，避免柱子贴边
+
+        # 动态调整y轴范围，确保正负对称
+        max_abs_gain = max(abs(min(average_gains)), abs(max(average_gains)))
+        plt.ylim(-max_abs_gain * 1.2, max_abs_gain * 1.2)  # 设置y轴范围，1.2倍留出空间
+
+        # 调整布局以防止标签被裁剪
+        plt.tight_layout()
+
+        # 保存到内存
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+        buf.seek(0)
+        plt.close()
+        return buf
+    except Exception as e:
+        print(f"无法绘画：{e}")
+        return None
+
+
 def statistic_token_time(symbol):
     try:
         k = get_k_lines(symbol, '1h', 1000)
@@ -1769,17 +1849,25 @@ def statistic_token_time(symbol):
 
         pump_res = []  # 拉盘结果
         dump_res = []  # 砸盘结果
+        gains = []  # 涨幅结果
 
         for i in k:
             timestamp_ms = i[0]
             utc_time = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000)
             utc8_time = utc_time + timedelta(hours=8)
             hour = utc8_time.hour
+            open_price = float(i[1])
+            close_price = float(i[4])
 
-            if i[1] < i[4]:  # 拉盘
+            # 计算涨幅（百分比）
+            gain = ((close_price - open_price) / open_price) * 100 if open_price != 0 else 0
+            gains.append([hour, gain])
+
+            # 拉盘/砸盘逻辑
+            if open_price < close_price:  # 拉盘
                 pump_res.append([hour, 1])
                 dump_res.append([hour, 0])
-            else:  # 砸盘 (包含 i[1] == i[4] 的情况)
+            else:  # 砸盘（包含相等情况）
                 pump_res.append([hour, 0])
                 dump_res.append([hour, 1])
 
@@ -1797,14 +1885,14 @@ def statistic_token_time(symbol):
             dump_count_dict[num] = dump_count_dict.get(num, 0) + 1
         dump_result = [[num, count] for num, count in dump_count_dict.items()]
 
-        return {symbol: {'pump': pump_result, 'dump': dump_result}}
+        return {symbol: {'pump': pump_result, 'dump': dump_result, 'gains': gains}}
 
     except Exception as e:
         print(f"无法统计币和时间：{e}")
         return None
 
 
-# 第一部分：计算每个时间的平均 count 并排序
+# 计算每个时间的平均 count 并排序
 def calculate_time_averages(data, type='pump'):
     time_counts = {}
     for item in data:
@@ -1824,7 +1912,7 @@ def calculate_time_averages(data, type='pump'):
     return sorted_times[:5]
 
 
-# 第二部分：对于特定时间，找出 count 最大的 symbol
+# 对于特定时间，找出 count 最大的 symbol
 def get_top_symbols_for_time(data, target_time, type='pump'):
     symbol_counts = []
     for item in data:
@@ -1838,7 +1926,75 @@ def get_top_symbols_for_time(data, target_time, type='pump'):
     return sorted_symbols[:10]
 
 
+# 新增：计算每个小时的平均涨幅
+def calculate_hourly_average_gains(data):
+    hourly_gains = {hour: {'sum': 0, 'count': 0} for hour in range(24)}
+    for item in data:
+        for symbol, results in item.items():
+            for hour, gain in results.get('gains', []):
+                if 0 <= hour <= 23:
+                    hourly_gains[hour]['sum'] += gain
+                    hourly_gains[hour]['count'] += 1
+
+    average_gains = [hourly_gains[hour]['sum'] / hourly_gains[hour]['count']
+                     if hourly_gains[hour]['count'] > 0 else 0
+                     for hour in range(24)]
+    return average_gains
+
+
+# 新增：生成24小时平均涨幅柱状图
+def create_all_tokens_time_plot():
+    hours = list(range(24))
+    average_gains = calculate_hourly_average_gains(stat)  # 使用全局 stat 数据
+
+    colors = ['green' if gain > 0 else 'red' if gain < 0 else 'skyblue' for gain in average_gains]
+
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']  # 优先使用 SimHei，支持中文
+    plt.rcParams['axes.unicode_minus'] = False
+
+    plt.figure(figsize=(16, 8))
+    plt.bar(hours, average_gains, color=colors, edgecolor='black', width=0.4)
+    plt.title('所有币种24小时平均涨跌幅', fontsize=14)  # 中文标题
+    plt.xlabel('时间 (小时)', fontsize=12)
+    plt.ylabel('平均涨跌幅 (%)', fontsize=12)
+    plt.xticks(hours, [f'{h}:00' for h in hours], rotation=45)
+    plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+    plt.axhline(y=0, color='black', linewidth=1)
+    plt.margins(y=0.1)
+    max_abs_gain = max(abs(min(average_gains)), abs(max(average_gains)))
+    plt.ylim(-max_abs_gain * 1.2, max_abs_gain * 1.2)
+    plt.tight_layout()
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+    buf.seek(0)
+    plt.close()
+    return buf
+
+
+# 新增：获取当前时间点的涨幅/跌幅排行榜
+def get_top_gains_for_time(data, target_time):
+    symbol_gains = []
+    for item in data:
+        for symbol, results in item.items():
+            for hour, gain in results.get('gains', []):
+                if hour == target_time:
+                    symbol_gains.append((symbol, gain))
+
+    # 分离涨幅和跌幅
+    gains = [(s, g) for s, g in symbol_gains if g > 0]
+    losses = [(s, g) for s, g in symbol_gains if g < 0]
+
+    # 按涨幅/跌幅排序
+    top_gains = sorted(gains, key=lambda x: x[1], reverse=True)[:10]
+    top_losses = sorted(losses, key=lambda x: x[1])[:10]  # 跌幅最负（最小）
+
+    return top_gains, top_losses
+
+
+# 修改 statistic_time 函数，添加平均涨幅和排行榜
 def statistic_time(endpoint='api/v3/ticker/24hr'):
+    global stat
     try:
         params = {}
         result = binance_api_get(endpoint, params)
@@ -1906,6 +2062,22 @@ def statistic_time(endpoint='api/v3/ticker/24hr'):
             dump_top_symbols = get_top_symbols_for_time(stat, target_time, 'dump')
             for symbol, count in dump_top_symbols:
                 res_str += f"`{symbol[:-4]}`：{count}\n"
+
+            # 新增：当前时间的涨幅/跌幅排行榜
+            res_str += "\n📊 当前时间点涨幅/跌幅排行：\n"
+            top_gains, top_losses = get_top_gains_for_time(stat, target_time)
+            res_str += "📈 涨幅最大的symbol：\n"
+            if top_gains:
+                for symbol, gain in top_gains:
+                    res_str += f"`{symbol[:-4]}`：{gain:.2f}%\n"
+            else:
+                res_str += "无上涨数据\n"
+            res_str += "\n📉 跌幅最大的symbol：\n"
+            if top_losses:
+                for symbol, loss in top_losses:
+                    res_str += f"`{symbol[:-4]}`：{loss:.2f}%\n"
+            else:
+                res_str += "无下跌数据\n"
 
             return res_str
 
