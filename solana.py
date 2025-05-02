@@ -40,6 +40,7 @@ AUTHORIZED_USERS = [546797136]  # 替换为实际用户 ID
 
 bot = telebot.TeleBot("8112245267:AAFedRwTwOz06mVqQ6lqRrnwzuvCLRuLFCg", parse_mode='Markdown')
 chat_id = "-4629100773"
+chat_id_alert = "-4609875695"
 bot.send_message(chat_id, "开始推荐sol链MEME币......")
 
 
@@ -688,7 +689,8 @@ def get_new_token_recommend():
                 )
                 d = response.json()['pairs']
                 if not d:
-                    safe_send_message(chat_id, f"dex未获取到代币信息,ca:{ca}")
+                    safe_send_message(chat_id_alert, f"new dex未获取到代币信息,ca:{ca}")
+                    new_his.add(ca)
                     continue
                 for i, data in enumerate(d):
                     if 'liquidity' not in data.keys() or 'fdv' not in data.keys() or 'h24' not in data[
@@ -716,7 +718,7 @@ def get_new_token_recommend():
             time.sleep(0.5)
         return res
     except Exception as e:
-        safe_send_message(chat_id, f"get_latest_token error:{e},ca:{ca}")
+        safe_send_message(chat_id_alert, f"get_latest_token error:{e},ca:{ca}")
         return None
 
 
@@ -765,7 +767,7 @@ def scan_new():
                 time.sleep(1)
             time.sleep(60)
         except Exception as e:
-            safe_send_message(chat_id, f"AI扫链获取出错：{e}")
+            safe_send_message(chat_id_alert, f"AI扫链获取出错：{e}")
             time.sleep(3)
             continue
 
@@ -834,6 +836,10 @@ def token_recommend():
                 headers={},
             )
             d = response.json()['pairs']
+            if not d:
+                safe_send_message(chat_id_alert, f"recommend dex未获取到代币信息,ca:{ca}")
+                recommend_his.add(ca + "|" + str(amount))
+                continue
             # 有可能会有pump.fun的池子放在前面，没有liquidity这个字段
             for data in d:
                 if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
@@ -903,7 +909,7 @@ def recommend_scan():
                 time.sleep(1)
             time.sleep(60)
         except Exception as e:
-            safe_send_message(chat_id, f"金狗挖掘获取出错：{e}")
+            safe_send_message(chat_id_alert, f"金狗挖掘获取出错：{e}")
             time.sleep(3)
             continue
 
@@ -1094,7 +1100,7 @@ def get_vc_increase(limit=10):
                 time.sleep(1)
             time.sleep(150)
         except Exception as e:
-            safe_send_message(chat_id, f"AI脉冲警报获取出错：{e}")
+            safe_send_message(chat_id_alert, f"AI脉冲警报获取出错：{e}")
             time.sleep(3)
             continue
 
