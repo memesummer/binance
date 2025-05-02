@@ -1825,6 +1825,31 @@ def create_token_time_plot(symbol):
         # 调整布局以防止标签被裁剪
         plt.tight_layout()
 
+        # 添加上方中间水印
+        plt.text(
+            0.5, 0.85,  # x=0.5（水平居中），y=0.95（靠近顶部）
+            "@EttoroSummer Copyright",  # 更长的文字
+            fontsize=30,  # 字体更大
+            alpha=0.5,  # 透明度
+            color="gray",
+            ha="center",  # 水平居中
+            va="center",  # 垂直居中
+            rotation=0,  # 不旋转（或根据需要调整）
+            transform=plt.gcf().transFigure  # 使用整个图的坐标系
+        )
+
+        # 添加下方中间水印
+        plt.text(
+            0.5, 0.15,  # x=0.5（水平居中），y=0.05（靠近底部）
+            "@EttoroSummer Copyright",  # 更长的文字
+            fontsize=30,  # 字体更大
+            alpha=0.5,  # 透明度
+            color="gray",
+            ha="center",  # 水平居中
+            va="center",  # 垂直居中
+            rotation=0,  # 不旋转
+            transform=plt.gcf().transFigure
+        )
         # 保存到内存
         buf = io.BytesIO()
         plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
@@ -1958,6 +1983,31 @@ def create_all_tokens_time_plot():
     max_abs_gain = max(abs(min(average_gains)), abs(max(average_gains)))
     plt.ylim(-max_abs_gain * 1.2, max_abs_gain * 1.2)
     plt.tight_layout()
+    # 添加上方中间水印
+    plt.text(
+        0.5, 0.85,  # x=0.5（水平居中），y=0.95（靠近顶部）
+        "@EttoroSummer Copyright",  # 更长的文字
+        fontsize=30,  # 字体更大
+        alpha=0.5,  # 透明度
+        color="gray",
+        ha="center",  # 水平居中
+        va="center",  # 垂直居中
+        rotation=0,  # 不旋转（或根据需要调整）
+        transform=plt.gcf().transFigure  # 使用整个图的坐标系
+    )
+
+    # 添加下方中间水印
+    plt.text(
+        0.5, 0.15,  # x=0.5（水平居中），y=0.05（靠近底部）
+        "@EttoroSummer Copyright",  # 更长的文字
+        fontsize=30,  # 字体更大
+        alpha=0.5,  # 透明度
+        color="gray",
+        ha="center",  # 水平居中
+        va="center",  # 垂直居中
+        rotation=0,  # 不旋转
+        transform=plt.gcf().transFigure
+    )
 
     buf = io.BytesIO()
     plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')

@@ -24,6 +24,7 @@ bot = telebot.TeleBot("7727377009:AAGxwVbs65PxqMfwP6ugCcMHxMBDrM2jc2o", parse_mo
 
 chat_id_inner = "-1002213443358"
 chat_id = "-4654295504"
+chat_id_alert = "-4609875695"
 # 获取当前脚本所在的目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,9 +45,9 @@ def safe_send_message(chat_id, message):
     try:
         bot.send_message(chat_id, message, timeout=10)  # 设置超时时间为10秒
     except Timeout:
-        bot.send_message(chat_id, "发送消息超时，正在重试...")
+        bot.send_message(chat_id_alert, "发送消息超时，正在重试...")
     except Exception as e:
-        bot.send_message(chat_id, f"recommend 消息发送失败: {remove_symbols(message)} 错误：{e}")
+        bot.send_message(chat_id_alert, f"recommend 消息发送失败: {remove_symbols(message)} 错误：{e}")
 
 
 while True:
@@ -162,5 +163,5 @@ while True:
         time.sleep(90)
     except Exception as e:
         error_message = f"recommend Error occurred: {str(e)}"
-        safe_send_message(chat_id_inner, error_message)  # 报错时通知管理员
+        safe_send_message(chat_id_alert, error_message)  # 报错时通知管理员
         time.sleep(10)  # 等待一段时间后再继续，避免频繁重启

@@ -462,6 +462,7 @@ def clear_pending_updates(bot):
 def start_bot():
     while True:
         try:
+            bot.delete_webhook()
             bot.session = session
             clear_pending_updates(bot)
             bot.polling(none_stop=True, interval=1, timeout=60)
