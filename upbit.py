@@ -350,7 +350,7 @@ if __name__ == "__main__":
     session.mount('https://', adapter)
     session.mount('http://', adapter)
 
-    bot = telebot.TeleBot("7483560900:AAHtBOXZLOOS1yXp32r3DtoWKV9zFwnYv5M", parse_mode='Markdown')
+    bot = telebot.TeleBot("6743288280:AAFavxiolz23O50EnrPL1aggeHUNk4NwpJY", parse_mode='Markdown')
     chat_id = "-4679507687"
     chat_id_alert = "-4609875695"
 
