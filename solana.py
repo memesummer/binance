@@ -36,7 +36,7 @@ headers2 = {
     "content_type": "application/json",
     "Authorization": define2
 }
-AUTHORIZED_USERS = [546797136, 1790928623, 6808760378, 6672213739]  # 替换为实际用户 ID
+AUTHORIZED_USERS = [546797136, 1790928623, 6808760378, 6672213739, 7205595566]  # 替换为实际用户 ID
 
 bot = telebot.TeleBot("8112245267:AAFedRwTwOz06mVqQ6lqRrnwzuvCLRuLFCg", parse_mode='Markdown')
 chat_id = "-4629100773"
