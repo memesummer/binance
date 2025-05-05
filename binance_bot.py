@@ -33,7 +33,7 @@ from rootdata import root_data_meta_data
 # 机器人3
 bot = telebot.TeleBot("7727377009:AAGxwVbs65PxqMfwP6ugCcMHxMBDrM2jc2o", parse_mode='Markdown')
 
-AUTHORIZED_USERS = [546797136]  # 替换为实际用户 ID
+AUTHORIZED_USERS = [546797136, 1790928623]  # 替换为实际用户 ID
 
 binance_his = set()
 record = set()
