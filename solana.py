@@ -1,11 +1,15 @@
+import csv
+import glob
 import json
+import os
 import random
 import re
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 
+import pandas as pd
 import requests
 import telebot
 from requests.adapters import HTTPAdapter
@@ -42,6 +46,49 @@ bot = telebot.TeleBot("8112245267:AAFedRwTwOz06mVqQ6lqRrnwzuvCLRuLFCg", parse_mo
 chat_id = "-4629100773"
 chat_id_alert = "-4609875695"
 bot.send_message(chat_id, "开始推荐sol链MEME币......")
+
+# 配置
+BASE_FILENAME = 'sol_push_record'  # 基础文件名
+FILE_EXTENSION = '.csv'  # 文件扩展名
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 最大文件大小：10MB（可调整）
+COLUMNS = ['timestamp', 'time', 'type', 'ca', 'symbol', 'name', 'liq', 'mc', 'price', 'age', 'score', 'count']  # 固定列名
+
+# 获取当前脚本所在目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+# 获取当前有效的文件名
+def get_current_filename():
+    index = 0
+    while True:
+        # 构造文件名：sol_push_record_0.csv, sol_push_record_1.csv, ...
+        filename = os.path.join(current_dir, f"{BASE_FILENAME}_{index}{FILE_EXTENSION}")
+        # 检查文件是否存在及大小
+        if not os.path.exists(filename):
+            return filename
+        if os.path.getsize(filename) < MAX_FILE_SIZE:
+            return filename
+        index += 1
+
+
+def get_utc8_time():
+    utc8 = timezone(timedelta(hours=8))  # UTC+8 时区
+    return int(datetime.now(utc8).timestamp()), datetime.now(utc8).strftime('%Y-%m-%d %H:%M:%S')
+
+
+# 统计 ca 列（c 列）在所有文件中出现的次数
+def count_ca_occurrences(ca_value):
+    count = 0
+    # 遍历所有 sol_push_record_*.csv 文件
+    for file in glob.glob(os.path.join(current_dir, f"{BASE_FILENAME}_*{FILE_EXTENSION}")):
+        try:
+            df = pd.read_csv(file)
+            # 确保 ca 列存在
+            if 'ca' in df.columns:
+                count += (df['ca'].astype(str) == str(ca_value)).sum()
+        except (pd.errors.EmptyDataError, KeyError):
+            continue  # 跳过空文件或无效文件
+    return count
 
 
 # 授权检查装饰器
@@ -271,9 +318,9 @@ def safe_send_message(chat_id, message):
         bot.send_message(chat_id, message, parse_mode='Markdown',
                          disable_web_page_preview=True, timeout=10)  # 设置超时时间为10秒
     except Timeout:
-        bot.send_message(chat_id, "发送消息超时，正在重试...")
+        bot.send_message(chat_id_alert, "发送消息超时，正在重试...")
     except Exception as e:
-        bot.send_message(chat_id, f"消息发送失败: {remove_symbols(message)}")
+        bot.send_message(chat_id_alert, f"消息发送失败: {remove_symbols(message)},原因：{e}")
 
 
 def new_pair_parse(res_list, min_liquidity=8000):
@@ -752,18 +799,39 @@ def scan_new():
             if len(new_list) > 0:
                 sol_sniffer = get_sol_sniffer_datas(new_list)
             for token in new_list:
+                age = get_token_age(token['pairCreatedAt'])
                 message += f"""
 🤖*AI扫链-潜力新币推荐*🧠
 🌱*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) ｜ {token['star'] * "⭐"}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
-⌛{get_token_age(token['pairCreatedAt'])}
+⌛{age}
 {sol_sniffer.get(token['ca']) if sol_sniffer else ""}
 💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
 {"-" * 48}
     """
                 safe_send_message(chat_id, message)
+
+                timestamp, push_time = get_utc8_time()
+
+                # 获取当前文件名
+                record_file_path = get_current_filename()
+
+                # 检查文件是否存在
+                file_exists = os.path.exists(record_file_path)
+
+                new_row = [timestamp, push_time, 1, token['ca'], token['symbol'], token['name'], token['liquidity'],
+                           token['fdv'], token['price'], age, token['star'], count_ca_occurrences(token['ca']) + 1]
+
+                # 打开文件以追加模式
+                with open(record_file_path, 'a', newline='') as f:
+                    writer = csv.writer(f)
+                    # 如果文件不存在，写入表头
+                    if not file_exists:
+                        writer.writerow(COLUMNS)
+                    # 写入新行
+                    writer.writerow(new_row)
                 time.sleep(1)
             time.sleep(60)
         except Exception as e:
@@ -895,17 +963,38 @@ def recommend_scan():
                 # 6h |  {pchg6}  {v6}  {format_number(buy6)}/{format_number(sell6)}
                 # 24h|  {pchg24}  {v24}  {format_number(buy24)}/{format_number(sell24)}
                 # """
+                age = get_token_age(token['pairCreatedAt'])
                 message = f"""
 🥇*AI严选-金狗挖掘*🚜
 🐕*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) | ⚡️{token['boost_amount']}
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
-⌛{get_token_age(token['pairCreatedAt'])}
+⌛{age}
 💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
 {"-" * 48}
                 """
                 safe_send_message(chat_id, message)
+                timestamp, push_time = get_utc8_time()
+
+                # 获取当前文件名
+                record_file_path = get_current_filename()
+
+                # 检查文件是否存在
+                file_exists = os.path.exists(record_file_path)
+
+                new_row = [timestamp, push_time, 2, token['ca'], token['symbol'], token['name'], token['liquidity'],
+                           token['fdv'], token['price'], age, token['boost_amount'],
+                           count_ca_occurrences(token['ca']) + 1]
+
+                # 打开文件以追加模式
+                with open(record_file_path, 'a', newline='') as f:
+                    writer = csv.writer(f)
+                    # 如果文件不存在，写入表头
+                    if not file_exists:
+                        writer.writerow(COLUMNS)
+                    # 写入新行
+                    writer.writerow(new_row)
                 time.sleep(1)
             time.sleep(60)
         except Exception as e:
@@ -1085,17 +1174,41 @@ def get_vc_increase(limit=10):
                 ca = token['token']['address']
                 symbol = token['token']['symbol']
                 name = token['token']['name']
+                age = get_token_age(token['createdAt'] * 1000)
+                vc = round(float(token['volumeChange5m']) * 100)
+                liq = format_number(int(token['liquidity']))
+                mc = format_number(int(token['marketCap']))
+                price = format_from_first_nonzero(token['priceUSD'])
                 message = f"""
 🚀*AI脉冲警报*🔥
-🎈*{symbol}*：[{name}](https://debot.ai/token/solana/{ca}) | 💥{round(float(token['volumeChange5m']) * 100)}%
-💧池子：{format_number(int(token['liquidity']))} ｜ 💸市值：{format_number(int(token['marketCap']))}
-💰价格：{format_from_first_nonzero(token['priceUSD'])}
-⌛{get_token_age(token['createdAt'] * 1000)}
+🎈*{symbol}*：[{name}](https://debot.ai/token/solana/{ca}) | 💥{vc}%
+💧池子：{liq} ｜ 💸市值：{mc}
+💰价格：{price}
+⌛{age}
 💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
 )
 {"-" * 48}
         """
                 safe_send_message(chat_id, message)
+                timestamp, push_time = get_utc8_time()
+
+                # 获取当前文件名
+                record_file_path = get_current_filename()
+
+                # 检查文件是否存在
+                file_exists = os.path.exists(record_file_path)
+
+                new_row = [timestamp, push_time, 3, ca, symbol, name, liq, mc, price, age, vc,
+                           count_ca_occurrences(ca) + 1]
+
+                # 打开文件以追加模式
+                with open(record_file_path, 'a', newline='') as f:
+                    writer = csv.writer(f)
+                    # 如果文件不存在，写入表头
+                    if not file_exists:
+                        writer.writerow(COLUMNS)
+                    # 写入新行
+                    writer.writerow(new_row)
                 vc_increase_his.add(str(token))
                 time.sleep(1)
             time.sleep(150)
