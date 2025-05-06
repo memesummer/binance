@@ -19,6 +19,7 @@ from urllib3.util.retry import Retry
 sol_id = 1399811149
 define1 = "1d1cfa84305b78b1ab8cd4205a45f77b231f9686"
 define2 = "eab19d30e8cb0d3c39e949aac2dd38ca19da87dc"
+define3 = "91a19d3b319a0c6642e96c679542e96adc324e09"
 codex_api_key = "1d1cfa84305b78b1ab8cd4205a45f77b231f9686"
 sol_sniffer_api_key_list = ['i2e0pwyjlztqemeok2sa6uc2vrk798', 'zkm1hkgigkrwgpvfdximp7qaoqylkk',
                             '6iu82h8hbz9axilnazunu2oyad8mfl', 'aau5mqrwpn9a0ykj8bmwgxo6ywwwr3',
@@ -40,7 +41,11 @@ headers2 = {
     "content_type": "application/json",
     "Authorization": define2
 }
-AUTHORIZED_USERS = [546797136, 1790928623, 6808760378, 6672213739, 7205595566]  # 替换为实际用户 ID
+headers3 = {
+    "content_type": "application/json",
+    "Authorization": define3
+}
+AUTHORIZED_USERS = [546797136, 6808760378, 6672213739, 7205595566]  # 替换为实际用户 ID
 
 bot = telebot.TeleBot("8112245267:AAFedRwTwOz06mVqQ6lqRrnwzuvCLRuLFCg", parse_mode='Markdown')
 chat_id = "-4629100773"
@@ -323,24 +328,6 @@ def safe_send_message(chat_id, message):
         bot.send_message(chat_id_alert, f"消息发送失败: {remove_symbols(message)},原因：{e}")
 
 
-def new_pair_parse(res_list, min_liquidity=8000):
-    token_list = []
-    for token in res_list:
-        liq = float(token['liquidity'])
-        if liq < min_liquidity:
-            continue
-        ca1 = token['token0']['id'][:-2]
-        ca2 = token['token1']['id'][:-2]
-        ca = ca1 if ca2 == "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2" else ca2
-        token_id = 0 if ca2 == "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2" else 1
-        print(token_id)
-        pc = round(token['priceChange'], 1)
-        if pc <= 0:
-            continue
-        token_list.append([ca, token_id])
-    return token_list
-
-
 def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
     try:
         attribute = f"trendingScore{interval}" if not is_volume_based else f"volume{interval}"
@@ -353,7 +340,7 @@ def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
               liquidity: {{ gt: 10000 }}
             }},
             rankings: {{ attribute: {attribute}, direction: DESC }},
-            limit: {limit}
+            limit: {limit},
             excludeTokens: {exclude_tokens_str}
           ) {{
             results {{
@@ -392,7 +379,7 @@ def get_rank_buyCount(limit, interval, network_id=sol_id):
               liquidity: {{ gt: 10000 }}
             }},
             rankings: {attribute},
-            limit: {limit}
+            limit: {limit},
             excludeTokens: {exclude_tokens_str}
           ) {{
             results {{
@@ -431,7 +418,7 @@ def get_rank_pc(limit, interval, network_id=sol_id):
               liquidity: {{ gt: 10000 }}
             }},
             rankings: {attribute},
-            limit: {limit}
+            limit: {limit},
             excludeTokens: {exclude_tokens_str}
           ) {{
             results {{
@@ -474,7 +461,7 @@ def get_rank_vc(limit, interval, network_id=sol_id):
               volumeChange1: {{ gt: 0 }}
             }},
             rankings: {attribute},
-            limit: {limit}
+            limit: {limit},
             excludeTokens: {exclude_tokens_str}
           ) {{
             results {{
@@ -513,7 +500,7 @@ def get_rank_holder(limit, interval, network_id=sol_id):
               liquidity: {{ gt: 10000 }}
             }},
             rankings: {attribute},
-            limit: {limit}
+            limit: {limit},
             excludeTokens: {exclude_tokens_str}
           ) {{
             results {{
@@ -549,7 +536,7 @@ def get_newest_token(limit, interval='5m', network_id=sol_id):
                         launchpadCompleted: true
                         }},
             rankings: {{ attribute: {attribute}, direction: DESC }},
-            limit: {limit}
+            limit: {limit},
             excludeTokens: {exclude_tokens_str}
           ) {{
             results {{
