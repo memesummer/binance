@@ -411,7 +411,7 @@ def get_rank_buyCount(limit, interval, network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers2, json={"query": getTopToken})
+        response = requests.post(url, headers=headers1, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
@@ -447,7 +447,7 @@ def get_rank_pc(limit, interval, network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers2, json={"query": getTopToken})
+        response = requests.post(url, headers=headers1, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
@@ -493,7 +493,7 @@ def get_rank_vc(limit, interval, network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers2, json={"query": getTopToken})
+        response = requests.post(url, headers=headers1, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
@@ -531,7 +531,7 @@ def get_rank_holder(limit, interval, network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers2, json={"query": getTopToken})
+        response = requests.post(url, headers=headers1, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
@@ -833,7 +833,7 @@ def scan_new():
                     # 写入新行
                     writer.writerow(new_row)
                 time.sleep(1)
-            time.sleep(60)
+            time.sleep(120)
         except Exception as e:
             safe_send_message(chat_id_alert, f"AI扫链获取出错：{e}")
             time.sleep(3)
@@ -996,7 +996,7 @@ def recommend_scan():
                     # 写入新行
                     writer.writerow(new_row)
                 time.sleep(1)
-            time.sleep(60)
+            time.sleep(120)
         except Exception as e:
             safe_send_message(chat_id_alert, f"金狗挖掘获取出错：{e}")
             time.sleep(3)
