@@ -787,9 +787,11 @@ def scan_new():
                 sol_sniffer = get_sol_sniffer_datas(new_list)
             for token in new_list:
                 age = get_token_age(token['pairCreatedAt'])
+                count = count_ca_occurrences(token['ca']) + 1
                 message += f"""
 🤖*AI扫链-潜力新币推荐*🧠
 🌱*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) ｜ {token['star'] * "⭐"}
+🧮第`{count}`次推送
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{age}
@@ -809,7 +811,7 @@ def scan_new():
                 file_exists = os.path.exists(record_file_path)
 
                 new_row = [timestamp, push_time, 1, token['ca'], token['symbol'], token['name'], token['liquidity'],
-                           token['fdv'], token['price'], age, token['star'], count_ca_occurrences(token['ca']) + 1]
+                           token['fdv'], token['price'], age, token['star'], count]
 
                 # 打开文件以追加模式
                 with open(record_file_path, 'a', newline='') as f:
@@ -951,9 +953,11 @@ def recommend_scan():
                 # 24h|  {pchg24}  {v24}  {format_number(buy24)}/{format_number(sell24)}
                 # """
                 age = get_token_age(token['pairCreatedAt'])
+                count = count_ca_occurrences(token['ca']) + 1
                 message = f"""
 🥇*AI严选-金狗挖掘*🚜
 🐕*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) | ⚡️{token['boost_amount']}
+🧮第`{count}`次推送
 💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
 💰价格：{token['price']}
 ⌛{age}
@@ -971,8 +975,7 @@ def recommend_scan():
                 file_exists = os.path.exists(record_file_path)
 
                 new_row = [timestamp, push_time, 2, token['ca'], token['symbol'], token['name'], token['liquidity'],
-                           token['fdv'], token['price'], age, token['boost_amount'],
-                           count_ca_occurrences(token['ca']) + 1]
+                           token['fdv'], token['price'], age, token['boost_amount'], count]
 
                 # 打开文件以追加模式
                 with open(record_file_path, 'a', newline='') as f:
@@ -1166,9 +1169,11 @@ def get_vc_increase(limit=10):
                 liq = format_number(int(token['liquidity']))
                 mc = format_number(int(token['marketCap']))
                 price = format_from_first_nonzero(token['priceUSD'])
+                count = count_ca_occurrences(ca) + 1
                 message = f"""
 🚀*AI脉冲警报*🔥
 🎈*{symbol}*：[{name}](https://debot.ai/token/solana/{ca}) | 💥{vc}%
+🧮第`{count}`次推送
 💧池子：{liq} ｜ 💸市值：{mc}
 💰价格：{price}
 ⌛{age}
@@ -1185,8 +1190,7 @@ def get_vc_increase(limit=10):
                 # 检查文件是否存在
                 file_exists = os.path.exists(record_file_path)
 
-                new_row = [timestamp, push_time, 3, ca, symbol, name, liq, mc, price, age, vc,
-                           count_ca_occurrences(ca) + 1]
+                new_row = [timestamp, push_time, 3, ca, symbol, name, liq, mc, price, age, vc, count]
 
                 # 打开文件以追加模式
                 with open(record_file_path, 'a', newline='') as f:
