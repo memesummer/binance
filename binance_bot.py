@@ -1,4 +1,5 @@
 import atexit
+import csv
 import json
 import os
 import re
@@ -7,6 +8,7 @@ import time
 from datetime import datetime, timedelta
 from functools import wraps
 
+import pytz
 import requests
 import telebot
 from requests.adapters import HTTPAdapter
@@ -23,8 +25,8 @@ from main import get_latest_price, get_net_volume_rank_future, get_net_volume_ra
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point, \
     create_token_time_plot, create_all_tokens_time_plot
-from upbit import to_list_on_upbit, get_upbit_volume
 from rootdata import root_data_meta_data
+from upbit import to_list_on_upbit, get_upbit_volume
 
 # 机器人1
 # bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
@@ -43,7 +45,28 @@ chat_id_inner = "-1002213443358"
 chat_id = "-4654295504"
 chat_id_alert = "-4609875695"
 
+# 获取当前脚本所在目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+LOG_CSV_FILE = os.path.join(current_dir, "bot_usage_log.csv")
+
 bot.send_message(chat_id, "开始扫描binance大单......")
+
+
+# 获取当前时间（北京时间）
+def get_current_time():
+    utc8 = pytz.timezone('Asia/Shanghai')
+    return datetime.now(utc8).strftime('%Y-%m-%d %H:%M:%S')
+
+
+def log_user_action(user_id, username, command, parameters, status, error_message=None):
+    with open(LOG_CSV_FILE, 'a', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        # 如果文件为空，写入表头
+        if csvfile.tell() == 0:
+            writer.writerow(['timestamp', 'user_id', 'username', 'command', 'parameters', 'status', 'error_message'])
+        # 写入日志
+        timestamp = get_current_time()
+        writer.writerow([timestamp, user_id, username or 'N/A', command, parameters, status, error_message or 'N/A'])
 
 
 def remove_symbols(text):
@@ -67,6 +90,11 @@ def restricted(func):
 
 @bot.message_handler(commands=['o'])
 def get_order(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/o'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         # 将参数分割成两部分
         param1, param2 = message.text.split()[1:]
@@ -109,13 +137,20 @@ def get_order(message):
                 table_sell = get_order_table_sell(spot_sell, future_sell)
                 res += table_sell
             bot.reply_to(message, res, parse_mode='Markdown')
+            log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/o BTC 20")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['nf'])
 @restricted
 def get_net_future(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/nf'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         # 将参数分割成两部分
         param1, param2 = message.text.split()[1:]
@@ -127,13 +162,20 @@ def get_net_future(message):
         net_list = get_net_volume_rank_future(interval, reverse=reverse)
         res = get_net_rank_table(net_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/nf 1h d")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['ns'])
 @restricted
 def get_net_spot(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/ns'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         # 将参数分割成两部分
         param1, param2 = message.text.split()[1:]
@@ -145,14 +187,20 @@ def get_net_spot(message):
         net_list = get_net_volume_rank_spot(interval, reverse=reverse)
         res = get_net_rank_table(net_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
-
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/ns 1h d")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['oi'])
 @restricted
 def get_open_interest_rank(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/oi'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         # 将参数分割成两部分
         param1, param2 = message.text.split()[1:]
@@ -164,13 +212,20 @@ def get_open_interest_rank(message):
         net_list, all_list = get_openInterest_rank(interval, reverse=reverse)
         res = get_delta_rank_table(net_list, all_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/oi 1h d")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['oid'])
 @restricted
 def get_open_interest_diff_rank(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/oid'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         # 将参数分割成两部分
         param1, param2 = message.text.split()[1:]
@@ -182,13 +237,19 @@ def get_open_interest_diff_rank(message):
         net_list, all_list = get_openInterest_diff_rank(interval, reverse=reverse)
         res = get_delta_diff_rank_table(net_list, all_list, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        # print(e)
         bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/oid 1h d")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['i'])
 def get_symbol_oi(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/i'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         param = message.text.split()[1:][0]
         symbol = param.upper() + 'USDT'
@@ -197,37 +258,57 @@ def get_symbol_oi(message):
         symbol_oi = get_symbol_open_interest(symbol)
         res += get_symbol_oi_table(symbol_oi)
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/i btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['s'])
 @restricted
 def get_switch(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/s'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         interval = message.text.split()[1:][0]
         switch0, switch1 = get_long_short_switch_point(interval)
         res = get_switch_table(switch0, switch1, interval)
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/s 1h")
+        bot.reply_to(message, f"请输入正确的参数格式。示例：/s 1h")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['n'])
 def get_symbol_net(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/n'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         param = message.text.split()[1:][0]
         symbol = param.upper() + 'USDT'
         symbol_oi = get_symbol_net_v(symbol)
         res = get_symbol_nf_table(symbol_oi)
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/n btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['t'])
 def get_token_info(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/t'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         symbol = message.text.split()[1:][0]
         # 获取当前脚本所在的目录
@@ -240,54 +321,78 @@ def get_token_info(message):
         res += "\n"
         res += root_data_meta_data(symbol)
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/t btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['d'])
 def get_token_sf_delta(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/d'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         spot, future = token_spot_future_delta()
         res = f"`只有现货`：{str(spot)}\n"
         res += f"`只有期货`：{str(future)}\n"
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/d")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['ma'])
 @restricted
 def add_monitor(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/ma'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         param = message.text.split()[1:][0]
         symbol = param.upper() + 'USDT'
         monitor_list.append(symbol)
         res = f"已开始监控{symbol}的大单交易..."
         safe_send_message(chat_id, res)
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/ma btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['md'])
 @restricted
 def delete_monitor(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/md'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         param = message.text.split()[1:][0]
         symbol = param.upper() + 'USDT'
         monitor_list.remove(symbol)
         res = f"已取消监控{symbol}的大单交易..."
         safe_send_message(chat_id, res)
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/md btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['mc'])
 @restricted
 def check_monitor(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/mc'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         s = ""
         for symbol in monitor_list:
@@ -295,14 +400,20 @@ def check_monitor(message):
             s += ' '
         res = f"目前监控的币有：{s}"
         safe_send_message(chat_id, res)
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/mc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['g'])
 @restricted
 def gain_lose_rank(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/g'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         # 将参数分割成两部分
         param1, param2 = message.text.split()[1:]
@@ -311,33 +422,51 @@ def gain_lose_rank(message):
         limit = param2
         res = get_gain_lose_rank(interval, limit)
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
-        bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/g 1w 2")
+        bot.reply_to(message, f"请输入正确的参数格式。示例：/g 1w 2")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['f'])
 def funding_rate(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/f'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         st = get_funding_info_str()
         bot.reply_to(message, st, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
-        bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/f")
+        bot.reply_to(message, f"请输入正确的参数格式。示例：/f")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['om'])
 def oi_mc_ratio(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/om'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         st = get_oi_mc_str()
         bot.reply_to(message, st, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
-        bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/om")
+        bot.reply_to(message, f"请输入正确的参数格式。示例：/om")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['stat'])
 def stat_coin_time(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/stat'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         param = message.text.split()[1:][0]
         if param != 'all':
@@ -346,6 +475,7 @@ def stat_coin_time(message):
             buf = create_token_time_plot(symbol)
             if not res or not buf:
                 bot.reply_to(message, "请输入正确的参数格式。示例：/stat btc", parse_mode='Markdown')
+                log_user_action(user_id, username, command, parameters, 'Failed')
             else:
                 bot.reply_to(message, res, parse_mode='Markdown')
                 bot.send_photo(
@@ -353,11 +483,13 @@ def stat_coin_time(message):
                     photo=buf
                 )
                 buf.close()
+                log_user_action(user_id, username, command, parameters, 'Success')
         elif param == 'all':
             res = statistic_time()
             buf = create_all_tokens_time_plot()
             if not res:
                 bot.reply_to(message, "无法获取统计数据", parse_mode='Markdown')
+                log_user_action(user_id, username, command, parameters, 'Failed')
             else:
                 bot.reply_to(message, res, parse_mode='Markdown')
                 if buf:
@@ -366,58 +498,88 @@ def stat_coin_time(message):
                         photo=buf
                     )
                     buf.close()
+                log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
-        bot.reply_to(message, f"{e}请输入正确的参数格式。示例：/stat btc")
+        bot.reply_to(message, f"请输入正确的参数格式。示例：/stat btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['ul'])
 def upbit_to_list(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/ul'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         up = to_list_on_upbit()
         res = f"`还没上upbit的潜力币`：{str(up)}\n"
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/ul")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['up'])
 @restricted
 def up_volume(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/up'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         unit = message.text.split()[1:][0]
         res = get_upbit_volume(unit)
         safe_send_message(chat_id, res)
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/up 60")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['ba'])
 @restricted
 def thumb_alert(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = 'ba'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         res = bithumb_alert()
         safe_send_message(chat_id, res)
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/ba")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['bl'])
 def bithumb_to_list(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/bl'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         bit = to_list_on_bithumb()
         res = f"`还没上bithumb的潜力币`：{str(bit)}\n"
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
         bot.reply_to(message, "请输入正确的参数格式。示例：/bl")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @bot.message_handler(commands=['kl'])
 def korea_to_list(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/kl'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
     try:
         up = to_list_on_upbit()
         bit = to_list_on_bithumb()
@@ -433,9 +595,10 @@ def korea_to_list(message):
         res += f"`没上upbit但上了bithumb的潜力币`：{str(only_in_up)}\n"
         res += f"`没上bithumb但上了upbit的潜力币`：{str(only_in_bit)}\n"
         bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
-        print(e)
-        bot.reply_to(message, "请输入正确的参数格式。示例：/bl")
+        bot.reply_to(message, "请输入正确的参数格式。示例：/kl")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
 @atexit.register
