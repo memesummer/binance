@@ -8,6 +8,7 @@ import threading
 import time
 from datetime import datetime, timezone, timedelta
 from functools import wraps
+from itertools import islice
 
 import pandas as pd
 import requests
@@ -20,7 +21,7 @@ sol_id = 1399811149
 define1 = "1d1cfa84305b78b1ab8cd4205a45f77b231f9686"
 define2 = "eab19d30e8cb0d3c39e949aac2dd38ca19da87dc"
 define3 = "91a19d3b319a0c6642e96c679542e96adc324e09"
-codex_api_key = "1d1cfa84305b78b1ab8cd4205a45f77b231f9686"
+
 sol_sniffer_api_key_list = ['i2e0pwyjlztqemeok2sa6uc2vrk798', 'zkm1hkgigkrwgpvfdximp7qaoqylkk',
                             '6iu82h8hbz9axilnazunu2oyad8mfl', 'aau5mqrwpn9a0ykj8bmwgxo6ywwwr3',
                             "ouwnjyt0ckpornm1ojj4tkl9rhiry6"]
@@ -48,8 +49,11 @@ headers3 = {
 AUTHORIZED_USERS = [546797136, 6808760378, 6672213739, 7205595566]  # 替换为实际用户 ID
 
 bot = telebot.TeleBot("8112245267:AAFedRwTwOz06mVqQ6lqRrnwzuvCLRuLFCg", parse_mode='Markdown')
+
 chat_id = "-4629100773"
 chat_id_alert = "-4609875695"
+chat_id_inner = "-1002213443358"
+
 bot.send_message(chat_id, "开始推荐sol链MEME币......")
 
 # 配置
@@ -731,7 +735,7 @@ def get_new_token_recommend():
                         'priceChange'].keys():
                         continue
                     elif data['priceChange']['h24'] >= 1000 and data['fdv'] < 100000000 and data['liquidity'][
-                        'usd'] > 100000:
+                        'usd'] > 50000:
                         pchg = data['priceChange']['h24']
                         star = 5 if pchg >= 10000 else 4 if pchg >= 5000 else 3 if pchg >= 3000 else 2 if pchg >= 2000 else 1
                         sym = {
@@ -901,7 +905,7 @@ def token_recommend():
             for data in d:
                 if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
                     continue
-                elif data['fdv'] < 100000000 and data.get('liquidity', {'usd': 0})['usd'] > 100000 and \
+                elif data['fdv'] < 100000000 and data.get('liquidity', {'usd': 0})['usd'] > 50000 and \
                         data['priceChange'].get('m5', 0) > 0 and data['priceChange'].get('h1', 0) > 0 and \
                         data['priceChange'].get('h6', 0) > 0 and data['priceChange'].get('h24', 0) > 0:
                     sym = {
@@ -1207,6 +1211,232 @@ def get_vc_increase(limit=10):
             safe_send_message(chat_id_alert, f"AI脉冲警报获取出错：{e}")
             time.sleep(3)
             continue
+
+
+def get_token_chart(ca, st, interval, network_id=sol_id, url="https://graph.defined.fi/graphql"):
+    try:
+        symbol = f'{ca}:{network_id}'
+        now_time, now_str = get_utc8_time()
+        getTopToken = f"""query {{
+          getBars(
+            symbol:"{symbol}",
+            from: {st},
+            to:{now_time},
+            resolution:"{interval}"
+          ) {{
+            o
+            h
+            l
+            c
+            s
+            liquidity
+          }}
+        }}"""
+        response = requests.post(url, headers=headers3, json={"query": getTopToken})
+        res = json.loads(response.text)
+        res_list = res['data']['getBars']
+        return res_list
+    except BaseException as e:
+        print(e)
+
+
+def process_csv(last_hours=24, near_hours=0):
+    try:
+        files = glob.glob(os.path.join(current_dir, f"{BASE_FILENAME}_*{FILE_EXTENSION}"))
+
+        # 使用正则表达式提取文件名中的数字索引
+        index_pattern = re.compile(rf"{BASE_FILENAME}_(\d+){FILE_EXTENSION}")
+        file_indices = []
+        for file in files:
+            match = index_pattern.search(os.path.basename(file))
+            if match:
+                index = int(match.group(1))  # 提取数字索引
+                file_indices.append((file, index))
+
+        # 按索引降序排序（索引最大的排在前面）
+        file_indices.sort(key=lambda x: x[1], reverse=True)
+
+        # 选择索引最大的两个文件（如果只有一个，则只选一个）
+        selected_files = [file for file, _ in file_indices[:2]]
+
+        # 读取并拼接文件为 DataFrame
+        if not selected_files:
+            safe_send_message(chat_id_alert, "没有找到匹配的文件。")
+            df = pd.DataFrame()  # 如果没有文件，返回空 DataFrame
+        elif len(selected_files) == 1:
+            df = pd.read_csv(selected_files[0])
+        else:
+            # 读取两个文件并拼接
+            df1 = pd.read_csv(selected_files[0])
+            df2 = pd.read_csv(selected_files[1])
+            df = pd.concat([df1, df2], ignore_index=True)
+
+        # 验证列名
+        if not all(col in df.columns for col in COLUMNS):
+            safe_send_message(chat_id_alert, f"CSV 文件缺少必要的列：{set(COLUMNS) - set(df.columns)}")
+
+        # 1. 时间筛选
+        # 获取当前时间（北京时间，UTC+8）
+        utc8 = timezone(timedelta(hours=8))
+        now = datetime.now(utc8)
+        # 当前时间戳（秒）
+        now_timestamp = int(now.timestamp())
+        # 计算时间范围：过去 n 小时到过去 2 小时（时间戳，秒）
+        start_time = now_timestamp - last_hours * 3600
+        end_time = now_timestamp - near_hours * 3600
+
+        # 调试：打印时间戳范围（转换为可读时间）
+        st = datetime.fromtimestamp(start_time, utc8).strftime('%Y-%m-%d %H:%M')
+        et = datetime.fromtimestamp(end_time, utc8).strftime('%Y-%m-%d %H:%M')
+        safe_send_message(chat_id_alert, f"筛选时间戳范围：{start_time} ({st}) "
+                                         f"到 {end_time} ({et})")
+        output_file = os.path.join(current_dir, f"p_{st}__{et}.csv")
+
+        # 确保 timestamp 是整数（Unix 时间戳）
+        df['timestamp'] = df['timestamp'].astype(int)
+
+        # 筛选 timestamp 在 [start_time, end_time] 内的记录
+        df = df[(df['timestamp'] >= start_time) & (df['timestamp'] <= end_time)]
+
+        # 调试：打印筛选后的记录数
+        safe_send_message(chat_id_alert, f"筛选后记录数：{len(df)}")
+
+        if df.empty:
+            safe_send_message(chat_id_alert, "警告：筛选后没有数据，请检查时间范围或 timestamp 数据")
+            return None
+
+        # 2. 统计每个 ca 的 type 出现次数
+        type_counts = df.groupby(['ca', 'type']).size().unstack(fill_value=0)
+
+        # 重命名列：将 1, 2, 3 映射到 type1count, type2count, type3count
+        type_counts.columns = [f'type{int(col)}count' for col in type_counts.columns]
+
+        # 确保 type1count, type2count, type3count 存在，缺失的列填充 0
+        for col in ['type1count', 'type2count', 'type3count']:
+            if col not in type_counts.columns:
+                type_counts[col] = 0
+
+        type_counts = type_counts.reset_index()
+
+        # 3. 合并 type 计数到原始 DataFrame
+        df = df.merge(type_counts, on='ca', how='left')
+
+        # 4. 按 ca 去重，保留 price 最低的记录
+        df_sorted = df.sort_values(['ca', 'price'])
+        df_dedup = df_sorted.groupby('ca').first().reset_index()
+
+        # 5. 确保输出包含所有原始列和计数列
+        expected_columns = COLUMNS + ['type1count', 'type2count', 'type3count']
+        df_dedup = df_dedup[expected_columns]
+
+        # 6. 保存结果到 CSV
+        df_dedup.to_csv(output_file, index=False, encoding='utf-8')
+        safe_send_message(chat_id_alert, f"处理完成，结果已保存")
+
+        return output_file
+
+    except FileNotFoundError:
+        safe_send_message(chat_id_alert, f"错误：源文件未找到")
+    except ValueError as e:
+        safe_send_message(chat_id_alert, f"错误：{str(e)}")
+    except Exception as e:
+        safe_send_message(chat_id_alert, f"发生错误：{str(e)}")
+
+
+def get_push_result_csv(processed_file):
+    directory = os.path.dirname(processed_file)  # 获取目录部分
+    filename = os.path.basename(processed_file)  # 获取文件名部分
+
+    # 替换文件名开头的第一个字母
+    if directory and filename:  # 确保文件名不为空
+        result_file = os.path.join(directory, 'r' + filename[1:])
+    else:
+        safe_send_message(chat_id_alert, "文件名为空")
+        return
+    with open(processed_file, 'r', newline='') as csvfile, open(result_file, 'w', newline='') as outfile:
+        reader = csv.DictReader(csvfile)
+        # Ensure CSV file contains timestamp and ca columns
+        if 'timestamp' not in reader.fieldnames or 'ca' not in reader.fieldnames:
+            safe_send_message(chat_id_alert, "Error: CSV file missing 'timestamp' or 'ca' column")
+            exit()
+
+        # Add new columns to fieldnames
+        fieldnames = reader.fieldnames + ['high_ratio', 'now_ratio']
+        writer = csv.DictWriter(outfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        # Process rows in batches
+        while True:
+            batch = list(islice(reader, 5))
+            if not batch:
+                break  # No more rows to process
+
+            for row in batch:
+                timestamp = row['timestamp']
+                ca = row['ca']
+                price = float(row['price'])
+                res = get_token_chart(ca, timestamp, 5)
+                hl = res['h']
+                h = sorted(hl, reverse=True)[1]
+                c = res['c'][-1]
+                liq = float(res['liquidity'][-1])
+
+                # Copy original row
+                new_row = row.copy()
+                if liq < 10000:
+                    new_row['high_ratio'] = -911
+                    new_row['now_ratio'] = -911
+                else:
+                    high_ratio = round(h / price * 100, 2)
+                    now_ratio = round(c / price * 100, 2)
+                    new_row['high_ratio'] = high_ratio
+                    new_row['now_ratio'] = now_ratio
+
+                writer.writerow(new_row)
+
+                # Sleep to respect API rate limit (5 requests per second)
+                time.sleep(0.2)
+
+            # Optional: Add a small buffer after each batch
+            time.sleep(0.1)
+    safe_send_message(chat_id_alert, "战绩结果写入完成")
+    return result_file
+
+
+@bot.message_handler(commands=['csv'])
+@restricted
+def get_csv(message):
+    try:
+        if not message.text:
+            bot.reply_to(message, "命令不能为空，请输入正确的格式！示例：/csv 24 0")
+            return
+
+        # 分割用户输入内容
+        parts = message.text.split()
+        if len(parts) == 1:
+            last_hours, near_hours = 24, 0
+        elif len(parts) == 2:
+            bot.reply_to(message, "请输入正确的参数格式。示例：/csv 24 0")
+            return
+        else:
+            last_hours, near_hours = parts[1:]
+        processed_file = process_csv(last_hours, near_hours)
+        res_file = get_push_result_csv(processed_file)
+        if os.path.getsize(res_file) > 50 * 1024 * 1024:  # 50MB
+            bot.reply_to(message, "文件过大，请联系管理员处理！")
+            return
+        else:
+            # 发送 CSV 文件给用户
+            with open(res_file, 'rb') as file:
+                bot.send_document(
+                    chat_id=message.chat.id,
+                    document=file,
+                    caption="这是您请求的 CSV 文件",
+                    reply_to_message_id=message.message_id
+                )
+
+    except Exception as e:
+        bot.reply_to(message, "请输入正确的参数格式。示例：/csv 24 0")
 
 
 if __name__ == "__main__":
