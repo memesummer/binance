@@ -839,7 +839,11 @@ def get_boosted_token():
         headers={},
     )
     data = response.json()
-    return data
+    res = []
+    for token in data:
+        if token['chainId'] == 'solana':
+            res.append(token)
+    return res
 
 
 def flatten_dict(d):
@@ -891,6 +895,8 @@ def token_recommend():
         merge[item['tokenAddress']] = item['totalAmount']
 
     for ca, amount in merge.items():
+        if ca.startswith('0x'):
+            continue
         if ca + "|" + str(amount) not in recommend_his:
             response = requests.get(
                 f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
@@ -1237,7 +1243,8 @@ def get_token_chart(ca, st, interval, network_id=sol_id, url="https://graph.defi
         res_list = res['data']['getBars']
         return res_list
     except BaseException as e:
-        print(e)
+        safe_send_message(chat_id_alert, f"getBars error:{e}")
+        return None
 
 
 def process_csv(last_hours=24, near_hours=0):
@@ -1376,6 +1383,12 @@ def get_push_result_csv(processed_file):
                 ca = row['ca']
                 price = float(row['price'])
                 res = get_token_chart(ca, timestamp, 5)
+                # 说明是其他链条的
+                if not res:
+                    continue
+                if not res['o'][0]:
+                    safe_send_message(chat_id_alert, f"getBars 获取了None数据，ca:{ca}")
+                    continue
                 hl = res['h']
                 h = sorted(hl, reverse=True)[1]
                 c = res['c'][-1]
@@ -1419,7 +1432,8 @@ def get_csv(message):
             bot.reply_to(message, "请输入正确的参数格式。示例：/csv 24 0")
             return
         else:
-            last_hours, near_hours = parts[1:]
+            last_hours = int(parts[1])  # 第一个参数
+            near_hours = int(parts[2])  # 第二个参数
         processed_file = process_csv(last_hours, near_hours)
         res_file = get_push_result_csv(processed_file)
         if os.path.getsize(res_file) > 50 * 1024 * 1024:  # 50MB
@@ -1439,10 +1453,38 @@ def get_csv(message):
         bot.reply_to(message, "请输入正确的参数格式。示例：/csv 24 0")
 
 
+def delete_pr_files():
+    # 获取当前工作目录
+    current_dir = os.getcwd()
+
+    # 定义要匹配的文件模式
+    patterns = ['p_*.csv', 'r_*.csv']
+
+    # 遍历所有匹配模式
+    for pattern in patterns:
+        # 查找匹配模式的文件
+        files_to_delete = glob.glob(os.path.join(current_dir, pattern))
+
+        # 删除每个匹配的文件
+        for file_path in files_to_delete:
+            try:
+                os.remove(file_path)
+                print(f"已删除: {file_path}")
+            except OSError as e:
+                print(f"删除 {file_path} 失败: {e}")
+
+    # 检查是否删除了文件
+    if not files_to_delete:
+        print("没有找到符合条件的文件（以 'p_' 或 'r_' 开头、'.csv' 结尾）。")
+
+
 if __name__ == "__main__":
     new_his = set()
     recommend_his = set()
     vc_increase_his = set()
+
+    delete_pr_files()
+
     # 创建自定义的 session
     session = requests.Session()
 
