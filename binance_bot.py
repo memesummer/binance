@@ -640,9 +640,9 @@ def safe_send_message(chat_id, message):
     try:
         bot.send_message(chat_id, message, timeout=10)  # 设置超时时间为10秒
     except Timeout:
-        bot.send_message(chat_id, "发送消息超时，正在重试...")
+        bot.send_message(chat_id_alert, "发送消息超时，正在重试...")
     except Exception as e:
-        bot.send_message(chat_id, f"scan 消息发送失败: {remove_symbols(message)}")
+        bot.send_message(chat_id_alert, f"scan 消息发送失败: {remove_symbols(message)},error:{e}")
 
 
 def scan():
