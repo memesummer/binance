@@ -792,11 +792,13 @@ def scan_new():
             for token in new_list:
                 age = get_token_age(token['pairCreatedAt'])
                 count = count_ca_occurrences(token['ca']) + 1
+                liq = format_number(token['liquidity'])
+                fdv = format_number(token['fdv'])
                 message += f"""
 🤖*AI扫链-潜力新币推荐*🧠
 🌱*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) ｜ {token['star'] * "⭐"}
 🧮第`{count}`次推送
-💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
+💧池子：{liq} ｜ 💸市值：{fdv}
 💰价格：{token['price']}
 ⌛{age}
 {sol_sniffer.get(token['ca']) if sol_sniffer else ""}
@@ -814,8 +816,8 @@ def scan_new():
                 # 检查文件是否存在
                 file_exists = os.path.exists(record_file_path)
 
-                new_row = [timestamp, push_time, 1, token['ca'], token['symbol'], token['name'], token['liquidity'],
-                           token['fdv'], token['price'], age, token['star'], count]
+                new_row = [timestamp, push_time, 1, token['ca'], token['symbol'], token['name'], liq,
+                           fdv, token['price'], age, token['star'], count]
 
                 # 打开文件以追加模式
                 with open(record_file_path, 'a', newline='') as f:
@@ -964,11 +966,13 @@ def recommend_scan():
                 # """
                 age = get_token_age(token['pairCreatedAt'])
                 count = count_ca_occurrences(token['ca']) + 1
+                liq = format_number(token['liquidity'])
+                fdv = format_number(token['fdv'])
                 message = f"""
 🥇*AI严选-金狗挖掘*🚜
 🐕*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) | ⚡️{token['boost_amount']}
 🧮第`{count}`次推送
-💧池子：{format_number(token['liquidity'])} ｜ 💸市值：{format_number(token['fdv'])}
+💧池子：{liq} ｜ 💸市值：{fdv}
 💰价格：{token['price']}
 ⌛{age}
 💳*购买入口*：🐸[pepeboost](https://t.me/pepeboost_sol08_bot?start=ref_0samim) | 🐕[debot](https://t.me/trading_solana_debot?start=invite_222966) | 🦅[xxyy](https://xxyy.io/?ref=2CrabsinABottle
@@ -984,8 +988,8 @@ def recommend_scan():
                 # 检查文件是否存在
                 file_exists = os.path.exists(record_file_path)
 
-                new_row = [timestamp, push_time, 2, token['ca'], token['symbol'], token['name'], token['liquidity'],
-                           token['fdv'], token['price'], age, token['boost_amount'], count]
+                new_row = [timestamp, push_time, 2, token['ca'], token['symbol'], token['name'], liq,
+                           fdv, token['price'], age, token['boost_amount'], count]
 
                 # 打开文件以追加模式
                 with open(record_file_path, 'a', newline='') as f:
