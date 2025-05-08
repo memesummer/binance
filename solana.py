@@ -224,7 +224,7 @@ def get_sol_sniffer_data(ca):
             print(f"Request failed with status code {response.status_code}")
             print(response.text)
     except Exception as e:
-        safe_send_message(chat_id, f"safe sniffer api调取有问题：{e}")
+        safe_send_message(chat_id_alert, f"safe sniffer api调取有问题：{e}")
         return None
 
 
@@ -293,9 +293,9 @@ def get_sol_sniffer_datas(new_list):
         else:
             # 如果请求失败，打印错误信息
             p = f"Request failed with status code {response.status_code}"
-            safe_send_message(chat_id, p + "/" + response.text)
+            safe_send_message(chat_id_alert, p + "/" + response.text)
     except Exception as e:
-        safe_send_message(chat_id, f"sol sniffer error:{e}")
+        safe_send_message(chat_id_alert, f"sol sniffer error:{e}")
         return None
 
 
@@ -670,7 +670,7 @@ def get_new_token():
                 res.append(token)
         return res
     except Exception as e:
-        safe_send_message(chat_id, f"获取新币时出现错误{e}")
+        safe_send_message(chat_id_alert, f"获取新币时出现错误{e}")
         return None
 
 
@@ -687,7 +687,7 @@ def get_latest_boosted_token():
                 res.append(token)
         return res
     except Exception as e:
-        safe_send_message(chat_id, f"获取新boost时出现错误{e}")
+        safe_send_message(chat_id_alert, f"获取新boost时出现错误{e}")
         return None
 
 
@@ -696,18 +696,18 @@ def get_new_token_recommend():
         res = []
         new_token = get_new_token()
         if not new_token:
-            safe_send_message(chat_id, "dex没有获取到新币")
+            safe_send_message(chat_id_alert, "dex没有获取到新币")
             return None
         top_new_list = get_newest_token(30)
         if not top_new_list:
-            safe_send_message(chat_id, "没有获取到新币")
+            safe_send_message(chat_id_alert, "没有获取到新币")
             return None
         merge_list = list(set([token['tokenAddress'] for token in new_token] + [token['token']['address'] for token in
                                                                                 top_new_list]))
 
         # latest_boosted_token = get_latest_boosted_token()
         # if not latest_boosted_token:
-        #     safe_send_message(chat_id, "没有获取到boost币")
+        #     safe_send_message(chat_id_alert, "没有获取到boost币")
         #     return None
         # merge = {}
         #
@@ -784,7 +784,7 @@ def scan_new():
             message = ""
             new_list = get_new_token_recommend()
             if new_list is None:
-                safe_send_message(chat_id, "本次新币扫描失败")
+                safe_send_message(chat_id_alert, "本次新币扫描失败")
                 time.sleep(60)
                 continue
             if len(new_list) > 0:
