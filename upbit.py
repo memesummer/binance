@@ -114,9 +114,14 @@ async def get_upbit_candle_volume(session, market, unit, limiter, retries=3):
                 async with session.get(candle_url, params=params, headers=headers,
                                        timeout=aiohttp.ClientTimeout(total=10)) as response:
                     if response.status == 200:
-                        x = (await response.json())[0]
-                        volume = x['candle_acc_trade_volume'] * x['trade_price']
-                        return [market.split("-")[1], volume]
+                        if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+                            x = data[0]
+                            # Safely access fields with fallback values
+                            volume = (x.get('candle_acc_trade_volume', 0) or 0) * (x.get('trade_price', 0) or 0)
+                            return [market.split("-")[1], volume]
+                        else:
+                            # Handle empty or invalid response
+                            return [market.split("-")[1], 0]
                     elif response.status == 429:
                         wait_time = 2 ** attempt  # 指数退避：1s, 2s, 4s
                         print(f"{market} 请求过多，第 {attempt + 1} 次重试，等待 {wait_time} 秒")
@@ -127,6 +132,8 @@ async def get_upbit_candle_volume(session, market, unit, limiter, retries=3):
                         return None
         except (aiohttp.ClientError, asyncio.TimeoutError) as e:
             print(f"请求 {market} 失败: {e}")
+            return None
+        except Exception as e:
             return None
     print(f"{market} 重试 {retries} 次后仍失败")
     return None
