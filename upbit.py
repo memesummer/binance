@@ -81,10 +81,11 @@ def get_24h_volume(server_url="https://api.upbit.com", rank=10):
 
     res = requests.get(server_url + "/v1/ticker/all", params=params)
     res = res.json()
-    # 使用 sorted 函数排序
+
+    # upbit新上的币acc_trade_volume_24h和price都有可能是NONE，所有需要这样写
     sorted_data = sorted(
         [x for x in res if x['market'] != 'KRW-USDT'],
-        key=lambda x: x['acc_trade_volume_24h'] * x['trade_price'],
+        key=lambda x: (x['acc_trade_volume_24h'] or 0) * (x['trade_price'] or 0),
         reverse=True
     )
 
