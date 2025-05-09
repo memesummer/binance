@@ -1,5 +1,6 @@
 import csv
 import glob
+import io
 import json
 import os
 import random
@@ -10,6 +11,7 @@ from datetime import datetime, timezone, timedelta
 from functools import wraps
 from itertools import islice
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import telebot
@@ -1417,7 +1419,145 @@ def get_push_result_csv(processed_file):
             # Optional: Add a small buffer after each batch
             time.sleep(0.1)
     safe_send_message(chat_id_alert, "战绩结果写入完成")
-    return result_file
+    safe_send_message(chat_id_alert, "生成统计图中……")
+
+    df = pd.read_csv(result_file)
+
+    # 提取小时部分，用于分组
+    df['time'] = pd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+    df['hour'] = df['time'].dt.hour
+    # 计算 -911 的记录数，按小时分组
+    count_911 = df[df['high_ratio'] == -911].groupby('hour').size().reset_index(name='count_scam')
+
+    # 过滤掉 high_ratio 等于 -911 的记录，计算平均 high_ratio
+    df_filtered = df[df['high_ratio'] != -911]
+    hourly_avg = df_filtered.groupby('hour')['high_ratio'].mean().reset_index()
+
+    # 合并数据，确保所有小时都出现（即使某些小时无数据）
+    all_hours = pd.DataFrame({'hour': range(24)})
+    hourly_avg = all_hours.merge(hourly_avg, on='hour', how='left')
+    count_911 = all_hours.merge(count_911, on='hour', how='left').fillna({'count_911': 0})
+
+    # 绘制柱状图
+    fig, ax1 = plt.subplots(figsize=(16, 8))
+
+    # 设置柱子宽度和偏移
+    bar_width = 0.35
+    spacing = 0.05
+    hours = hourly_avg['hour']
+
+    # 定义浅蓝色和浅红色
+    light_blue = '#6495ED'  # 柔和的浅蓝色
+    light_red = '#FF4040'  # 柔和的浅红色
+
+    # 绘制蓝色柱子（平均 high_ratio，左侧纵轴）
+    bars_avg = ax1.bar(hours - bar_width / 2, hourly_avg['high_ratio'].fillna(0), bar_width,
+                       label='Average High Ratio (Excl. Scam)', color=light_blue)
+
+    # 创建右侧纵轴并绘制红色柱子（-911 计数）
+    ax2 = ax1.twinx()
+    bars_911 = ax2.bar(hours + bar_width / 2, count_911['count_scam'], bar_width, label='Scam Count',
+                       color=light_red)
+
+    # 计算动态偏移量（基于 high_ratio 范围的 2% 和 count_911 的 2%）
+    max_height_avg = max(abs(hourly_avg['high_ratio'].max()), abs(hourly_avg['high_ratio'].min()), 0.1)
+    offset_avg = 0.02 * max_height_avg
+    max_height_911 = max(count_911['count_scam'].max(), 1)  # 至少为 1
+    offset_911 = 0.02 * max_height_911
+
+    # 为蓝色柱子添加标签（正值在上方，负值在下方）
+    for bar in bars_avg:
+        yval = bar.get_height()
+        if yval > 0:  # 正值：显示在柱子上方
+            ax1.text(
+                bar.get_x() + bar.get_width() / 2,
+                yval + offset_avg,
+                f'{yval:.0f}%' if yval != 0 else '',
+                ha='center',
+                va='bottom',
+                fontsize=8,
+                color='blue'
+            )
+        elif yval < 0:  # 负值：显示在柱子下方
+            ax1.text(
+                bar.get_x() + bar.get_width() / 2,
+                yval - offset_avg,
+                f'{yval:.0f}%',
+                ha='center',
+                va='top',
+                fontsize=8,
+                color='blue'
+            )
+
+    # 为红色柱子添加标签（在上方，整数）
+    for bar in bars_911:
+        yval = bar.get_height()
+        if yval > 0:  # 仅非零计数显示标签
+            ax2.text(
+                bar.get_x() + bar.get_width() / 2,
+                yval + offset_911,
+                f'{int(yval)}',
+                ha='center',
+                va='bottom',
+                fontsize=8,
+                color='red'
+            )
+
+    # 设置轴标签和标题
+    ax1.set_xlabel('Hour (e.g., 1 represents 1:00-2:00)')
+    ax1.set_ylabel('Average High Ratio', color='blue')
+    ax2.set_ylabel('Count of Scam', color='red')
+    plt.title('Average High Ratio and Scam Count per Hour Segment')
+
+    # 设置横轴为整数小时点（0, 1, 2, ...）
+    ax1.set_xticks(hours)
+    ax1.set_xticklabels(hours, rotation=0)
+
+    # 设置颜色和网格
+    ax1.tick_params(axis='y', labelcolor='blue')
+    ax2.tick_params(axis='y', labelcolor='red')
+    ax1.grid(True, axis='y', linestyle='--', alpha=0.7)
+
+    # 添加图例
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper right')
+
+    plt.tight_layout()
+
+    # 添加上方中间水印
+    plt.text(
+        0.5, 0.85,  # x=0.5（水平居中），y=0.95（靠近顶部）
+        "@EttoroSummer Copyright",  # 更长的文字
+        fontsize=30,  # 字体更大
+        alpha=0.5,  # 透明度
+        color="gray",
+        ha="center",  # 水平居中
+        va="center",  # 垂直居中
+        rotation=0,  # 不旋转（或根据需要调整）
+        transform=plt.gcf().transFigure  # 使用整个图的坐标系
+    )
+
+    # 添加下方中间水印
+    plt.text(
+        0.5, 0.15,  # x=0.5（水平居中），y=0.05（靠近底部）
+        "@EttoroSummer Copyright",  # 更长的文字
+        fontsize=30,  # 字体更大
+        alpha=0.5,  # 透明度
+        color="gray",
+        ha="center",  # 水平居中
+        va="center",  # 垂直居中
+        rotation=0,  # 不旋转
+        transform=plt.gcf().transFigure
+    )
+
+    # 保存到内存
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+    buf.seek(0)
+    plt.close()
+    safe_send_message(chat_id_alert, "统计图生成成功……")
+    return result_file, buf
 
 
 @bot.message_handler(commands=['csv'])
@@ -1439,7 +1579,7 @@ def get_csv(message):
             last_hours = int(parts[1])  # 第一个参数
             near_hours = int(parts[2])  # 第二个参数
         processed_file = process_csv(last_hours, near_hours)
-        res_file = get_push_result_csv(processed_file)
+        res_file, buf = get_push_result_csv(processed_file)
         if os.path.getsize(res_file) > 50 * 1024 * 1024:  # 50MB
             bot.reply_to(message, "文件过大，请联系管理员处理！")
             return
@@ -1452,9 +1592,13 @@ def get_csv(message):
                     caption="这是您请求的 CSV 文件",
                     reply_to_message_id=message.message_id
                 )
-
+            bot.send_photo(
+                chat_id=message.chat.id,
+                photo=buf
+            )
+            buf.close()
     except Exception as e:
-        bot.reply_to(message, "请输入正确的参数格式。示例：/csv 24 0")
+        bot.reply_to(message, f"请输入正确的参数格式。示例：/csv 24 0 error:{e}")
 
 
 def delete_pr_files():
