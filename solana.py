@@ -26,8 +26,9 @@ define3 = "91a19d3b319a0c6642e96c679542e96adc324e09"
 
 sol_sniffer_api_key_list = ['i2e0pwyjlztqemeok2sa6uc2vrk798', 'zkm1hkgigkrwgpvfdximp7qaoqylkk',
                             '6iu82h8hbz9axilnazunu2oyad8mfl', 'aau5mqrwpn9a0ykj8bmwgxo6ywwwr3',
-                            "ouwnjyt0ckpornm1ojj4tkl9rhiry6"]
-probabilities = [0.2, 0.2, 0.2, 0.2, 0.2]
+                            "ouwnjyt0ckpornm1ojj4tkl9rhiry6", "vf6vigj6jcudx7s30766sandlyewen",
+                            "s0itn9yxyx2b2d2vxt2k4i2ojpjw25", "3of090m7s3y9lvlmhr8kdterdhgewv"]
+# probabilities = [0.2, 0.2, 0.2, 0.2, 0.2]
 
 exclude_tokens = [f"So11111111111111111111111111111111111111112:{sol_id}",
                   f"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:{sol_id}",
@@ -173,91 +174,24 @@ def get_safe_str(des):
 
 def get_sol_sniffer_data(ca):
     try:
-        url = f'https://solsniffer.com/api/v2/token/{ca}'
-        api_key = random.choices(sol_sniffer_api_key_list, probabilities)[0]
+        for index, api_key in enumerate(sol_sniffer_api_key_list):
+            url = f'https://solsniffer.com/api/v2/token/{ca}'
 
-        # 设置请求头，包含API密钥
-        headers = {
-            'accept': 'application/json',
-            'X-API-KEY': api_key  # 注意：如果API需要在请求头中发送API密钥
-        }
+            # api_key = random.choices(sol_sniffer_api_key_list, probabilities)[0]
 
-        # 发送GET请求
-        response = requests.get(url, headers=headers)
+            # 设置请求头，包含API密钥
+            headers = {
+                'accept': 'application/json',
+                'X-API-KEY': api_key  # 注意：如果API需要在请求头中发送API密钥
+            }
 
-        # 检查响应状态码
-        if response.status_code == 200:
-            # 如果请求成功，打印JSON响应
-            res = response.json()['tokenData']
+            # 发送GET请求
+            response = requests.get(url, headers=headers)
 
-            risk_str = "⚠️风险提示：\n"
-            indicator = res['indicatorData']
-            for k, v in indicator.items():
-                if v['count'] > 0:
-                    risk_str += get_safe_str(k)
-                    details = json.loads(v['details'].replace("'", '"'))
-                    for m, n in details.items():
-                        if n is False:
-                            risk_str += get_safe_str(m)
-            if risk_str == "⚠️风险提示：\n":
-                risk_str = "⚠️风险提示：无🎉\n"
-
-            ownersList = res['ownersList']
-            top10 = 0
-            top5 = []
-            for i, holder in enumerate(ownersList[:10]):
-                top10 += float(holder['percentage'])
-                if i < 5:
-                    top5.append(float(holder['percentage']))
-            top10 = int(round(top10, 0))
-            t5 = ""
-            for k in top5:
-                t5 += f"| {k} "
-            top_str = f"👥Top10占比:{top10}% {t5}\n"
-
-            safe_score_str = f"🛡️安全评分：{res['score']}\n"
-            audit = res['auditRisk']
-            audit_str = f"🔍丢权限{get_if_str(audit['mintDisabled'])}烧池子{get_if_str(audit['lpBurned'])}无冻结权限{get_if_str(audit['freezeDisabled'])}Top10{get_if_str(audit['top10Holders'])}\n"
-
-            final_str = safe_score_str + top_str + audit_str + risk_str
-            return final_str
-        else:
-            # 如果请求失败，打印错误信息
-            print(f"Request failed with status code {response.status_code}")
-            print(response.text)
-    except Exception as e:
-        safe_send_message(chat_id_alert, f"safe sniffer api调取有问题：{e}")
-        return None
-
-
-def get_sol_sniffer_datas(new_list):
-    try:
-        ca_list = [i['ca'] for i in new_list]
-        url = f'https://solsniffer.com/api/v2/tokens'
-        api_key = random.choices(sol_sniffer_api_key_list, probabilities)[0]
-
-        # 设置请求头，包含API密钥
-        headers = {
-            'accept': 'application/json',
-            'X-API-KEY': api_key  # 注意：如果API需要在请求头中发送API密钥
-        }
-        request_body = {
-            "addresses": ca_list
-        }
-
-        # 发送GET请求
-        response = requests.post(url, headers=headers, json=request_body)
-
-        # 检查响应状态码
-        if response.status_code == 200:
-
-            multi_res = {}
-            # 如果请求成功，打印JSON响应
-            result = response.json()['data']
-
-            for r in result:
-                key = r['address']
-                res = r['tokenData']
+            # 检查响应状态码
+            if response.status_code == 200:
+                # 如果请求成功，打印JSON响应
+                res = response.json()['tokenData']
 
                 risk_str = "⚠️风险提示：\n"
                 indicator = res['indicatorData']
@@ -271,31 +205,112 @@ def get_sol_sniffer_datas(new_list):
                 if risk_str == "⚠️风险提示：\n":
                     risk_str = "⚠️风险提示：无🎉\n"
 
-                # ownersList = res['ownersList']
-                # top10 = 0
-                # top5 = []
-                # for i, holder in enumerate(ownersList[:10]):
-                #     top10 += float(holder['percentage'])
-                #     if i < 5:
-                #         top5.append(float(holder['percentage']))
-                # top10 = int(round(top10, 0))
-                # t5 = ""
-                # for k in top5:
-                #     t5 += f"|{k}"
-                # top = f"Top10占比:{top10}% {t5}\n"
+                ownersList = res['ownersList']
+                top10 = 0
+                top5 = []
+                for i, holder in enumerate(ownersList[:10]):
+                    top10 += float(holder['percentage'])
+                    if i < 5:
+                        top5.append(float(holder['percentage']))
+                top10 = int(round(top10, 0))
+                t5 = ""
+                for k in top5:
+                    t5 += f"| {k} "
+                top_str = f"👥Top10占比:{top10}% {t5}\n"
 
                 safe_score_str = f"🛡️安全评分：{res['score']}\n"
                 audit = res['auditRisk']
                 audit_str = f"🔍丢权限{get_if_str(audit['mintDisabled'])}烧池子{get_if_str(audit['lpBurned'])}无冻结权限{get_if_str(audit['freezeDisabled'])}Top10{get_if_str(audit['top10Holders'])}\n"
 
-                final_str = safe_score_str + audit_str + risk_str
-                multi_res.update({key: final_str})
+                final_str = safe_score_str + top_str + audit_str + risk_str
+                return final_str
+            elif response.status_code == 429:
+                if index == len(sol_sniffer_api_key_list) - 1:
+                    safe_send_message(chat_id_alert, f"sol sniffer api credits全部用完了")
+                    return None
+                else:
+                    continue
+            else:
+                # 如果请求失败，打印错误信息
+                print(f"Request failed with status code {response.status_code}")
+                print(response.text)
+    except Exception as e:
+        safe_send_message(chat_id_alert, f"safe sniffer api调取有问题：{e}")
+        return None
 
-            return multi_res
-        else:
-            # 如果请求失败，打印错误信息
-            p = f"Request failed with status code {response.status_code}"
-            safe_send_message(chat_id_alert, p + "/" + response.text)
+
+def get_sol_sniffer_datas(new_list):
+    try:
+        for index, api_key in enumerate(sol_sniffer_api_key_list):
+            ca_list = [i['ca'] for i in new_list]
+            url = f'https://solsniffer.com/api/v2/tokens'
+            # api_key = random.choices(sol_sniffer_api_key_list, probabilities)[0]
+
+            # 设置请求头，包含API密钥
+            headers = {
+                'accept': 'application/json',
+                'X-API-KEY': api_key  # 注意：如果API需要在请求头中发送API密钥
+            }
+            request_body = {
+                "addresses": ca_list
+            }
+
+            # 发送GET请求
+            response = requests.post(url, headers=headers, json=request_body)
+
+            if response.status_code == 200:
+
+                multi_res = {}
+                # 如果请求成功，打印JSON响应
+                result = response.json()['data']
+
+                for r in result:
+                    key = r['address']
+                    res = r['tokenData']
+
+                    risk_str = "⚠️风险提示：\n"
+                    indicator = res['indicatorData']
+                    for k, v in indicator.items():
+                        if v['count'] > 0:
+                            risk_str += get_safe_str(k)
+                            details = json.loads(v['details'].replace("'", '"'))
+                            for m, n in details.items():
+                                if n is False:
+                                    risk_str += get_safe_str(m)
+                    if risk_str == "⚠️风险提示：\n":
+                        risk_str = "⚠️风险提示：无🎉\n"
+
+                    # ownersList = res['ownersList']
+                    # top10 = 0
+                    # top5 = []
+                    # for i, holder in enumerate(ownersList[:10]):
+                    #     top10 += float(holder['percentage'])
+                    #     if i < 5:
+                    #         top5.append(float(holder['percentage']))
+                    # top10 = int(round(top10, 0))
+                    # t5 = ""
+                    # for k in top5:
+                    #     t5 += f"|{k}"
+                    # top = f"Top10占比:{top10}% {t5}\n"
+
+                    safe_score_str = f"🛡️安全评分：{res['score']}\n"
+                    audit = res['auditRisk']
+                    audit_str = f"🔍丢权限{get_if_str(audit['mintDisabled'])}烧池子{get_if_str(audit['lpBurned'])}无冻结权限{get_if_str(audit['freezeDisabled'])}Top10{get_if_str(audit['top10Holders'])}\n"
+
+                    final_str = safe_score_str + audit_str + risk_str
+                    multi_res.update({key: final_str})
+
+                return multi_res
+            elif response.status_code == 429:
+                if index == len(sol_sniffer_api_key_list) - 1:
+                    safe_send_message(chat_id_alert, f"sol sniffer api credits全部用完了")
+                    return None
+                else:
+                    continue
+            else:
+                # 如果请求失败，打印错误信息
+                p = f"Request failed with status code {response.status_code}"
+                safe_send_message(chat_id_alert, p + "/" + response.text)
     except Exception as e:
         safe_send_message(chat_id_alert, f"sol sniffer error:{e}")
         return None
