@@ -800,7 +800,6 @@ def get_token_age(pair_created_at):
 def scan_new():
     while True:
         try:
-            message = ""
             new_list = get_new_token_recommend()
             if new_list is None:
                 safe_send_message(chat_id_alert, "本次新币扫描失败")
@@ -813,7 +812,7 @@ def scan_new():
                 count = count_ca_occurrences(token['ca']) + 1
                 liq = format_number(token['liquidity'])
                 fdv = format_number(token['fdv'])
-                message += f"""
+                message = f"""
 🤖*AI扫链-潜力新币推荐*🧠
 🌱*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) ｜ {token['star'] * "⭐"}
 🧮第`{count}`次推送
