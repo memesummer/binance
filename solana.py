@@ -3,7 +3,6 @@ import glob
 import io
 import json
 import os
-import random
 import re
 import threading
 import time
@@ -20,8 +19,11 @@ from requests.exceptions import Timeout
 from urllib3.util.retry import Retry
 
 sol_id = 1399811149
+# 5万次 (ettoro)
 define1 = "1d1cfa84305b78b1ab8cd4205a45f77b231f9686"
+# 5万次 （aozone）
 define2 = "eab19d30e8cb0d3c39e949aac2dd38ca19da87dc"
+# 1万次（mountain）
 define3 = "91a19d3b319a0c6642e96c679542e96adc324e09"
 
 sol_sniffer_api_key_list = ['i2e0pwyjlztqemeok2sa6uc2vrk798', 'zkm1hkgigkrwgpvfdximp7qaoqylkk',
