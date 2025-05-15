@@ -51,7 +51,7 @@ headers3 = {
     "content_type": "application/json",
     "Authorization": define3
 }
-AUTHORIZED_USERS = [546797136, 6808760378, 6672213739, 7205595566]  # 替换为实际用户 ID
+AUTHORIZED_USERS = [546797136, 6808760378, 6672213739, 7205595566, 7517528905]  # 替换为实际用户 ID
 
 bot = telebot.TeleBot("8112245267:AAFedRwTwOz06mVqQ6lqRrnwzuvCLRuLFCg", parse_mode='Markdown')
 
