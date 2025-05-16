@@ -245,7 +245,10 @@ def run_task():
             if diff_ratio >= 2:
                 symbol = l[0] + 'USDT'
                 p_chg = f"{str(l[1])}%"
-                market_str = f"{format_number(float(l[4]))}｜{str(l[3])}%"
+                if float(l[4]) == -911:
+                    market_str = f"{str(l[3])}%｜◻️"
+                else:
+                    market_str = f"{str(l[3])}%｜{format_number(float(l[4]))}"
                 new_timestamp, push_time = get_utc8_time()
 
                 # 获取当前文件名
@@ -302,7 +305,10 @@ def run_task():
             if diff_ratio <= -2:
                 symbol = l[0] + 'USDT'
                 p_chg = f"{str(l[1])}%"
-                market_str = f"{format_number(float(l[4]))}｜{str(l[3])}%"
+                if float(l[4]) == -911:
+                    market_str = f"{str(l[3])}%｜◻️"
+                else:
+                    market_str = f"{str(l[3])}%｜{format_number(float(l[4]))}"
                 new_timestamp, push_time = get_utc8_time()
 
                 # 获取当前文件名

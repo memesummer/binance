@@ -1074,15 +1074,16 @@ def fetch_oid_openInterest_diff(symbol, p_chg, limit, current_timestamp):
                 print(f"{symbol}fetch_openInterest_diff error")
                 return None
             sumOpenInterest_now = float(oi_newest['openInterest'])
+            value_diff = -911
         else:
             sumOpenInterest_now = float(oi_now['sumOpenInterest'])
+            value_before = float(oi_before['sumOpenInterestValue'])
+            value_now = float(oi_now['sumOpenInterestValue'])
+            value_diff = round(value_now - value_before, 2)
         sumOpenInterest_before = float(oi_before['sumOpenInterest'])
-        value_before = float(oi_before['sumOpenInterestValue'])
-        value_now = float(oi_now['sumOpenInterestValue'])
         diff = round(sumOpenInterest_now - sumOpenInterest_before, 2)
         sumopenInterest_before = sumOpenInterest_before if sumOpenInterest_before != 0 else 1e-10
         diff_ratio = round((diff / abs(sumopenInterest_before)) * 100, 2)
-        value_diff = round(value_now - value_before, 2)
         return [symbol[:-4], p_chg, diff, diff_ratio, value_diff]
 
 
