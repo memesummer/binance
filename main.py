@@ -968,7 +968,7 @@ def parse_interval_to_5minutes(interval):
         raise ValueError("Unsupported time unit. Use 'm' for minutes, 'h' for hours, or 'd' for days.")
 
     # 计算有多少个5分钟
-    return int(total_minutes // 5)
+    return int(total_minutes // 5) + 1
 
 
 def fetch_openInterest(symbol, p_chg, limit):
@@ -1050,6 +1050,32 @@ def fetch_openInterest_diff(symbol, p_chg, limit):
         return [symbol[:-4], diff, diff_ratio, p_chg, diff_total, diff_ratio_total]
 
 
+def fetch_oid_openInterest_diff(symbol, p_chg, limit):
+    if symbol in symbol1000:
+        symbol = "1000" + symbol
+    para = {
+        'symbol': symbol,
+        'period': '5m',
+        'limit': limit
+    }
+    openInterest = um_futures_client.open_interest_hist(**para)
+    if not openInterest:
+        print(f"{symbol}fetch_openInterest_diff error")
+        return None
+    else:
+        oi_before = openInterest[0]
+        oi_now = openInterest[-1]
+        sumOpenInterest_before = float(oi_before['sumOpenInterest'])
+        sumOpenInterest_now = float(oi_now['sumOpenInterest'])
+        value_before = float(oi_before['sumOpenInterestValue'])
+        value_now = float(oi_now['sumOpenInterestValue'])
+        diff = round(sumOpenInterest_now - sumOpenInterest_before, 2)
+        sumopenInterest_before = sumOpenInterest_before if sumOpenInterest_before != 0 else 1e-10
+        diff_ratio = round((diff / abs(sumopenInterest_before)) * 100, 2)
+        value_diff = round(value_now - value_before, 2)
+        return [symbol[:-4], p_chg, diff, diff_ratio, value_diff]
+
+
 def get_openInterest_diff_rank(interval, rank=10, reverse=True):
     data = um_futures_client.ticker_24hr_price_change()
     # 获取前一天的时间戳
@@ -1112,6 +1138,37 @@ def get_bi_openInterest_diff_rank(interval, rank=10):
     sorted_list_net_a = sorted(delta_list, key=lambda x: x[2], reverse=False)[:rank]
     sorted_list_all_a = sorted(delta_list, key=lambda x: x[5], reverse=False)[:rank]
     return sorted_list_net_d, sorted_list_all_d, sorted_list_net_a, sorted_list_all_a
+
+
+def get_oid_openInterest_diff_rank(interval, rank=10):
+    data = um_futures_client.ticker_24hr_price_change()
+    # 获取前一天的时间戳
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=1)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+    symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+                   'count'] != 0 and v['closeTime'] > yesterday_timestamp_utc]
+
+    delta_list = []
+
+    limit = parse_interval_to_5minutes(interval)
+
+    # 使用 ThreadPoolExecutor 进行并行 API 请求
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(fetch_oid_openInterest_diff, symbol[0], symbol[1], limit) for symbol in symbols]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                delta_list.append(result)
+
+    # 按净持仓量进行排序
+    sorted_list_all_d = sorted(delta_list, key=lambda x: x[3], reverse=True)[:rank]
+    sorted_list_all_a = sorted(delta_list, key=lambda x: x[3], reverse=False)[:rank]
+    return sorted_list_all_d, sorted_list_all_a
 
 
 def fetch_long_short_switch(symbol, pchg, limit):

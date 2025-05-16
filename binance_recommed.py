@@ -143,8 +143,9 @@ while True:
                 price = vl[0]
                 symbol = k
                 star = len(v) * "🌟"
+                sym = symbol[4:] if symbol.startswith("1000") else symbol
                 message += f"""
-*💎symbol：*`{symbol}`｜{star}
+*💎symbol：*`{sym}`｜{star}
 💰价格：{price}
 {st}
 {"-" * 32}

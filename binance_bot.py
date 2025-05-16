@@ -687,8 +687,9 @@ def scan():
                                 st += f"🟩期货在{time_only}以`{price}`买入了`{fn}`，达到阈值\n"
                     if not st:
                         continue
+                    sym = k[4:] if k.startswith("1000") else k
                     message += f"""
-*🚧symbol：*`{k}` 🚧 
+*🚧symbol：*`{sym}` 🚧 
 {st}
 {"-" * 32}
                                                                 """
