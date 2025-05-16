@@ -83,7 +83,7 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
         result_list = list(result_dict.values())
 
         # 过滤
-        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
+        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD']
 
         filtered_tokens = [
             token for token in result_list
@@ -720,7 +720,7 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
                 result_dict[sym] = item
         result_list = list(result_dict.values())
         # 过滤
-        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
+        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD']
 
         filtered_tokens = [
             token for token in result_list
@@ -2060,7 +2060,7 @@ def statistic_time(endpoint='api/v3/ticker/24hr'):
                     result_dict[sym] = item
             result_list = list(result_dict.values())
 
-            fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR']
+            fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD']
             tokens = [
                 token['symbol'] for token in result_list
                 if token['symbol'].endswith("USDT")

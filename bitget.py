@@ -68,7 +68,7 @@ def fetch_bitget_tickers_spot(limit=50):
         response.raise_for_status()
         data = response.json()
         # 过滤
-        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'DAI', 'WUSD', 'USDE']
+        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'DAI', 'WUSD', 'USDE', 'XUSD']
 
         if data.get("code") == "00000":
             tickers = data.get("data", [])
