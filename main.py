@@ -4,6 +4,7 @@ import io
 import json
 import os
 import random
+import time
 from datetime import timedelta, timezone
 
 import matplotlib.pyplot as plt
@@ -1050,7 +1051,7 @@ def fetch_openInterest_diff(symbol, p_chg, limit):
         return [symbol[:-4], diff, diff_ratio, p_chg, diff_total, diff_ratio_total]
 
 
-def fetch_oid_openInterest_diff(symbol, p_chg, limit):
+def fetch_oid_openInterest_diff(symbol, p_chg, limit, current_timestamp):
     if symbol in symbol1000:
         symbol = "1000" + symbol
     para = {
@@ -1059,14 +1060,23 @@ def fetch_oid_openInterest_diff(symbol, p_chg, limit):
         'limit': limit
     }
     openInterest = um_futures_client.open_interest_hist(**para)
+
     if not openInterest:
         print(f"{symbol}fetch_openInterest_diff error")
         return None
     else:
         oi_before = openInterest[0]
         oi_now = openInterest[-1]
+        provided_timestamp = int(oi_now['timestamp'])
+        if current_timestamp - provided_timestamp > 5 * 60 * 1000:
+            oi_newest = um_futures_client.open_interest(symbol)
+            if not oi_newest:
+                print(f"{symbol}fetch_openInterest_diff error")
+                return None
+            sumOpenInterest_now = float(oi_newest['openInterest'])
+        else:
+            sumOpenInterest_now = float(oi_now['sumOpenInterest'])
         sumOpenInterest_before = float(oi_before['sumOpenInterest'])
-        sumOpenInterest_now = float(oi_now['sumOpenInterest'])
         value_before = float(oi_before['sumOpenInterestValue'])
         value_now = float(oi_now['sumOpenInterestValue'])
         diff = round(sumOpenInterest_now - sumOpenInterest_before, 2)
@@ -1153,11 +1163,13 @@ def get_oid_openInterest_diff_rank(interval, rank=10):
     delta_list = []
 
     limit = parse_interval_to_5minutes(interval)
+    current_timestamp = int(time.time() * 1000)
 
     # 使用 ThreadPoolExecutor 进行并行 API 请求
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
-        futures = [executor.submit(fetch_oid_openInterest_diff, symbol[0], symbol[1], limit) for symbol in symbols]
+        futures = [executor.submit(fetch_oid_openInterest_diff, symbol[0], symbol[1], limit, current_timestamp) for
+                   symbol in symbols]
 
         # 等待所有任务完成，并收集结果
         for future in concurrent.futures.as_completed(futures):
