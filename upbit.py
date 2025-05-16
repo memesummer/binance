@@ -207,7 +207,7 @@ def get_15m_upbit_volume(rank=20):
     return res_unit
 
 
-def get_15m_upbit_volume_increase(symbol, unit=15):
+def get_15m_upbit_volume_increase(symbol, r=10, unit=15):
     market = 'KRW-' + symbol
     params = {
         'market': market,
@@ -221,7 +221,7 @@ def get_15m_upbit_volume_increase(symbol, unit=15):
         v_now = float(data15[0]['candle_acc_trade_volume'])
         v_past = float(data15[1]['candle_acc_trade_volume'])
         v_ratio = round(float(v_now / v_past), 2)
-        if v_ratio >= 3:
+        if v_ratio >= r:
             v15_list = [1, v_ratio]
         else:
             v15_list = [0, v_ratio]

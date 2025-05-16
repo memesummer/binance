@@ -347,6 +347,7 @@ def run_task():
 ⚖️费率：{fr}%
 🧯市场缩量强度：`{recent_count}` | {market_str}
 {other_str}
+--------------------------------
 """
                     safe_send_message(chat_id, res_str)
 

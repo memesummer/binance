@@ -129,19 +129,19 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             except Exception as e:
                 print(f'{symbol}:15m volume_increase error: {e}')
 
-            try:
+            # try:
+            # p_len4, v_len4, vc_ratio = get_price_volume_increase(symbol, '4h', 5, circle_supply)
+            # if p_len4 >= 3 and v_len4 >= 2:
+            #     flag.append([1, p_len4, v_len4])
+            # if vc_ratio > 0.05:
+            #     flag.append([3, vc_ratio])
 
-                p_len4, v_len4, vc_ratio = get_price_volume_increase(symbol, '4h', 5, circle_supply)
-                if p_len4 >= 3 and v_len4 >= 2:
-                    flag.append([1, p_len4, v_len4])
-                if vc_ratio > 0.05:
-                    flag.append([3, vc_ratio])
-                # if taker_ratio4 > 0.6:
-                #     flag.append([9, taker_ratio4])
-                # if t_len4 >= 3:
-                #     flag.append([11, t_len4])
-            except Exception as e:
-                print(f'{symbol}:4h error: {e}')
+            # if taker_ratio4 > 0.6:
+            #     flag.append([9, taker_ratio4])
+            # if t_len4 >= 3:
+            #     flag.append([11, t_len4])
+            # except Exception as e:
+            #     print(f'{symbol}:4h error: {e}')
 
             # buy_spot = search_more_big_buy_spot(symbol)
             # buy_future = search_more_big_buy_future(symbol)
@@ -173,9 +173,9 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             if oi_increase is None or oi_decrease is None:
                 print(f"{symbol}获取持仓递增数据错误")
             else:
-                if oi_increase >= 3:
+                if oi_increase >= 5:
                     flag.append([20, oi_increase, 1])
-                elif oi_decrease >= 3:
+                elif oi_decrease >= 5:
                     flag.append([20, oi_decrease, 0])
 
             # oil = fetch_openInterest_diff(symbol, 0, 3)
@@ -314,14 +314,14 @@ def get_price_volume_increase(symbol, interval, limit, circle_supply):
         return p_len, v_len, vc_ratio
 
 
-def get_volume_increase_15(symbol):
+def get_volume_increase_15(symbol, r=10):
     try:
         data15 = get_k_lines(symbol, '15m', 2)
         # 再看15min内是否有交易量激增
         v_now = float(data15[1][7])
         v_past = float(data15[0][7])
         v_ratio = round(float(v_now / v_past), 2)
-        if v_ratio >= 3:
+        if v_ratio >= r:
             if data15[1][4] > data15[0][4]:
                 v15_list = [1, 1, v_ratio]
             else:
@@ -335,7 +335,7 @@ def get_volume_increase_15(symbol):
         v_now = float(data15[1][7])
         v_past = float(data15[0][7])
         v_ratio = round(float(v_now / v_past), 2)
-        if v_ratio >= 3:
+        if v_ratio >= r:
             if data15[1][4] > data15[0][4]:
                 v15_list = [1, 1, v_ratio]
             else:
