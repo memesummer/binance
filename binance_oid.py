@@ -81,13 +81,13 @@ def format_price(symbol, price):
         return price
 
 
-def get_volume_increase_15(symbol):
+def get_volume_increase_15(symbol, r=10):
     data15 = get_k_lines_future(symbol, '15m', 2)
     # 再看15min内是否有交易量激增
     v_now = float(data15[1][7])
     v_past = float(data15[0][7])
     v_ratio = round(float(v_now / v_past), 2)
-    if v_ratio >= 3:
+    if v_ratio >= r:
         if data15[1][4] > data15[0][4]:
             v15_list = [1, 1, v_ratio]
         else:
@@ -107,12 +107,12 @@ def get_symbol_other_index(symbol, is_long):
         res.append([0, 0])
     else:
         if is_long:
-            if oi_increase >= 3:
+            if oi_increase >= 5:
                 res.append([1, oi_increase])
             else:
                 res.append([0, oi_increase])
         else:
-            if oi_decrease >= 3:
+            if oi_decrease >= 5:
                 res.append([1, oi_decrease])
             else:
                 res.append([0, oi_decrease])
@@ -239,10 +239,10 @@ def get_symbol_other_index_str(symbol, ll, is_long):
 
 def run_task():
     try:
-        all_list_d, all_list_a = get_oid_openInterest_diff_rank("15m")
+        all_list_d, all_list_a = get_oid_openInterest_diff_rank("5m")
         for l in all_list_d:
             diff_ratio = l[3]
-            if diff_ratio >= 3:
+            if diff_ratio >= 2:
                 symbol = l[0] + 'USDT'
                 p_chg = f"{str(l[1])}%"
                 market_str = f"{format_number(float(l[4]))}｜{str(l[3])}%"
@@ -280,7 +280,7 @@ def run_task():
                     writer.writerow(new_row)
                 s_count, ll, price = get_symbol_other_index(symbol, True)
                 star_count = s_count + recent_count
-                if star_count >= 2:
+                if star_count >= 1:
                     fr = get_funding_rate(symbol, decimal=4)[1]
                     sym = symbol[4:-4] if symbol.startswith('1000') else symbol[:-4]
                     other_str = get_symbol_other_index_str(symbol, ll, True)
@@ -299,7 +299,7 @@ def run_task():
 
         for l in all_list_a:
             diff_ratio = l[3]
-            if diff_ratio <= -3:
+            if diff_ratio <= -2:
                 symbol = l[0] + 'USDT'
                 p_chg = f"{str(l[1])}%"
                 market_str = f"{format_number(float(l[4]))}｜{str(l[3])}%"
@@ -337,7 +337,7 @@ def run_task():
                     writer.writerow(new_row)
                 s_count, ll, price = get_symbol_other_index(symbol, False)
                 star_count = s_count + recent_count
-                if star_count >= 2:
+                if star_count >= 1:
                     fr = get_funding_rate(symbol, decimal=4)[1]
                     sym = symbol[4:-4] if symbol.startswith('1000') else symbol[:-4]
                     other_str = get_symbol_other_index_str(symbol, ll, False)
