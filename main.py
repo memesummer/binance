@@ -1074,6 +1074,7 @@ def fetch_oid_openInterest_diff(symbol, p_chg, limit, current_timestamp):
                 print(f"{symbol}fetch_openInterest_diff error")
                 return None
             sumOpenInterest_now = float(oi_newest['openInterest'])
+            oi_before = openInterest[-1]
             value_diff = -911
         else:
             sumOpenInterest_now = float(oi_now['sumOpenInterest'])
