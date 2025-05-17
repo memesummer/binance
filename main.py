@@ -1119,6 +1119,35 @@ def get_openInterest_diff_rank(interval, rank=10, reverse=True):
     return sorted_list_net, sorted_list_all
 
 
+def get_openInterest_increase_rank(interval, rank=10, reverse=True):
+    data = um_futures_client.ticker_24hr_price_change()
+    # 获取前一天的时间戳
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=1)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+    symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+                   'count'] != 0 and v['closeTime'] > yesterday_timestamp_utc]
+
+    increase_list = []
+
+    # 使用 ThreadPoolExecutor 进行并行 API 请求
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(get_oi_increase_rank, symbol[0], symbol[1], interval) for symbol in symbols]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                increase_list.append(result)
+
+    # 按净持仓量进行排序
+    in_sorted_list = sorted(increase_list, key=lambda x: x[2], reverse=reverse)[:rank]
+    de_sorted_list = sorted(increase_list, key=lambda x: x[3], reverse=reverse)[:rank]
+    return in_sorted_list, de_sorted_list
+
+
 def get_bi_openInterest_diff_rank(interval, rank=10):
     data = um_futures_client.ticker_24hr_price_change()
     # 获取前一天的时间戳
@@ -2276,3 +2305,32 @@ def get_oi_increase(symbol, limit=100):
                 else:
                     break
         return increase_num, decrease_num
+
+
+def get_oi_increase_rank(symbol, pchg, period, limit=100):
+    if symbol in symbol1000:
+        symbol = "1000" + symbol
+    para = {
+        'symbol': symbol,
+        'period': period,
+        'limit': limit
+    }
+    openInterest = um_futures_client.open_interest_hist(**para)
+    if not openInterest:
+        return None, None
+    else:
+        increase_num = 0
+        decrease_num = 0
+        for i in range(len(openInterest) - 1, -1, -1):
+            if float(openInterest[i]['sumOpenInterest']) > float(openInterest[i - 1]['sumOpenInterest']):
+                increase_num += 1
+            else:
+                break
+        if increase_num == 0:
+            for i in range(len(openInterest) - 1, -1, -1):
+                if float(openInterest[i]['sumOpenInterest']) < float(openInterest[i - 1]['sumOpenInterest']):
+                    decrease_num += 1
+                else:
+                    break
+        sym = symbol[4:-4] if symbol.startswith("1000") else symbol[:-4]
+        return sym, pchg, increase_num, decrease_num

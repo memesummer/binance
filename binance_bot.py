@@ -19,12 +19,12 @@ from binance_future import format_number, format_price
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
     get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str, get_oi_mc_str, get_funding_rate, \
-    get_switch_table
+    get_switch_table, get_oi_increase_rank_table
 from bithumb import bithumb_alert, to_list_on_bithumb
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point, \
-    create_token_time_plot, create_all_tokens_time_plot
+    create_token_time_plot, create_all_tokens_time_plot, get_openInterest_increase_rank
 from rootdata import root_data_meta_data
 from upbit import to_list_on_upbit, get_upbit_volume
 
@@ -261,6 +261,26 @@ def get_symbol_oi(message):
         log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/i btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
+
+
+@bot.message_handler(commands=['ii'])
+@restricted
+def get_oi_increase(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/i'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
+    try:
+        # 将参数分割成两部分
+        interval = message.text.split()[1:][0]
+        in_list, de_list = get_openInterest_increase_rank(interval)
+        res = get_oi_increase_rank_table(in_list, de_list)
+        bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
+    except Exception as e:
+        bot.reply_to(message, "请输入正确的参数格式。示例：/ii 15m")
         log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 

@@ -364,6 +364,33 @@ def get_symbol_oi_table(symbol_oi, m=10, r=24):
     return res
 
 
+def get_oi_increase_rank_table(in_list, de_list, m=15, r=26):
+    res = f"`symbol      市场增量      价格变化`\n"
+    for i, l in enumerate(in_list):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += str(l[2])
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += f"{str(l[1])}%"
+        line += '`\n'
+        res += line
+
+    res += f"\n`symbol      市场缩量      价格变化`\n"
+    for i, l in enumerate(de_list):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += str(l[3])
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        line += f"{str(l[1])}%"
+        line += '`\n'
+        res += line
+    return res
+
+
 def get_symbol_nf_table(symbol_nf, m=10, k=22):
     res = f"`周期     期货净流入    现货净流入`\n"
     for i, l in enumerate(symbol_nf):
