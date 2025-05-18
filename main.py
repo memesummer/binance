@@ -1345,7 +1345,7 @@ def get_token_info(symbol, data):
             tags = token['tags']
             market_cap = round(token['quote']['USD']['market_cap'] / 100000000, 2)
             return market_cap, circulating_rate, infinite_supply, tags
-    print(f"Symbol {symbol} not found in the data.")
+    return None, None, None, None
 
 
 def get_binance_spot_info(symbol):
@@ -1423,7 +1423,7 @@ def get_binance_spot_future(symbol):
         return None
 
 
-def get_symbol_info(symbol, data):
+def get_symbol_info_str(symbol, data):
     res = f"💎*symbol*：`{symbol.upper()}`\n"
     market_cap, circulating_rate, infinite_supply, tags = get_token_info(symbol, data)
     res += f"💵*市值*：{market_cap}亿\n"
@@ -1432,7 +1432,7 @@ def get_symbol_info(symbol, data):
     res += f"⚠️*增发*：{z}\n"
 
     keywords = ['-portfolio', '-ecosystem', '-estate', 'store-of-value', 'state-channel', 'sha-256',
-                'cmc-crypto-awards', '-chain', '-ecosytem', '-capital']
+                'cmc-crypto-awards', '-chain', '-ecosytem', '-capital', 'made-in-america']
     filtered_tags = [item for item in tags if not any(keyword in item for keyword in keywords)]
     res += f"🏷️*标签*：{str(filtered_tags)}\n"
 
@@ -1443,6 +1443,17 @@ def get_symbol_info(symbol, data):
     future2 = get_binance_spot_future("1000" + symbol.upper() + 'USDT')
     res += future1 if future1 else future2 if future2 else "🙅‍️未上币安期货\n"
     return res
+
+
+def get_symbol_info(symbol, data):
+    market_cap, circulating_rate, infinite_supply, tags = get_token_info(symbol, data)
+    if not market_cap:
+        return None, None, None
+    keywords = ['-portfolio', '-ecosystem', '-estate', 'store-of-value', 'state-channel', 'sha-256',
+                'cmc-crypto-awards', '-chain', '-ecosytem', '-capital', 'made-in-america']
+    filtered_tags = [item for item in tags if not any(keyword in item for keyword in keywords)]
+    tag = filtered_tags[0]
+    return market_cap, circulating_rate, tag
 
 
 def token_spot_future_delta(endpoint="api/v3/ticker/24hr"):
@@ -1660,12 +1671,21 @@ def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
             filtered_sorted_list = sorted(price_chg_res, key=lambda x: x[1], reverse=True)
 
             filtered_sorted_list_500 = [item for item in filtered_sorted_list if item[1] >= 500]
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            token_info_file_path = os.path.join(current_dir, "token_data.json")
+
+            with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
+                symbol_data = json.load(json_file)
             if len(filtered_sorted_list_500) > 0:
                 res_str += "\n🥇`5倍以上：`\n"
                 for fsl in filtered_sorted_list_500:
                     sym = fsl[0]
                     pchg = fsl[1]
-                    res_str += f"🪙*{sym}*: {pchg}%\n"
+                    market_cap, circulating_rate, tag = get_symbol_info(sym, symbol_data)
+                    if not market_cap:
+                        res_str += f"🪙*{sym}*: *{pchg}%*   -   -   -\n"
+                    else:
+                        res_str += f"🪙*{sym}*: *{pchg}%*   {market_cap}亿   流通{circulating_rate}%   {tag}\n"
             else:
                 res_str += "\n🥇`5倍以上：`*无*\n"
 
@@ -1675,7 +1695,11 @@ def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
                 for fsl in filtered_sorted_list_200:
                     sym = fsl[0]
                     pchg = fsl[1]
-                    res_str += f"🪙*{sym}*: {pchg}%\n"
+                    market_cap, circulating_rate, tag = get_symbol_info(sym, symbol_data)
+                    if not market_cap:
+                        res_str += f"🪙*{sym}*: *{pchg}%*   -   -   -\n"
+                    else:
+                        res_str += f"🪙*{sym}*: *{pchg}%*   {market_cap}亿   流通{circulating_rate}%   {tag}\n"
             else:
                 res_str += "\n🥈`3倍以上：`*无*\n"
 
@@ -1685,7 +1709,11 @@ def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
                 for fsl in filtered_sorted_list_100:
                     sym = fsl[0]
                     pchg = fsl[1]
-                    res_str += f"🪙*{sym}*: {pchg}%\n"
+                    market_cap, circulating_rate, tag = get_symbol_info(sym, symbol_data)
+                    if not market_cap:
+                        res_str += f"🪙*{sym}*: *{pchg}%*   -   -   -\n"
+                    else:
+                        res_str += f"🪙*{sym}*: *{pchg}%*   {market_cap}亿   流通{circulating_rate}%   {tag}\n"
             else:
                 res_str += "\n🥉`2倍以上：`*无*\n"
 
@@ -1695,7 +1723,11 @@ def get_gain_lose_rank(interval, limit, endpoint="api/v3/ticker/24hr"):
                 for fsl in filtered_sorted_list_50:
                     sym = fsl[0]
                     pchg = fsl[1]
-                    res_str += f"🪙*{sym}*: {pchg}%\n"
+                    market_cap, circulating_rate, tag = get_symbol_info(sym, symbol_data)
+                    if not market_cap:
+                        res_str += f"🪙*{sym}*: *{pchg}%*   -   -   -\n"
+                    else:
+                        res_str += f"🪙*{sym}*: *{pchg}%*   {market_cap}亿   流通{circulating_rate}%   {tag}\n"
             else:
                 res_str += "\n👏`1.6倍以上：`*无*\n"
         return res_str

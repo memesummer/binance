@@ -22,9 +22,9 @@ from binance_future import get_future_pending_order_rank, get_spot_pending_order
     get_switch_table, get_oi_increase_rank_table
 from bithumb import bithumb_alert, to_list_on_bithumb
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
-    get_symbol_open_interest, get_symbol_info, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
+    get_symbol_open_interest, get_symbol_info_str, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point, \
-    create_token_time_plot, create_all_tokens_time_plot, get_openInterest_increase_rank
+    create_token_time_plot, create_all_tokens_time_plot, get_openInterest_increase_rank, get_symbol_info
 from rootdata import root_data_meta_data
 from upbit import to_list_on_upbit, get_upbit_volume
 
@@ -337,7 +337,7 @@ def get_token_info(message):
 
         with open(token_info_file_path, 'r', encoding='utf-8') as json_file:
             data = json.load(json_file)
-        res = get_symbol_info(symbol, data)
+        res = get_symbol_info_str(symbol, data)
         res += "\n"
         res += root_data_meta_data(symbol)
         bot.reply_to(message, res, parse_mode='Markdown')
