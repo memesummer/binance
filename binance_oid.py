@@ -37,6 +37,11 @@ COLUMNS = ['timestamp', 'time', 'symbol', 'long_short_type', 'count', 'market_st
 thresholds = {'BTC': 2500000, 'ETH': 1000000, 'SOL': 1000000, 'DOGE': 500000, 'XRP': 500000}
 big_record = set()
 
+# 模型配置
+INTERVAL = "10m"
+DIFF_RATIO = 3
+OI_INCREASE = 3
+
 # 获取当前脚本所在目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -107,12 +112,12 @@ def get_symbol_other_index(symbol, is_long):
         res.append([0, 0])
     else:
         if is_long:
-            if oi_increase >= 5:
+            if oi_increase >= OI_INCREASE:
                 res.append([1, oi_increase])
             else:
                 res.append([0, oi_increase])
         else:
-            if oi_decrease >= 5:
+            if oi_decrease >= OI_INCREASE:
                 res.append([1, oi_decrease])
             else:
                 res.append([0, oi_decrease])
@@ -239,10 +244,10 @@ def get_symbol_other_index_str(symbol, ll, is_long):
 
 def run_task():
     try:
-        all_list_d, all_list_a = get_oid_openInterest_diff_rank("5m")
+        all_list_d, all_list_a = get_oid_openInterest_diff_rank(INTERVAL)
         for l in all_list_d:
             diff_ratio = l[3]
-            if diff_ratio >= 2:
+            if diff_ratio >= DIFF_RATIO:
                 symbol = l[0] + 'USDT'
                 p_chg = f"{str(l[1])}%"
                 if float(l[4]) == -911:
@@ -302,7 +307,7 @@ def run_task():
 
         for l in all_list_a:
             diff_ratio = l[3]
-            if diff_ratio <= -2:
+            if diff_ratio <= -DIFF_RATIO:
                 symbol = l[0] + 'USDT'
                 p_chg = f"{str(l[1])}%"
                 if float(l[4]) == -911:
