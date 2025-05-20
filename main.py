@@ -174,9 +174,9 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
             if oi_increase is None or oi_decrease is None:
                 print(f"{symbol}获取持仓递增数据错误")
             else:
-                if oi_increase >= 5:
+                if oi_increase >= 3:
                     flag.append([20, oi_increase, 1])
-                elif oi_decrease >= 5:
+                elif oi_decrease >= 3:
                     flag.append([20, oi_decrease, 0])
 
             # oil = fetch_openInterest_diff(symbol, 0, 3)
