@@ -931,6 +931,9 @@ def token_recommend():
             for data in d:
                 if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
                     continue
+                elif 'pairCreatedAt' not in data.keys():
+                    safe_send_message(chat_id_alert, f"{ca}没有 pairCreatedAt 字段")
+                    continue
                 elif data['fdv'] < 100000000 and data.get('liquidity', {'usd': 0})['usd'] > 50000 and \
                         data['priceChange'].get('m5', 0) > 0 and data['priceChange'].get('h1', 0) > 0 and \
                         data['priceChange'].get('h6', 0) > 0 and data['priceChange'].get('h24', 0) > 0:
@@ -949,7 +952,7 @@ def token_recommend():
                     }
                     res.append(sym)
                     recommend_his.add(ca + "|" + str(amount))
-                break
+                    break
     return res
 
 
