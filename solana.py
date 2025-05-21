@@ -928,15 +928,14 @@ def token_recommend():
                 recommend_his.add(ca + "|" + str(amount))
                 continue
             # 有可能会有pump.fun的池子放在前面，没有liquidity这个字段
-            for data in d:
+            for index, data in enumerate(d):
                 if 'liquidity' not in data.keys() or 'fdv' not in data.keys():
-                    continue
-                elif 'pairCreatedAt' not in data.keys():
-                    safe_send_message(chat_id_alert, f"{ca}没有 pairCreatedAt 字段")
                     continue
                 elif data['fdv'] < 100000000 and data.get('liquidity', {'usd': 0})['usd'] > 50000 and \
                         data['priceChange'].get('m5', 0) > 0 and data['priceChange'].get('h1', 0) > 0 and \
                         data['priceChange'].get('h6', 0) > 0 and data['priceChange'].get('h24', 0) > 0:
+                    pair_created_at = data.get('pairCreatedAt',
+                                               d[index + 1].get('pairCreatedAt', 0) if index + 1 < len(d) else 0)
                     sym = {
                         'ca': ca,
                         'symbol': data['baseToken']['symbol'],
@@ -944,7 +943,7 @@ def token_recommend():
                         'price': data['priceUsd'],
                         'liquidity': data['liquidity']['usd'],
                         'fdv': data['fdv'],
-                        'pairCreatedAt': data['pairCreatedAt'],
+                        'pairCreatedAt': pair_created_at,
                         'txns': data['txns'],
                         'volume': data['volume'],
                         'priceChange': data['priceChange'],
@@ -985,7 +984,7 @@ def recommend_scan():
                 # 6h |  {pchg6}  {v6}  {format_number(buy6)}/{format_number(sell6)}
                 # 24h|  {pchg24}  {v24}  {format_number(buy24)}/{format_number(sell24)}
                 # """
-                age = get_token_age(token['pairCreatedAt'])
+                age = get_token_age(token['pairCreatedAt']) if token['pairCreatedAt'] != 0 else "无"
                 count = count_ca_occurrences(token['ca']) + 1
                 liq = format_number(token['liquidity'])
                 fdv = format_number(token['fdv'])
