@@ -160,8 +160,7 @@ while True:
         # 定期清理历史记录，避免内存泄漏
         if len(binance_his) > 10000:
             binance_his.clear()
-
-        time.sleep(90)
+        time.sleep(100)
     except Exception as e:
         error_message = f"recommend Error occurred: {str(e)}"
         safe_send_message(chat_id_alert, error_message)  # 报错时通知管理员
