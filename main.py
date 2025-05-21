@@ -1052,40 +1052,44 @@ def fetch_openInterest_diff(symbol, p_chg, limit):
 
 
 def fetch_oid_openInterest_diff(symbol, p_chg, limit, current_timestamp):
-    if symbol in symbol1000:
-        symbol = "1000" + symbol
-    para = {
-        'symbol': symbol,
-        'period': '5m',
-        'limit': limit
-    }
-    openInterest = um_futures_client.open_interest_hist(**para)
+    try:
+        if symbol in symbol1000:
+            symbol = "1000" + symbol
+        para = {
+            'symbol': symbol,
+            'period': '5m',
+            'limit': limit
+        }
+        openInterest = um_futures_client.open_interest_hist(**para)
 
-    if not openInterest:
-        print(f"{symbol}fetch_openInterest_diff error")
-        return None
-    else:
-        oi_before = openInterest[0]
-        oi_now = openInterest[-1]
-        provided_timestamp = int(oi_now['timestamp'])
-        if current_timestamp - provided_timestamp > 5 * 60 * 1000:
-            oi_newest = um_futures_client.open_interest(symbol)
-            if not oi_newest:
-                print(f"{symbol}fetch_openInterest_diff error")
-                return None
-            sumOpenInterest_now = float(oi_newest['openInterest'])
-            oi_before = openInterest[-1]
-            value_diff = -911
+        if not openInterest:
+            print(f"{symbol}fetch_openInterest_diff error")
+            return None
         else:
-            sumOpenInterest_now = float(oi_now['sumOpenInterest'])
-            value_before = float(oi_before['sumOpenInterestValue'])
-            value_now = float(oi_now['sumOpenInterestValue'])
-            value_diff = round(value_now - value_before, 2)
-        sumOpenInterest_before = float(oi_before['sumOpenInterest'])
-        diff = round(sumOpenInterest_now - sumOpenInterest_before, 2)
-        sumopenInterest_before = sumOpenInterest_before if sumOpenInterest_before != 0 else 1e-10
-        diff_ratio = round((diff / abs(sumopenInterest_before)) * 100, 2)
-        return [symbol[:-4], p_chg, diff, diff_ratio, value_diff]
+            oi_before = openInterest[0]
+            oi_now = openInterest[-1]
+            provided_timestamp = int(oi_now['timestamp'])
+            if current_timestamp - provided_timestamp > 5 * 60 * 1000:
+                oi_newest = um_futures_client.open_interest(symbol)
+                if not oi_newest:
+                    print(f"{symbol}fetch_openInterest_diff error")
+                    return None
+                sumOpenInterest_now = float(oi_newest['openInterest'])
+                oi_before = openInterest[-1]
+                value_diff = -911
+            else:
+                sumOpenInterest_now = float(oi_now['sumOpenInterest'])
+                value_before = float(oi_before['sumOpenInterestValue'])
+                value_now = float(oi_now['sumOpenInterestValue'])
+                value_diff = round(value_now - value_before, 2)
+            sumOpenInterest_before = float(oi_before['sumOpenInterest'])
+            diff = round(sumOpenInterest_now - sumOpenInterest_before, 2)
+            sumopenInterest_before = sumOpenInterest_before if sumOpenInterest_before != 0 else 1e-10
+            diff_ratio = round((diff / abs(sumopenInterest_before)) * 100, 2)
+            return [symbol[:-4], p_chg, diff, diff_ratio, value_diff]
+    except Exception as e:
+        # 有可能合约正在交割
+        return None
 
 
 def get_openInterest_diff_rank(interval, rank=10, reverse=True):
