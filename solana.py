@@ -814,7 +814,7 @@ def scan_new():
                 fdv = format_number(token['fdv'])
                 message = f"""
 🤖*AI扫链-潜力新币推荐*🧠
-🌱*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) ｜ {token['star'] * "⭐"}
+🌱*${token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) ｜ {token['star'] * "⭐"}
 🧮第`{count}`次推送
 💧池子：{liq} ｜ 💸市值：{fdv}
 💰价格：{token['price']}
@@ -990,7 +990,7 @@ def recommend_scan():
                 fdv = format_number(token['fdv'])
                 message = f"""
 🥇*AI严选-金狗挖掘*🚜
-🐕*{token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) | ⚡️{token['boost_amount']}
+🐕*${token['symbol']}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) | ⚡️{token['boost_amount']}
 🧮第`{count}`次推送
 💧池子：{liq} ｜ 💸市值：{fdv}
 💰价格：{token['price']}
@@ -1206,7 +1206,7 @@ def get_vc_increase(limit=10):
                 count = count_ca_occurrences(ca) + 1
                 message = f"""
 🚀*AI脉冲警报*🔥
-🎈*{symbol}*：[{name}](https://debot.ai/token/solana/{ca}) | 💥{vc}%
+🎈*${symbol}*：[{name}](https://debot.ai/token/solana/{ca}) | 💥{vc}%
 🧮第`{count}`次推送
 💧池子：{liq} ｜ 💸市值：{mc}
 💰价格：{price}
