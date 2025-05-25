@@ -25,6 +25,10 @@ define1 = "1d1cfa84305b78b1ab8cd4205a45f77b231f9686"
 define2 = "eab19d30e8cb0d3c39e949aac2dd38ca19da87dc"
 # 1万次（mountain）
 define3 = "91a19d3b319a0c6642e96c679542e96adc324e09"
+# 2021ettoro2022@gmail.com
+define4 = "e19e45eede7f9e5e9131b5275f5057bd5ffe8db0"
+# xxinddaix@gmail.com
+define5 = "eb45a14825b03eb9c6047ce1078c2aa078e44b9d"
 
 sol_sniffer_api_key_list = ['i2e0pwyjlztqemeok2sa6uc2vrk798', 'zkm1hkgigkrwgpvfdximp7qaoqylkk',
                             '6iu82h8hbz9axilnazunu2oyad8mfl', 'aau5mqrwpn9a0ykj8bmwgxo6ywwwr3',
@@ -50,6 +54,14 @@ headers2 = {
 headers3 = {
     "content_type": "application/json",
     "Authorization": define3
+}
+headers4 = {
+    "content_type": "application/json",
+    "Authorization": define4
+}
+headers5 = {
+    "content_type": "application/json",
+    "Authorization": define5
 }
 AUTHORIZED_USERS = [546797136, 6808760378, 6672213739, 7205595566, 7517528905]  # 替换为实际用户 ID
 
@@ -382,7 +394,7 @@ def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers2, json={"query": getTopToken})
+        response = requests.post(url, headers=headers4, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
@@ -577,7 +589,7 @@ def get_newest_token(limit, interval='5m', network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers2, json={"query": getNewToken})
+        response = requests.post(url, headers=headers4, json={"query": getNewToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
@@ -846,7 +858,7 @@ def scan_new():
                     # 写入新行
                     writer.writerow(new_row)
                 time.sleep(1)
-            time.sleep(120)
+            time.sleep(150)
         except Exception as e:
             safe_send_message(chat_id_alert, f"AI扫链获取出错：{e}")
             time.sleep(3)
@@ -1020,7 +1032,7 @@ def recommend_scan():
                     # 写入新行
                     writer.writerow(new_row)
                 time.sleep(1)
-            time.sleep(120)
+            time.sleep(150)
         except Exception as e:
             safe_send_message(chat_id_alert, f"金狗挖掘获取出错：{e}")
             time.sleep(3)
