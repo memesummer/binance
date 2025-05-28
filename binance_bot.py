@@ -19,12 +19,12 @@ from binance_future import format_number, format_price
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
     get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str, get_oi_mc_str, get_funding_rate, \
-    get_switch_table, get_oi_increase_rank_table
+    get_switch_table, get_oi_increase_rank_table, get_symbol_oi_value_table
 from bithumb import bithumb_alert, to_list_on_bithumb
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info_str, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point, \
-    create_token_time_plot, create_all_tokens_time_plot, get_openInterest_increase_rank, get_symbol_info
+    create_token_time_plot, create_all_tokens_time_plot, get_openInterest_increase_rank, get_symbol_open_interest_value
 from rootdata import root_data_meta_data
 from upbit import to_list_on_upbit, get_upbit_volume
 
@@ -89,6 +89,7 @@ def restricted(func):
 
 
 @bot.message_handler(commands=['o'])
+@restricted
 def get_order(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -244,6 +245,7 @@ def get_open_interest_diff_rank(message):
 
 
 @bot.message_handler(commands=['i'])
+@restricted
 def get_symbol_oi(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -261,6 +263,28 @@ def get_symbol_oi(message):
         log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/i btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
+
+
+@bot.message_handler(commands=['iv'])
+@restricted
+def get_symbol_oi_value(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/i'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
+    try:
+        param = message.text.split()[1:][0]
+        symbol = param.upper() + 'USDT'
+        fr = get_funding_rate(symbol, decimal=4)[1]
+        res = f"`费率：{fr}%`\n\n"
+        symbol_oi = get_symbol_open_interest_value(symbol)
+        res += get_symbol_oi_value_table(symbol_oi)
+        bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
+    except Exception as e:
+        bot.reply_to(message, "请输入正确的参数格式。示例：/iv btc")
         log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 
@@ -304,6 +328,7 @@ def get_switch(message):
 
 
 @bot.message_handler(commands=['n'])
+@restricted
 def get_symbol_net(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -323,6 +348,7 @@ def get_symbol_net(message):
 
 
 @bot.message_handler(commands=['t'])
+@restricted
 def get_token_info(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -348,6 +374,7 @@ def get_token_info(message):
 
 
 @bot.message_handler(commands=['d'])
+@restricted
 def get_token_sf_delta(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -449,6 +476,7 @@ def gain_lose_rank(message):
 
 
 @bot.message_handler(commands=['f'])
+@restricted
 def funding_rate(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -465,6 +493,7 @@ def funding_rate(message):
 
 
 @bot.message_handler(commands=['om'])
+@restricted
 def oi_mc_ratio(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -481,6 +510,7 @@ def oi_mc_ratio(message):
 
 
 @bot.message_handler(commands=['stat'])
+@restricted
 def stat_coin_time(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -525,6 +555,7 @@ def stat_coin_time(message):
 
 
 @bot.message_handler(commands=['ul'])
+@restricted
 def upbit_to_list(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -577,6 +608,7 @@ def thumb_alert(message):
 
 
 @bot.message_handler(commands=['bl'])
+@restricted
 def bithumb_to_list(message):
     user_id = message.from_user.id
     username = message.from_user.username
@@ -594,6 +626,7 @@ def bithumb_to_list(message):
 
 
 @bot.message_handler(commands=['kl'])
+@restricted
 def korea_to_list(message):
     user_id = message.from_user.id
     username = message.from_user.username

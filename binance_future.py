@@ -364,6 +364,45 @@ def get_symbol_oi_table(symbol_oi, m=10, r=24):
     return res
 
 
+def get_symbol_oi_value_table(symbol_oi, m=10, r=24):
+    res = f"`周期      净持仓值      持仓变化`\n"
+    for i, l in enumerate(symbol_oi):
+        if i == 0:
+            continue
+        line = f"`{l[0]}:"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += format_number(float(l[1]))
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        if i == len(symbol_oi) - 1:
+            diff = 'NA'
+        else:
+            before = float(symbol_oi[i + 1][1])
+            diff = round((float(l[1]) - before) / abs(before) * 100, 0)
+        line += f"{diff}%"
+        line += '`\n'
+        res += line
+
+    res += f"\n`周期      持仓值       持仓变化`\n"
+    for i, l in enumerate(symbol_oi):
+        line = f"`{l[0]}:"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += format_number(float(l[2]))
+        n2 = len(line)
+        line += ' ' * (r - n2)
+        if i == len(symbol_oi) - 1:
+            diff = 'NA'
+        else:
+            before = float(symbol_oi[i + 1][2])
+            diff = round((float(l[2]) - before) / abs(before) * 100, 0)
+        line += f"{diff}%"
+        line += '`\n'
+        res += line
+    return res
+
+
 def get_oi_increase_rank_table(in_list, de_list, m=15, r=26):
     res = f"`symbol      市场增量      价格变化`\n"
     for i, l in enumerate(in_list):

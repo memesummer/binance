@@ -1338,6 +1338,39 @@ def get_symbol_open_interest(symbol):
     return res
 
 
+def get_symbol_open_interest_value(symbol):
+    interval_list = ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "16h", "20h", "1d", "1.5d"]
+    res = []
+    oi_newest = um_futures_client.open_interest(symbol)
+    if not oi_newest:
+        return None
+    else:
+        oi0 = float(oi_newest['openInterest'])
+        para = {
+            'symbol': symbol
+        }
+        p0 = float(um_futures_client.ticker_price(**para)['price'])
+        res.append(["0m", "-", round(oi0 * p0, 2)])
+    for interval in interval_list:
+        limit = parse_interval_to_5minutes(interval)
+        para = {
+            'symbol': symbol,
+            'period': '5m',
+            'limit': limit
+        }
+        openInterest = um_futures_client.open_interest_hist(**para)
+        if not openInterest:
+            return None
+        else:
+            openInterest = openInterest[0]
+            sumOpenInterestValue = float(openInterest['sumOpenInterestValue'])
+            ls_ratio = um_futures_client.top_long_short_position_ratio(**para)[0]
+            delta_openInterest = (float(ls_ratio['longAccount']) - float(
+                ls_ratio['shortAccount'])) * sumOpenInterestValue
+            res.append([interval, round(delta_openInterest, 2), round(sumOpenInterestValue, 2)])
+    return res
+
+
 def get_token_info(symbol, data):
     # 查找符号匹配的代币
     for token in data['data']:
