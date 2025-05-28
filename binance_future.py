@@ -609,3 +609,16 @@ def get_oi_mc_str(m=13, r=22, b=32):
         line += '`\n'
         res += line
     return res
+
+
+def get_symbol_net_rank_str(spot_rank, spot_net, future_rank, future_net):
+    res = ""
+    if not spot_rank:
+        res += "💵无现货流入排名\n"
+    else:
+        res += f"💵现货流入排名第`{spot_rank}`名, 📥➕${format_number(float(spot_net))}\n"
+    if not future_rank:
+        res += "⏳无期货流入排名\n"
+    else:
+        res += f"⏳期货流入排名第`{future_rank}`名, 📥➕${format_number(float(future_net))}\n"
+    return res

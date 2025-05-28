@@ -19,12 +19,13 @@ from binance_future import format_number, format_price
 from binance_future import get_future_pending_order_rank, get_spot_pending_order_rank, get_order_table_buy, \
     get_order_table_sell, get_future_price, get_net_rank_table, get_delta_rank_table, get_symbol_oi_table, \
     get_symbol_nf_table, get_delta_diff_rank_table, get_funding_info_str, get_oi_mc_str, get_funding_rate, \
-    get_switch_table, get_oi_increase_rank_table, get_symbol_oi_value_table
+    get_switch_table, get_oi_increase_rank_table, get_symbol_oi_value_table, get_symbol_net_rank_str
 from bithumb import bithumb_alert, to_list_on_bithumb
 from main import get_latest_price, get_net_volume_rank_future, get_net_volume_rank_spot, get_openInterest_rank, \
     get_symbol_open_interest, get_symbol_info_str, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point, \
-    create_token_time_plot, create_all_tokens_time_plot, get_openInterest_increase_rank, get_symbol_open_interest_value
+    create_token_time_plot, create_all_tokens_time_plot, get_openInterest_increase_rank, get_symbol_open_interest_value, \
+    get_symbol_net_rank
 from rootdata import root_data_meta_data
 from upbit import to_list_on_upbit, get_upbit_volume
 
@@ -271,7 +272,7 @@ def get_symbol_oi(message):
 def get_symbol_oi_value(message):
     user_id = message.from_user.id
     username = message.from_user.username
-    command = '/i'
+    command = '/iv'
     parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
     log_user_action(user_id, username, command, parameters, 'Started')
     try:
@@ -285,6 +286,27 @@ def get_symbol_oi_value(message):
         log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
         bot.reply_to(message, "请输入正确的参数格式。示例：/iv btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
+
+
+@bot.message_handler(commands=['r'])
+@restricted
+def get_symbol_net_volume_rank(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/r'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
+    try:
+        param1, param2 = message.text.split()[1:]
+        symbol = param1.upper() + 'USDT'
+        interval = param2
+        spot_rank, spot_net, future_rank, future_net = get_symbol_net_rank(symbol, interval)
+        res = get_symbol_net_rank_str(spot_rank, spot_net, future_rank, future_net)
+        bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
+    except Exception as e:
+        bot.reply_to(message, "请输入正确的参数格式。示例：/i btc")
         log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 

@@ -874,6 +874,79 @@ def get_net_volume_rank_future(interval, rank=10, reverse=True):
     return sorted_list
 
 
+def get_symbol_net_rank(symbol, interval, reverse=True):
+    data = um_futures_client.ticker_24hr_price_change()
+    # 获取前一天的时间戳
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=1)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+    symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+                   'count'] != 0 and v['closeTime'] > yesterday_timestamp_utc]
+
+    net_list = []
+    new_interval, limit = parse_interval_to_minutes(interval)
+
+    # 使用 ThreadPoolExecutor 进行并行 API 请求
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(fetch_taker_data_future, symbol[0], symbol[1], new_interval, limit) for symbol in
+                   symbols]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                net_list.append(result)
+
+    future_rank, future_net = None, None
+    # 按净成交量进行排序
+    future_list = sorted(net_list, key=lambda x: x[1], reverse=reverse)
+    # 查找第一个元素等于 symbol 的子列表
+    for index, sublist in enumerate(future_list):
+        if sublist[0] == symbol[:-4]:
+            future_rank, future_net = index + 1, sublist[1]
+            break
+
+    endpoint = "api/v3/ticker/24hr"
+    params = {}
+    data = binance_api_get(endpoint, params)
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=1)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+    symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+                   'count'] != 0 and float(v['bidPrice']) != 0 and float(v['askPrice']) != 0 and v[
+                   'closeTime'] > yesterday_timestamp_utc]
+
+    net_list = []
+
+    new_interval, limit = parse_interval_to_minutes(interval)
+
+    # 使用 ThreadPoolExecutor 进行并行 API 请求
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+        futures = [executor.submit(fetch_taker_data_spot, symbol[0], symbol[1], new_interval, limit) for symbol in
+                   symbols]
+
+        # 等待所有任务完成，并收集结果
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                net_list.append(result)
+
+    # 按净成交量进行排序
+    spot_list = sorted(net_list, key=lambda x: x[1], reverse=reverse)
+    spot_rank, spot_net = None, None
+    # 查找第一个元素等于 symbol 的子列表
+    for index, sublist in enumerate(spot_list):
+        if sublist[0] == symbol[:-4]:
+            spot_rank, spot_net = index + 1, sublist[1]
+            break
+
+    return spot_rank, spot_net, future_rank, future_net
+
+
 def fetch_taker_data_spot(symbol, p_chg, interval, limit):
     """
     获取每个 symbol 的净成交量数据
