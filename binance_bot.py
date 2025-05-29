@@ -25,7 +25,7 @@ from main import get_latest_price, get_net_volume_rank_future, get_net_volume_ra
     get_symbol_open_interest, get_symbol_info_str, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point, \
     create_token_time_plot, create_all_tokens_time_plot, get_openInterest_increase_rank, get_symbol_open_interest_value, \
-    get_symbol_net_rank
+    get_symbol_net_rank, symbol1000
 from rootdata import root_data_meta_data
 from upbit import to_list_on_upbit, get_upbit_volume
 
@@ -256,6 +256,8 @@ def get_symbol_oi(message):
     try:
         param = message.text.split()[1:][0]
         symbol = param.upper() + 'USDT'
+        if symbol in symbol1000:
+            symbol = '1000' + symbol
         fr = get_funding_rate(symbol, decimal=4)[1]
         res = f"`费率：{fr}%`\n\n"
         symbol_oi = get_symbol_open_interest(symbol)
@@ -299,10 +301,11 @@ def get_symbol_net_volume_rank(message):
     log_user_action(user_id, username, command, parameters, 'Started')
     try:
         param1, param2 = message.text.split()[1:]
-        symbol = param1.upper() + 'USDT'
+        symbol_list = param1.split(',')
+        symbol_list = [symbol.upper() + 'USDT' for symbol in symbol_list]
         interval = param2
-        spot_rank, spot_net, future_rank, future_net = get_symbol_net_rank(symbol, interval)
-        res = get_symbol_net_rank_str(spot_rank, spot_net, future_rank, future_net)
+        res_dict = get_symbol_net_rank(symbol_list, interval)
+        res = get_symbol_net_rank_str(res_dict)
         bot.reply_to(message, res, parse_mode='Markdown')
         log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:

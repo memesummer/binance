@@ -898,15 +898,9 @@ def get_symbol_net_rank(symbol, interval, reverse=True):
             result = future.result()
             if result:
                 net_list.append(result)
-
-    future_rank, future_net = None, None
+    res = {}
     # 按净成交量进行排序
     future_list = sorted(net_list, key=lambda x: x[1], reverse=reverse)
-    # 查找第一个元素等于 symbol 的子列表
-    for index, sublist in enumerate(future_list):
-        if sublist[0] == symbol[:-4]:
-            future_rank, future_net = index + 1, sublist[1]
-            break
 
     endpoint = "api/v3/ticker/24hr"
     params = {}
@@ -937,14 +931,30 @@ def get_symbol_net_rank(symbol, interval, reverse=True):
 
     # 按净成交量进行排序
     spot_list = sorted(net_list, key=lambda x: x[1], reverse=reverse)
-    spot_rank, spot_net = None, None
     # 查找第一个元素等于 symbol 的子列表
-    for index, sublist in enumerate(spot_list):
-        if sublist[0] == symbol[:-4]:
-            spot_rank, spot_net = index + 1, sublist[1]
-            break
+    for symbol in symbol_list:
+        spot_rank, spot_net = None, None
+        for index, sublist in enumerate(spot_list):
+            if sublist[0] == symbol[:-4]:
+                spot_rank, spot_net = index + 1, sublist[1]
+                break
+        res.update({symbol: [spot_rank, spot_net]})
 
-    return spot_rank, spot_net, future_rank, future_net
+    for symbol in symbol_list:
+        if symbol in symbol1000:
+            sym = '1000' + symbol[:-4]
+        else:
+            sym = symbol[:-4]
+        future_rank, future_net = None, None
+        for index, sublist in enumerate(future_list):
+            if sublist[0] == sym:
+                future_rank, future_net = index + 1, sublist[1]
+                break
+        ll0 = res[symbol]
+        ll1 = ll0 + [future_rank, future_net]
+        res[symbol] = ll1
+
+    return res
 
 
 def fetch_taker_data_spot(symbol, p_chg, interval, limit):
