@@ -394,7 +394,7 @@ def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers4, json={"query": getTopToken})
+        response = requests.post(url, headers=headers5, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
@@ -515,7 +515,7 @@ def get_rank_vc(limit, interval, network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers1, json={"query": getTopToken})
+        response = requests.post(url, headers=headers3, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
@@ -589,7 +589,7 @@ def get_newest_token(limit, interval='5m', network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers4, json={"query": getNewToken})
+        response = requests.post(url, headers=headers5, json={"query": getNewToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
