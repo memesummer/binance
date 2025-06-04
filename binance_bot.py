@@ -28,6 +28,7 @@ from main import get_latest_price, get_net_volume_rank_future, get_net_volume_ra
     get_symbol_net_rank, symbol1000
 from rootdata import root_data_meta_data
 from upbit import to_list_on_upbit, get_upbit_volume
+from macd import get_macd_str
 
 # 机器人1
 # bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
@@ -410,6 +411,23 @@ def get_token_sf_delta(message):
         spot, future = token_spot_future_delta()
         res = f"`只有现货`：{str(spot)}\n"
         res += f"`只有期货`：{str(future)}\n"
+        bot.reply_to(message, res, parse_mode='Markdown')
+        log_user_action(user_id, username, command, parameters, 'Success')
+    except Exception as e:
+        bot.reply_to(message, "请输入正确的参数格式。示例：/d")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
+
+
+@bot.message_handler(commands=['macd'])
+@restricted
+def get_token_sf_delta(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/macd'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
+    try:
+        res = get_macd_str()
         bot.reply_to(message, res, parse_mode='Markdown')
         log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
