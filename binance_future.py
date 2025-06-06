@@ -628,3 +628,15 @@ def get_symbol_net_rank_str(res_dict):
         else:
             res += f"⏳期货流入排名第`{future_rank}`名, 📥➕${format_number(float(future_net))}\n"
     return res
+
+
+def get_klines_history_performance_table(res_list, m=15):
+    res = f"`符号            涨幅`\n"
+    for i, l in enumerate(res_list):
+        line = f"`{i + 1}.{l[0]}"
+        n1 = len(line)
+        line += ' ' * (m - n1)
+        line += f"{str(l[1])}%"
+        line += '`\n'
+        res += line
+    return res

@@ -30,7 +30,7 @@ binance_adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100, max_retrie
 binance_session.mount("https://", binance_adapter)
 binance_session.mount("http://", binance_adapter)
 symbol1000 = ['XECUSDT', 'LUNCUSDT', 'PEPEUSDT', 'SHIBUSDT', 'BONKUSDT', 'SATSUSDT', 'RATSUSDT', 'FLOKIUSDT',
-              '00MOGUSDT', '000MOGUSDT', 'MOGUSDT', 'CATUSDT', 'WHYUSDT', 'CHEEMSUSDT', 'XUSDT']
+              '00MOGUSDT', '000MOGUSDT', 'MOGUSDT', 'CATUSDT', 'WHYUSDT', 'CHEEMSUSDT', 'XUSDT', '000BOBUSDT']
 
 
 def binance_api_get(endpoint, params=None):
@@ -55,11 +55,11 @@ def binance_api_get(endpoint, params=None):
         if response.status_code == 200:
             return response.json()  # Return JSON response
         else:
+            return None
             print(f"Failed to fetch data from {url}. Status code: {response.status_code}")
     except requests.RequestException as e:
         print(f"Error making request to {url}: {e}")
-
-    return None  # Return None if the request fails
+        return None  # Return None if the request fails
 
 
 def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
@@ -84,7 +84,7 @@ def recommend(cir_df, rank=30, endpoint="api/v3/ticker/24hr"):
         result_list = list(result_dict.values())
 
         # 过滤
-        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD']
+        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD', 'USD1']
 
         filtered_tokens = [
             token for token in result_list
@@ -721,7 +721,7 @@ def scan_big_order(record, endpoint='api/v3/ticker/24hr', rank=12, add=None):
                 result_dict[sym] = item
         result_list = list(result_dict.values())
         # 过滤
-        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD']
+        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD', 'USD1']
 
         filtered_tokens = [
             token for token in result_list
@@ -874,7 +874,7 @@ def get_net_volume_rank_future(interval, rank=10, reverse=True):
     return sorted_list
 
 
-def get_symbol_net_rank(symbol, interval, reverse=True):
+def get_symbol_net_rank(symbol_list, interval, reverse=True):
     data = um_futures_client.ticker_24hr_price_change()
     # 获取前一天的时间戳
     now_utc = datetime.datetime.now(timezone.utc)
@@ -2312,7 +2312,7 @@ def statistic_time(endpoint='api/v3/ticker/24hr'):
                     result_dict[sym] = item
             result_list = list(result_dict.values())
 
-            fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD']
+            fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD', 'USD1']
             tokens = [
                 token['symbol'] for token in result_list
                 if token['symbol'].endswith("USDT")
@@ -2486,3 +2486,80 @@ def get_oi_increase_rank(symbol, pchg, period, limit=100):
                     break
         sym = symbol[4:-4] if symbol.startswith("1000") else symbol[:-4]
         return sym, pchg, increase_num, decrease_num
+
+
+def get_symbol_history_performance(symbol):
+    try:
+        k = get_k_lines(symbol, '1M', 1000)
+        start_price = float(k[0][1])
+        high_price = 0
+        for i in k:
+            if float(i[2]) > high_price:
+                high_price = float(i[2])
+        pchg = int(round(high_price / start_price * 100, 0))
+        return [symbol[:-4], pchg]
+    except Exception as e:
+        try:
+            if symbol in symbol1000:
+                symbol = "1000" + symbol
+            k = get_k_lines_future(symbol, '1M', 1000)
+            start_price = float(k[0][1])
+            high_price = 0
+            for i in k:
+                if float(i[2]) > high_price:
+                    high_price = float(i[2])
+            pchg = int(round(high_price / start_price * 100, 0))
+            return [symbol[:-4], pchg]
+        except Exception as e:
+            return None
+
+
+def get_binance_history_performance(limit):
+    endpoint = "api/v3/ticker/24hr"
+    params = {}
+    result = binance_api_get(endpoint, params)
+    res = result
+    result_future = um_futures_client.ticker_24hr_price_change(**params)
+    res1 = result_future
+    now_utc = datetime.datetime.now(timezone.utc)
+    yesterday_utc = now_utc - timedelta(days=0.5)
+    yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
+
+    # 检查 res 是否是列表，确保不是空列表
+    if isinstance(res, list) and res and isinstance(res1, list) and res1:
+        result_dict = {item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']: item for item in
+                       res}
+        for item in res1:
+            sym = item['symbol'][4:] if item['symbol'].startswith("1000") else item['symbol']
+            if sym not in result_dict:
+                result_dict[sym] = item
+        result_list = list(result_dict.values())
+
+        # 过滤
+        fil_str_list = ['USDC', 'FDUSD', 'TUSDUSDT', 'USDP', 'EUR', 'XUSD', 'USD1']
+
+        filtered_tokens = [
+            token for token in result_list
+            if token['symbol'].endswith("USDT")
+               and all(f not in token['symbol'] for f in fil_str_list)
+               and token['count'] != 0
+               and token['closeTime'] > yesterday_timestamp_utc
+        ]
+
+        res_list = []
+        symbols = [token['symbol'] for token in filtered_tokens]
+        # 使用 ThreadPoolExecutor 进行并行 API 请求
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
+            futures = [executor.submit(get_symbol_history_performance, symbol) for symbol in
+                       symbols]
+
+            # 等待所有任务完成，并收集结果
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    res_list.append(result)
+
+        # 按净成交量进行排序
+        sorted_list = sorted(res_list, key=lambda x: x[1], reverse=True)[:limit]
+        return sorted_list
