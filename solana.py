@@ -751,6 +751,8 @@ def get_new_token_recommend():
         #     merge[item['tokenAddress']] = [item['amount'], item['totalAmount']]
 
         for ca in merge_list:
+            if ca.startswith("https://"):
+                continue
             if ca not in new_his:
                 response = requests.get(
                     f"https://api.dexscreener.com/latest/dex/tokens/{ca}",
