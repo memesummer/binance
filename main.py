@@ -2545,9 +2545,10 @@ def get_binance_history_performance(limit):
                and token['count'] != 0
                and token['closeTime'] > yesterday_timestamp_utc
         ]
+        sorted_res = sorted(filtered_tokens, key=lambda x: float(x['priceChangePercent']), reverse=True)
 
         res_list = []
-        symbols = [token['symbol'] for token in filtered_tokens]
+        symbols = [token['symbol'] for token in sorted_res][:200]
         # 使用 ThreadPoolExecutor 进行并行 API 请求
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             # 提交所有的 API 请求，并行运行 fetch_taker_data 函数
