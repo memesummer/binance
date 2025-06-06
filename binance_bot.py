@@ -413,7 +413,7 @@ def get_binance_performance_history(message):
         if len(text) == 1:
             limit = 10
         else:
-            limit = int(text[1][0])
+            limit = int(text[1])
         res_list = get_binance_history_performance(limit)
         res = get_klines_history_performance_table(res_list)
         bot.reply_to(message, res, parse_mode='Markdown')
