@@ -515,7 +515,7 @@ def get_rank_vc(limit, interval, network_id=sol_id):
             }}
           }}
         }}"""
-        response = requests.post(url, headers=headers3, json={"query": getTopToken})
+        response = requests.post(url, headers=headers1, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['filterTokens']['results']
         return res_list
