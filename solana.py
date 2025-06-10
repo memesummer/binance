@@ -1276,7 +1276,7 @@ def get_token_chart(ca, st, interval, network_id=sol_id, url="https://graph.defi
             liquidity
           }}
         }}"""
-        response = requests.post(url, headers=headers3, json={"query": getTopToken})
+        response = requests.post(url, headers=headers5, json={"query": getTopToken})
         res = json.loads(response.text)
         res_list = res['data']['getBars']
         return res_list
