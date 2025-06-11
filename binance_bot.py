@@ -26,7 +26,7 @@ from main import get_latest_price, get_net_volume_rank_future, get_net_volume_ra
     get_symbol_open_interest, get_symbol_info_str, token_spot_future_delta, scan_big_order, get_gain_lose_rank, \
     get_symbol_net_v, get_openInterest_diff_rank, statistic_coin_time, statistic_time, get_long_short_switch_point, \
     create_token_time_plot, create_all_tokens_time_plot, get_openInterest_increase_rank, get_symbol_open_interest_value, \
-    get_symbol_net_rank, symbol1000, get_binance_history_performance
+    get_symbol_net_rank, symbol1000, get_binance_history_performance, fetch_and_plot_order_book_heatmap
 from rootdata import root_data_meta_data
 from upbit import to_list_on_upbit, get_upbit_volume
 from macd import get_macd_str
@@ -618,6 +618,40 @@ def stat_coin_time(message):
                 log_user_action(user_id, username, command, parameters, 'Success')
     except Exception as e:
         bot.reply_to(message, f"请输入正确的参数格式。示例：/stat btc")
+        log_user_action(user_id, username, command, parameters, 'Failed', e)
+
+
+@bot.message_handler(commands=['op'])
+@restricted
+def plot_order_map(message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    command = '/op'
+    parameters = ' '.join(message.text.split()[1:]) if len(message.text.split()) > 1 else 'None'
+    log_user_action(user_id, username, command, parameters, 'Started')
+    try:
+        param_list = message.text.split()
+        if len(param_list) > 2:
+            percentage_range = int(param_list[2])
+            top_percent = int(param_list[3])
+        else:
+            percentage_range = 2
+            top_percent = 20
+        symbol = param_list[1]
+        symbol = symbol.upper() + '/USDT'
+        buf = fetch_and_plot_order_book_heatmap(symbol, percentage_range=percentage_range, top_percent=top_percent)
+        if not buf:
+            bot.reply_to(message, "请输入正确的参数格式。示例：/op btc", parse_mode='Markdown')
+            log_user_action(user_id, username, command, parameters, 'Failed')
+        else:
+            bot.send_photo(
+                chat_id=chat_id,
+                photo=buf
+            )
+            buf.close()
+            log_user_action(user_id, username, command, parameters, 'Success')
+    except Exception as e:
+        bot.reply_to(message, f"请输入正确的参数格式。示例：/op btc")
         log_user_action(user_id, username, command, parameters, 'Failed', e)
 
 

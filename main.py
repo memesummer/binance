@@ -2,15 +2,20 @@ import concurrent.futures
 import datetime
 import io
 import json
+import math
 import os
+import pickle
 import random
 import time
 from datetime import timedelta, timezone
 
+import ccxt
 import matplotlib.pyplot as plt
+import numpy as np
 import requests
 from binance.um_futures import UMFutures
 from dateutil.relativedelta import relativedelta
+from matplotlib.colors import LinearSegmentedColormap
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -2564,3 +2569,302 @@ def get_binance_history_performance(limit):
         # 按净成交量进行排序
         sorted_list = sorted(res_list, key=lambda x: x[1], reverse=True)[:limit]
         return sorted_list
+
+
+def get_tick_size(exchange, symbol):
+    try:
+        markets = exchange.load_markets()
+        if symbol.replace('/', "") in symbol1000:
+            return markets['1000' + symbol + ':USDT']['precision']['price']
+        else:
+            return markets[symbol + ':USDT']['precision']['price']
+    except KeyError:
+        return None
+
+
+# Heatmap plotting function
+def fetch_and_plot_order_book_heatmap(symbol='BTC/USDT', percentage_range=2, top_percent=20, flag1000=False):
+    if symbol.replace('/', "") in symbol1000:
+        flag1000 = True
+
+    # Initialize Binance clients
+    exchange_spot = ccxt.binance({'enableRateLimit': True, 'options': {'defaultType': 'spot'}})
+    exchange_future = ccxt.binance({'enableRateLimit': True, 'options': {'defaultType': 'future'}})
+
+    # Check if symbol exists in spot or futures
+    spot_available = False
+    future_available = False
+    try:
+        exchange_spot.load_markets()[symbol]
+        spot_available = True
+    except KeyError:
+        print(f"Symbol {symbol} not available in spot market")
+
+    try:
+        if flag1000:
+            exchange_future.load_markets()['1000' + symbol + ':USDT']
+        else:
+            exchange_future.load_markets()[symbol + ':USDT']
+        future_available = True
+    except KeyError:
+        print(f"Symbol {symbol} not available in futures market")
+
+    # If neither spot nor futures is available, print error and return
+    if not spot_available and not future_available:
+        print("出错：Symbol not available in both spot and futures markets")
+        return
+
+    # Retrieve tick size
+    tick_size = get_tick_size(exchange_spot, symbol) if spot_available else get_tick_size(exchange_future, symbol)
+    if tick_size is None:
+        tick_size = 0.01  # Fallback tick size
+    print(f"tick_size: {tick_size}")
+
+    def save_order_book(order_book, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(order_book, f)
+        print(f"Saved {filename}")
+
+    # Fetch order books if not loaded or forced refresh
+    if spot_available:
+        try:
+            spot_order_book = exchange_spot.fetch_order_book(symbol, limit=5000)
+        except Exception as e:
+            print(f"Error fetching spot order book: {e}")
+            spot_available = False
+
+    if future_available:
+        try:
+            target_symbol = "1000" + symbol if flag1000 else symbol
+            future_order_book = exchange_future.fetch_order_book(target_symbol, limit=1000)
+        except Exception as e:
+            print(f"Error fetching future order book: {e}")
+            future_available = False
+
+    # If both failed after attempting fetch, print error and return
+    if not spot_available and not future_available:
+        print("出错：Failed to fetch order books for both spot and futures")
+        return
+
+    # Get spot and future current prices
+    spot_price = None
+    future_price = None
+    if spot_available:
+        try:
+            spot_price = exchange_spot.fetch_ticker(symbol)['last']
+            if flag1000:
+                spot_price = spot_price * 1000
+        except Exception as e:
+            print(f"Error fetching spot price: {e}")
+            spot_available = False
+
+    if future_available:
+        try:
+            target_symbol = "1000" + symbol if flag1000 else symbol
+            future_price = exchange_future.fetch_ticker(target_symbol)['last']
+        except Exception as e:
+            print(f"Error fetching future price: {e}")
+            future_available = False
+
+    # If both failed, print error and return
+    if not spot_available and not future_available:
+        print("出错：Failed to fetch prices for both spot and futures")
+        return None
+
+    # Print price information if available
+    if spot_price and future_price:
+        print(
+            f"现货价格（调整后）: {spot_price}, 期货价格: {future_price}, "
+            f"差价: {abs(spot_price - future_price) / spot_price * 100:.2f}%"
+        )
+    elif spot_price:
+        print(f"现货价格（调整后）: {spot_price}")
+    elif future_price:
+        print(f"期货价格: {future_price}")
+
+    # Filter spot and futures orders
+    spot_bids, spot_asks, future_bids, future_asks = [], [], [], []
+
+    if spot_available and spot_price:
+        if flag1000:
+            spot_bids = [(float(p) * 1000, float(a) / 1000) for p, a in spot_order_book['bids'] if
+                         spot_price * (1 - percentage_range / 100) <= float(p) * 1000 <= spot_price]
+            spot_asks = [(float(p) * 1000, float(a) / 1000) for p, a in spot_order_book['asks'] if
+                         spot_price <= float(p) * 1000 <= spot_price * (1 + percentage_range / 100)]
+        else:
+            spot_bids = [(float(p), float(a)) for p, a in spot_order_book['bids'] if
+                         spot_price * (1 - percentage_range / 100) <= float(p) <= spot_price]
+            spot_asks = [(float(p), float(a)) for p, a in spot_order_book['asks'] if
+                         spot_price <= float(p) <= spot_price * (1 + percentage_range / 100)]
+
+    if future_available and future_price:
+        future_bids = [(float(p), float(a)) for p, a in future_order_book['bids'] if
+                       future_price * (1 - percentage_range / 100) <= float(p) <= future_price]
+        future_asks = [(float(p), float(a)) for p, a in future_order_book['asks'] if
+                       future_price <= float(p) <= future_price * (1 + percentage_range / 100)]
+
+    # Combine filtered bids and asks
+    bids = spot_bids + future_bids
+    asks = spot_asks + future_asks
+
+    if not bids and not asks:
+        print("出错：No valid order book data available")
+        return None
+
+    # Aggregate amount to get USD volume
+    def to_volume(orders):
+        return [(p, p * a) for p, a in orders]
+
+    bid_volumes = to_volume(bids)
+    ask_volumes = to_volume(asks)
+
+    # Determine decimal places for price
+    reference_price = spot_price if spot_price else future_price
+    if reference_price > 1000 or tick_size >= 1:
+        decimals = 0
+    elif reference_price > 10 or tick_size >= 0.1:
+        decimals = 1
+    else:
+        decimals = int(math.log10(1 / tick_size))
+    print(f"保留小数位：{decimals}")
+
+    all_orders = [('buy', round(p, decimals), v) for p, v in bid_volumes] + \
+                 [('sell', round(p, decimals), v) for p, v in ask_volumes]
+    all_orders.sort(key=lambda x: x[2], reverse=True)
+    top_n = int(len(all_orders) * (top_percent / 100))
+    top_orders = all_orders[:top_n]
+
+    # Aggregate volumes by price
+    price_volumes = {}
+    for side, price, volume in top_orders:
+        if price not in price_volumes:
+            price_volumes[price] = {'buy_volume': 0, 'sell_volume': 0}
+        if side == 'buy':
+            price_volumes[price]['buy_volume'] += volume
+        else:
+            price_volumes[price]['sell_volume'] += volume
+
+    # Convert to list for plotting and finding support/resistance
+    aggregated_orders = []
+    for price, volumes in price_volumes.items():
+        if volumes['buy_volume'] > 0:
+            aggregated_orders.append(('buy', price, volumes['buy_volume']))
+        if volumes['sell_volume'] > 0:
+            aggregated_orders.append(('sell', price, volumes['sell_volume']))
+
+    if not aggregated_orders:
+        print("出错：No aggregated order data available")
+        return None
+
+    # Find support and resistance based on cumulative volume
+    support = max([o for o in aggregated_orders if o[0] == 'buy'], key=lambda x: x[2], default=None)
+    resistance = max([o for o in aggregated_orders if o[0] == 'sell'], key=lambda x: x[2], default=None)
+
+    # Calculate separate max volumes for buy and sell
+    buy_max_volume = max([vol for side, _, vol in aggregated_orders if side == 'buy'], default=1)
+    sell_max_volume = max([vol for side, _, vol in aggregated_orders if side == 'sell'], default=1)
+    print(f"Buy Max Volume: {buy_max_volume}, Sell Max Volume: {sell_max_volume}")
+
+    # Verify support and resistance volumes
+    if support and support[2] != buy_max_volume:
+        print(f"Warning: Support volume {support[2]} does not match buy_max_volume {buy_max_volume}")
+    if resistance and resistance[2] != sell_max_volume:
+        print(f"Warning: Resistance volume {resistance[2]} does not match sell_max_volume {sell_max_volume}")
+
+    # Create color scale
+    reds = LinearSegmentedColormap.from_list('reds', ['#ffe6e6', '#ff0000'])
+    greens = LinearSegmentedColormap.from_list('greens', ['#e6ffe6', '#008000'])
+
+    # Plot setup
+    fig, ax = plt.subplots(figsize=(8, 10))
+    fig.patch.set_facecolor('white')
+
+    price_min = min([price for side, price, _ in aggregated_orders if side == 'buy'])
+    price_max = max([price for side, price, _ in aggregated_orders if side == 'sell'])
+    price_range = price_max - price_min
+    num_ticks = 10  # 目标刻度数量
+    tick_interval = price_range / num_ticks  # 动态计算间隔
+
+    if reference_price > 1000 or tick_size >= 1:
+        bar_height = 1
+    elif reference_price > 10 or tick_size >= 0.1:
+        bar_height = 0.1
+    else:
+        bar_height = min(tick_size * 10, tick_interval / 100)
+
+    print(f"bar height: {bar_height}")
+
+    # Draw rectangles for each price level
+    for side, price, volume in aggregated_orders:
+        norm_vol = volume / buy_max_volume if side == 'buy' else volume / sell_max_volume
+        color = reds(norm_vol) if side == 'sell' else greens(norm_vol)
+        ax.barh(price, 1, color=color, edgecolor=color, height=bar_height, alpha=0.4)
+
+    # Highlight spot and future prices if available
+    if spot_price:
+        ax.axhline(spot_price, linestyle='--', color='orange', linewidth=1, label='Spot Price')
+        ax.text(1.01, spot_price, f'{spot_price}', va='center', ha='left', color='orange', fontsize=10,
+                transform=ax.get_yaxis_transform())
+    if future_price:
+        ax.axhline(future_price, linestyle='--', color='purple', linewidth=1, label='Future Price')
+        ax.text(1.01, future_price, f'{future_price}', va='center', ha='left', color='purple', fontsize=10,
+                transform=ax.get_yaxis_transform())
+
+    # Annotate support and resistance
+    if support:
+        ax.text(1.01, support[1], f"Support: {support[1]} (Vol: {support[2]:.2f})", va='center', ha='left',
+                color='green', fontsize=10, transform=ax.get_yaxis_transform())
+    if resistance:
+        ax.text(1.01, resistance[1], f"Resistance: {resistance[1]} (Vol: {resistance[2]:.2f})", va='center',
+                ha='left', color='red', fontsize=10, transform=ax.get_yaxis_transform())
+
+    ax.set_yticks(np.arange(np.floor(price_min / tick_interval) * tick_interval,
+                            np.ceil(price_max / tick_interval) * tick_interval + tick_interval,
+                            tick_interval))
+
+    # Labels and legend
+    market_type = "Spot and Futures" if spot_available and future_available else (
+        "Spot" if spot_available else "Futures")
+    ax.set_title(f"{symbol} {market_type} Order Book Heatmap ({datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')})")
+    ax.set_xlabel("Volume Intensity")
+    ax.set_ylabel("Price (USDT)")
+    ax.legend(loc='upper left')
+    # 添加上方中间水印
+    plt.text(
+        0.5, 0.85,  # x=0.5（水平居中），y=0.85（靠近顶部）
+        "@EttoroSummer Copyright",  # 更长的文字
+        fontsize=20,  # 字体更大
+        alpha=0.5,  # 透明度
+        color="gray",
+        ha="center",  # 水平居中
+        va="center",  # 垂直居中
+        rotation=0,  # 不旋转
+        transform=plt.gcf().transFigure  # 使用整个图的坐标系
+    )
+
+    # 添加下方中间水印
+    plt.text(
+        0.5, 0.15,  # x=0.5（水平居中），y=0.15（靠近底部）
+        "@EttoroSummer Copyright",  # 更长的文字
+        fontsize=20,  # 字体更大
+        alpha=0.5,  # 透明度
+        color="gray",
+        ha="center",  # 水平居中
+        va="center",  # 垂直居中
+        rotation=0,  # 不旋转
+        transform=plt.gcf().transFigure
+    )
+
+    plt.tight_layout()
+
+    # Save the figure
+    # filename = f"{symbol.replace('/', '')}_heatmap.png"
+    # plt.savefig(filename, dpi=300, bbox_inches='tight')
+    # print(f"Saved heatmap as {filename}")
+
+    # 保存到内存
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=300, bbox_inches='tight')
+    buf.seek(0)
+    plt.close()
+    return buf
