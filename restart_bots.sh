@@ -38,7 +38,7 @@ python /opt/daixin/binance/cmc.py
 echo "正在重新启动程序..."
 /usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_bot.py >> bot.log 2>&1 &
 /usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_recommed.py >> push.log 2>&1 &
-/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_oid.py >> oid.log 2>&1 &
+#/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/binance_oid.py >> oid.log 2>&1 &
 #/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/bitget.py >> bitget.log 2>&1 &
 #/usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/lbank.py >> lbank.log 2>&1 &
 /usr/bin/nohup /opt/anaconda3/envs/bot/bin/python -u /opt/daixin/binance/solana.py >> solana.log 2>&1 &
