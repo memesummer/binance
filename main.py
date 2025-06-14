@@ -2825,7 +2825,15 @@ def fetch_and_plot_order_book_heatmap(symbol='BTC/USDT', percentage_range=2, top
     # Labels and legend
     market_type = "Spot and Futures" if spot_available and future_available else (
         "Spot" if spot_available else "Futures")
-    ax.set_title(f"{symbol} {market_type} Order Book Heatmap ({datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')})")
+    # 当前 UTC 时间
+    utc_now = datetime.datetime.now(timezone.utc)
+
+    # 转换为 UTC+8
+    utc_plus_8 = utc_now.astimezone(timezone(timedelta(hours=8)))
+
+    # 格式化输出
+    formatted_time = utc_plus_8.strftime('%Y-%m-%d %H:%M:%S')
+    ax.set_title(f"{symbol} {market_type} Order Book Heatmap ({formatted_time})")
     ax.set_xlabel("Volume Intensity")
     ax.set_ylabel("Price (USDT)")
     ax.legend(loc='upper left')
