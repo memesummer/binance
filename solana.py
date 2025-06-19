@@ -860,7 +860,7 @@ def scan_new():
                     # 写入新行
                     writer.writerow(new_row)
                 time.sleep(1)
-            time.sleep(150)
+            time.sleep(164)
         except Exception as e:
             safe_send_message(chat_id_alert, f"AI扫链获取出错：{e}")
             time.sleep(3)
@@ -1034,7 +1034,7 @@ def recommend_scan():
                     # 写入新行
                     writer.writerow(new_row)
                 time.sleep(1)
-            time.sleep(150)
+            time.sleep(155)
         except Exception as e:
             safe_send_message(chat_id_alert, f"金狗挖掘获取出错：{e}")
             time.sleep(3)
@@ -1250,7 +1250,7 @@ def get_vc_increase(limit=10):
                     writer.writerow(new_row)
                 vc_increase_his.add(str(token))
                 time.sleep(1)
-            time.sleep(150)
+            time.sleep(173)
         except Exception as e:
             safe_send_message(chat_id_alert, f"AI脉冲警报获取出错：{e}")
             time.sleep(3)
