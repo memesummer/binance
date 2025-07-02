@@ -1419,6 +1419,8 @@ def get_push_result_csv(processed_file):
             for row in batch:
                 timestamp = row['timestamp']
                 ca = row['ca']
+                if ca == 'CB9dDufT3ZuQXqqSfa1c5kY935TEreyBw9XJXxHKpump':
+                    continue
                 price = float(row['price'])
                 res = get_token_chart(ca, timestamp, 5)
                 # 说明是其他链条的
