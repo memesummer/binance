@@ -67,9 +67,10 @@ AUTHORIZED_USERS = [546797136, 6808760378, 6672213739, 7205595566, 7517528905]  
 
 bot = telebot.TeleBot("8112245267:AAFedRwTwOz06mVqQ6lqRrnwzuvCLRuLFCg", parse_mode='Markdown')
 
-chat_id = "-4629100773"
+# chat_id = "-4629100773"
 chat_id_alert = "-4609875695"
 chat_id_inner = "-1002213443358"
+chat_id = "-1002724472797"
 
 bot.send_message(chat_id, "开始推荐sol链MEME币......")
 
