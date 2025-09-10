@@ -65,7 +65,7 @@ headers5 = {
 }
 AUTHORIZED_USERS = [546797136, 6808760378, 6672213739, 7205595566, 7517528905]  # 替换为实际用户 ID
 
-bot = telebot.TeleBot("8112245267:AAFedRwTwOz06mVqQ6lqRrnwzuvCLRuLFCg", parse_mode='Markdown')
+bot = telebot.TeleBot("8112245267:AAGjBpkxGLGLp3QjKt007-B3Xp31g0IMGFo", parse_mode='Markdown')
 
 # chat_id = "-4629100773"
 chat_id_alert = "-4609875695"

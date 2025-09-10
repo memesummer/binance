@@ -20,11 +20,12 @@ from binance_future import format_number
 binance_his = set()
 # bot = telebot.TeleBot("6798857946:AAEVjD81AKrCET317yb-xNO1-DyP3RAdRH0", parse_mode='Markdown')
 # bot = telebot.TeleBot("8077013417:AAFg0uzWmO3zXyvRJNfJORhK9BJTltFUJa0", parse_mode='Markdown')
-bot = telebot.TeleBot("7727377009:AAGxwVbs65PxqMfwP6ugCcMHxMBDrM2jc2o", parse_mode='Markdown')
+bot = telebot.TeleBot("7727377009:AAEYu_J7Gw6EhxL5M2q_gBuq7fy87K5NaBg", parse_mode='Markdown')
 
 chat_id_inner = "-1002213443358"
-chat_id = "-4654295504"
-chat_id_alert = "-4609875695"
+
+# chat_id = "-4654295504"
+chat_id = "-1003050170208"
 # 获取当前脚本所在的目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
