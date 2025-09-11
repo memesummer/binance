@@ -856,7 +856,8 @@ def get_net_volume_rank_future(interval, rank=10, reverse=True):
     yesterday_utc = now_utc - timedelta(days=1)
     yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
     symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
-               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v[
+                   'symbol'] and 'USD1' not in v['symbol'] and 'EUR' not in v['symbol'] and v[
                    'count'] != 0 and v['closeTime'] > yesterday_timestamp_utc]
 
     net_list = []
@@ -996,7 +997,8 @@ def get_net_volume_rank_spot(interval, rank=10, reverse=True):
     yesterday_utc = now_utc - timedelta(days=1)
     yesterday_timestamp_utc = int(yesterday_utc.timestamp()) * 1000
     symbols = [[v['symbol'], round(float(v['priceChangePercent']), 2)] for v in data if
-               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v['symbol'] and v[
+               v['symbol'].endswith('USDT') and 'USDC' not in v['symbol'] and 'FDUSD' not in v[
+                   'symbol'] and 'USD1' not in v['symbol'] and 'EUR' not in v['symbol'] and v[
                    'count'] != 0 and float(v['bidPrice']) != 0 and float(v['askPrice']) != 0 and v[
                    'closeTime'] > yesterday_timestamp_utc]
 
