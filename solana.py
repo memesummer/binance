@@ -4,6 +4,7 @@ import io
 import json
 import os
 import re
+import socket
 import threading
 import time
 from datetime import datetime, timezone, timedelta
@@ -16,7 +17,16 @@ import requests
 import telebot
 from requests.adapters import HTTPAdapter
 from requests.exceptions import Timeout
+from requests.packages.urllib3.util import connection
 from urllib3.util.retry import Retry
+
+
+# 强制 IPv4
+def force_ipv4():
+    return socket.AF_INET
+
+
+connection.allowed_gai_family = force_ipv4
 
 sol_id = 1399811149
 # 5万次 (ettoro)
