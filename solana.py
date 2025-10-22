@@ -29,6 +29,9 @@ def force_ipv4():
 connection.allowed_gai_family = force_ipv4
 
 sol_id = 1399811149
+bsc_id = 56
+network_id_list = ["1399811149", "56"]
+
 # 5万次 (ettoro)
 define1 = "1d1cfa84305b78b1ab8cd4205a45f77b231f9686"
 # 5万次 （aozone）
@@ -374,13 +377,14 @@ def safe_send_message(chat_id, message):
         bot.send_message(chat_id_alert, f"消息发送失败: {remove_symbols(message)},原因：{e}")
 
 
-def get_top_token(limit, interval, is_volume_based=False, network_id=sol_id):
+def get_top_token(limit, interval, is_volume_based=False, network_id=network_id_list):
     try:
+        network_ids_str = f"[{', '.join(network_id)}]"
         attribute = f"trendingScore{interval}" if not is_volume_based else f"volume{interval}"
         getTopToken = f"""query {{
           filterTokens(
             filters: {{ 
-              network: {network_id},
+              network: {network_ids_str},
               potentialScam: false,
               launchpadCompleted: true,
               liquidity: {{ gt: 10000 }}
@@ -488,13 +492,14 @@ def get_rank_pc(limit, interval, network_id=sol_id):
         print(e)
 
 
-def get_rank_vc(limit, interval, network_id=sol_id):
+def get_rank_vc(limit, interval, network_id=network_id_list):
     try:
+        network_ids_str = f"[{', '.join(network_id)}]"
         attribute = f"{{attribute: volumeChange{interval}, direction: DESC}}"
         getTopToken = f"""query {{
           filterTokens(
             filters: {{ 
-              network: {network_id},
+              network: {network_ids_str},
               potentialScam: false,
               launchpadCompleted: true,
               liquidity: {{ gt: 10000 }}
@@ -572,12 +577,13 @@ def get_rank_holder(limit, interval, network_id=sol_id):
         print(e)
 
 
-def get_newest_token(limit, interval='5m', network_id=sol_id):
+def get_newest_token(limit, interval='5m', network_id=network_id_list):
     try:
+        network_ids_str = f"[{', '.join(network_id)}]"
         attribute = f"createdAt"
         getNewToken = f"""query {{
           filterTokens(
-            filters: {{ network: {network_id},
+            filters: {{ network: {network_ids_str},
                         potentialScam: false,
                         launchpadCompleted: true
                         }},
@@ -708,7 +714,7 @@ def get_new_token():
         data = response.json()
         res = []
         for token in data:
-            if token['chainId'] == 'solana':
+            if token['chainId'] in ['solana', 'bsc']:
                 res.append(token)
         return res
     except Exception as e:
@@ -790,7 +796,8 @@ def get_new_token_recommend():
                             'liquidity': data['liquidity']['usd'],
                             'fdv': data['fdv'],
                             'pairCreatedAt': data['pairCreatedAt'],
-                            'star': star
+                            'star': star,
+                            'chainId': data['chainId']
                             # 'amount': boost[0],
                             # 'totalAmount': boost[1]
                         }
@@ -837,8 +844,9 @@ def scan_new():
                 count = count_ca_occurrences(token['ca']) + 1
                 liq = format_number(token['liquidity'])
                 fdv = format_number(token['fdv'])
+                chainId = token['chainId']
                 message = f"""
-🤖*AI扫链-潜力新币推荐*🧠
+🤖*AI扫链-潜力新币推荐*🧠｜{chainId}
 🌱*${token['symbol'].upper()}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) ｜ {token['star'] * "⭐"}
 🧮第`{count}`次推送
 💧池子：{liq} ｜ 💸市值：{fdv}
@@ -886,7 +894,7 @@ def get_boosted_token():
     data = response.json()
     res = []
     for token in data:
-        if token['chainId'] == 'solana':
+        if token['chainId'] in ['solana', 'bsc']:
             res.append(token)
     return res
 
@@ -972,7 +980,8 @@ def token_recommend():
                         'txns': data['txns'],
                         'volume': data['volume'],
                         'priceChange': data['priceChange'],
-                        'boost_amount': amount
+                        'boost_amount': amount,
+                        'chainId': data['chainId']
                     }
                     res.append(sym)
                     recommend_his.add(ca + "|" + str(amount))
@@ -1013,8 +1022,9 @@ def recommend_scan():
                 count = count_ca_occurrences(token['ca']) + 1
                 liq = format_number(token['liquidity'])
                 fdv = format_number(token['fdv'])
+                chainId = token['chainId']
                 message = f"""
-🥇*AI严选-金狗挖掘*🚜
+🥇*AI严选-金狗挖掘*🚜｜{chainId}
 🐕*${token['symbol'].upper()}*：[{token['name']}](https://debot.ai/token/solana/{token['ca']}) | ⚡️{token['boost_amount']}
 🧮第`{count}`次推送
 💧池子：{liq} ｜ 💸市值：{fdv}
